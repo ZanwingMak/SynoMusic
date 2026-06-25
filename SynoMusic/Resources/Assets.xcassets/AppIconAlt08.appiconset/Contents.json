@@ -11,6 +11,24 @@
       "idiom": "iphone",
       "size": "60x60",
       "scale": "3x"
+    },
+    {
+      "filename": "AppIconAlt08-76.png",
+      "idiom": "ipad",
+      "scale": "1x",
+      "size": "76x76"
+    },
+    {
+      "filename": "AppIconAlt08-76@2x.png",
+      "idiom": "ipad",
+      "scale": "2x",
+      "size": "76x76"
+    },
+    {
+      "filename": "AppIconAlt08-83.5@2x.png",
+      "idiom": "ipad",
+      "scale": "2x",
+      "size": "83.5x83.5"
     }
   ],
   "info": {
