@@ -4,7 +4,9 @@ import SwiftUI
 struct LibraryHomeView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var purchase: PurchaseStore
     @StateObject private var vm = LibraryHomeViewModel()
+    @State private var paywallFeature: PremiumFeature?
 
     var body: some View {
         ScrollView {
@@ -40,12 +42,29 @@ struct LibraryHomeView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
+                purchaseButton
                 toolbarLink(value: BrowseRoute.localPlaylists, systemImage: "music.note.list", label: "我的歌单".t)
                 toolbarLink(value: BrowseRoute.radio, systemImage: "antenna.radiowaves.left.and.right", label: "电台".t)
                 toolbarLink(value: BrowseRoute.settings, systemImage: "gearshape", label: "设置".t)
             }
         }
+        .sheet(item: $paywallFeature) { feature in
+            PaywallView(feature: feature)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+        }
         .task { await vm.load(client: session.client) }
+    }
+
+    /// 首页右上角的购买与订阅入口。
+    private var purchaseButton: some View {
+        Button {
+            Haptics.tap()
+            paywallFeature = .allAccess
+        } label: {
+            Image(systemName: purchase.hasFullAccess ? "checkmark.seal" : "sparkles")
+                .accessibilityLabel("购买与订阅".t)
+        }
     }
 
     /// 带轻触反馈的导航栏图标入口。

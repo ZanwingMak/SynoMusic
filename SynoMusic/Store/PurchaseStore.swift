@@ -193,7 +193,28 @@ final class PurchaseStore: ObservableObject {
             await refreshEntitlements()
             statusMessage = hasFullAccess ? "购买已恢复".t : "没有找到有效购买".t
         } catch {
+            guard !isUserCancelled(error) else {
+                statusMessage = nil
+                return
+            }
             statusMessage = "恢复购买失败".t + "：\(error.localizedDescription)"
+        }
+    }
+
+    /// 打开系统订阅管理面板，方便用户查看或取消订阅。
+    func manageSubscriptions() async {
+        guard let scene = activeWindowScene else {
+            statusMessage = "订阅管理暂不可用".t
+            return
+        }
+        do {
+            try await AppStore.showManageSubscriptions(in: scene)
+        } catch {
+            guard !isUserCancelled(error) else {
+                statusMessage = nil
+                return
+            }
+            statusMessage = "打开订阅管理失败".t + "：\(error.localizedDescription)"
         }
     }
 
@@ -270,6 +291,16 @@ final class PurchaseStore: ObservableObject {
     /// 返回商品定义中的固定排序下标。
     private func productSortIndex(_ productID: String) -> Int {
         SynoMusicProduct(rawValue: productID)?.sortIndex ?? Int.max
+    }
+
+    /// 判断 StoreKit 错误是否来自用户主动取消。
+    private func isUserCancelled(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        if let storeKitError = error as? StoreKitError,
+           case .userCancelled = storeKitError {
+            return true
+        }
+        return false
     }
 
     /// 当前前台窗口场景，用于展示兑换码系统面板。

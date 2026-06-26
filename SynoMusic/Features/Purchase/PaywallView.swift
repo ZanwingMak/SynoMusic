@@ -20,7 +20,7 @@ struct PaywallView: View {
                 .padding(20)
             }
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
-            .navigationTitle("解锁完整功能".t)
+            .navigationTitle((purchase.hasFullAccess ? "购买与订阅" : "解锁完整功能").t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -113,6 +113,13 @@ struct PaywallView: View {
 
     private var restoreAndRedeem: some View {
         VStack(spacing: 10) {
+            Button {
+                Task { await purchase.manageSubscriptions() }
+            } label: {
+                Label("管理订阅".t, systemImage: "person.crop.circle.badge.checkmark")
+            }
+            .buttonStyle(SecondaryButtonStyle())
+
             Button {
                 Task { await purchase.restorePurchases() }
             } label: {
