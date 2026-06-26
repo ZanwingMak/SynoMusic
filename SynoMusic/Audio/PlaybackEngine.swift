@@ -139,6 +139,7 @@ final class PlaybackEngine: ObservableObject {
     /// 当前状态提示开始显示的时间，用于计算 loading Toast 的最短展示时间。
     private var statusVisibleSince: Date?
     private var sleepTask: Task<Void, Never>?
+    private var fadeTask: Task<Void, Never>?
     /// 当前曲目临时使用的转码偏好（fallback 用），不修改用户全局设置。
     private var transcodeOverride: AudioQuality?
     /// 当前曲目是否已尝试过 raw→mp3 兜底重试，避免无限循环。
@@ -214,7 +215,13 @@ final class PlaybackEngine: ObservableObject {
     /// 用户主动暂停播放，并清掉待自动恢复标记。
     func pause() {
         shouldResumeAfterInterruption = false
-        player.pause()
+        guard shouldFadeAudio, player.timeControlStatus == .playing else {
+            fadeTask?.cancel()
+            player.pause()
+            setPlayingState(false)
+            return
+        }
+        fadeOutAndPause()
         setPlayingState(false)
     }
 
@@ -229,7 +236,9 @@ final class PlaybackEngine: ObservableObject {
         }
         // 若从未加载，尝试加载当前。
         if player.currentItem == nil { loadCurrent(autoPlay: true); return }
+        prepareFadeInIfNeeded()
         player.play()
+        fadeInIfNeeded()
         setPlayingState(true)
     }
 
@@ -238,6 +247,7 @@ final class PlaybackEngine: ObservableObject {
         shouldResumeAfterInterruption = false
         player.pause()
         player.removeAllItems()
+        fadeTask?.cancel()
         demoTicker?.cancel()
         isDemoPlayback = false
         setPlayingState(false)
@@ -413,6 +423,8 @@ final class PlaybackEngine: ObservableObject {
         let url: URL?
         if let localURL = downloadManager?.localURL(for: song.id) {
             url = localURL
+        } else if song.id.hasPrefix("local:"), let path = song.path {
+            url = URL(fileURLWithPath: path)
         } else if song.id.hasPrefix("radio:"), let path = song.path {
             url = URL(string: path)
         } else if let api = apiClient?.audioStation {
@@ -440,9 +452,12 @@ final class PlaybackEngine: ObservableObject {
 
         if autoPlay {
             activateAudioSessionIfNeeded()
+            prepareFadeInIfNeeded()
             player.play()
+            fadeInIfNeeded()
             setPlayingState(true)
         } else {
+            player.volume = 1
             setPlayingState(false)
         }
 
@@ -884,6 +899,59 @@ final class PlaybackEngine: ObservableObject {
         isPlaying = playing
         updateNowPlayingPlaybackState()
         refreshLiveActivity()
+    }
+
+    /// 当前是否应该对 AVPlayer 做淡入淡出。
+    private var shouldFadeAudio: Bool {
+        settings?.crossfadeEnabled == true && (settings?.crossfadeDuration ?? 0) > 0
+    }
+
+    /// 播放前把音量准备到淡入起点。
+    private func prepareFadeInIfNeeded() {
+        guard shouldFadeAudio else {
+            player.volume = 1
+            return
+        }
+        fadeTask?.cancel()
+        player.volume = 0
+    }
+
+    /// 按用户设置把当前播放器音量淡入到 1。
+    private func fadeInIfNeeded() {
+        guard shouldFadeAudio else { return }
+        fadePlayerVolume(to: 1, duration: min(settings?.crossfadeDuration ?? 3, 3))
+    }
+
+    /// 淡出后暂停播放器。
+    private func fadeOutAndPause() {
+        let duration = min(settings?.crossfadeDuration ?? 3, 2)
+        fadePlayerVolume(to: 0, duration: duration) { [weak self] in
+            self?.player.pause()
+            self?.player.volume = 1
+        }
+    }
+
+    /// 用小步进调整 AVPlayer 音量，避免暂停/播放过于突兀。
+    private func fadePlayerVolume(to target: Float, duration: Double, completion: (() -> Void)? = nil) {
+        fadeTask?.cancel()
+        let start = player.volume
+        let steps = max(1, Int(duration / 0.05))
+        fadeTask = Task { [weak self] in
+            for step in 1...steps {
+                if Task.isCancelled { return }
+                try? await Task.sleep(nanoseconds: 50_000_000)
+                await MainActor.run {
+                    guard let self else { return }
+                    let progress = Float(step) / Float(steps)
+                    self.player.volume = start + (target - start) * progress
+                }
+            }
+            await MainActor.run {
+                guard let self else { return }
+                self.player.volume = target
+                completion?()
+            }
+        }
     }
 
     /// 应用播放偏好；启用后立刻按当前开关重新配置 audio session

@@ -12,8 +12,8 @@ settings:
     SWIFT_VERSION: "6.0"
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
-    MARKETING_VERSION: "1.3.6"
-    CURRENT_PROJECT_VERSION: "6"
+    MARKETING_VERSION: "1.4.1"
+    CURRENT_PROJECT_VERSION: "10"
     DEVELOPMENT_TEAM: 2Q2LMV7BR6
     CODE_SIGN_STYLE: Automatic
 
@@ -116,6 +116,10 @@ targets:
               CFBundleIconFiles:
                 - AppIconAlt10
               UIPrerenderedIcon: false
+        CFBundleURLTypes:
+          - CFBundleURLName: app.synomusic.SynoMusic
+            CFBundleURLSchemes:
+              - synomusic
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.synomusic.SynoMusic

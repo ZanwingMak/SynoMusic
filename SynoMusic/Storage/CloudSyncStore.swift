@@ -8,6 +8,7 @@ final class CloudSyncStore: ObservableObject {
 
     private weak var serverStore: ServerStore?
     private weak var playlistStore: PlaylistStore?
+    private weak var themeManager: ThemeManager?
     private var changeObserver: NSObjectProtocol?
 
     private let defaults: UserDefaults
@@ -22,9 +23,10 @@ final class CloudSyncStore: ObservableObject {
     }
 
     /// 绑定本地仓库，并开始监听 iCloud 外部变更。
-    func configure(serverStore: ServerStore, playlistStore: PlaylistStore) {
+    func configure(serverStore: ServerStore, playlistStore: PlaylistStore, themeManager: ThemeManager) {
         self.serverStore = serverStore
         self.playlistStore = playlistStore
+        self.themeManager = themeManager
         guard changeObserver == nil else { return }
         changeObserver = NotificationCenter.default.addObserver(
             forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
@@ -75,11 +77,14 @@ final class CloudSyncStore: ObservableObject {
     /// 将当前本地配置写入 iCloud KVS。
     private func pushLocalSnapshot() {
         guard let serverStore, let playlistStore else { return }
+        statusMessage = "正在同步 iCloud".t
         let snapshot = CloudConfigSnapshot(
             updatedAt: Date(),
             serverProfiles: serverStore.profiles,
             activeProfileID: serverStore.activeProfileID,
-            playlists: playlistStore.playlists
+            playlists: playlistStore.playlists,
+            themeID: themeManager?.currentID,
+            appearance: themeManager?.appearance.rawValue
         )
         guard let data = try? JSONEncoder().encode(snapshot) else {
             statusMessage = "iCloud 同步失败：无法编码配置".t
@@ -104,9 +109,23 @@ final class CloudSyncStore: ObservableObject {
         guard snapshot.updatedAt > lastAppliedDate else { return false }
         serverStore.replaceProfiles(snapshot.serverProfiles, activeProfileID: snapshot.activeProfileID)
         playlistStore.replacePlaylists(snapshot.playlists)
+        applyTheme(snapshot)
         rememberAppliedDate(snapshot.updatedAt)
         statusMessage = "已从 iCloud 更新配置".t
         return true
+    }
+
+    /// 将云端主题配置应用到本机。
+    private func applyTheme(_ snapshot: CloudConfigSnapshot) {
+        guard let themeManager else { return }
+        if let themeID = snapshot.themeID,
+           ThemeManager.palettes.contains(where: { $0.id == themeID }) {
+            themeManager.currentID = themeID
+        }
+        if let raw = snapshot.appearance,
+           let appearance = AppearancePreference(rawValue: raw) {
+            themeManager.appearance = appearance
+        }
     }
 
     /// 记录已应用的云端快照时间，避免重复覆盖本地。
@@ -129,4 +148,6 @@ private struct CloudConfigSnapshot: Codable {
     let serverProfiles: [ServerProfile]
     let activeProfileID: UUID?
     let playlists: [LocalPlaylist]
+    let themeID: String?
+    let appearance: String?
 }

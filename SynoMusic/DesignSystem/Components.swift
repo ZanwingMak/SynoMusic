@@ -80,6 +80,78 @@ struct CircleIconButton: View {
     }
 }
 
+// MARK: - 完整功能徽章
+
+/// 已购买用户的完整功能金色徽章。
+struct PremiumAccessBadge: View {
+    var showsText: Bool = false
+
+    var body: some View {
+        HStack(spacing: showsText ? 10 : 0) {
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 1.0, green: 0.82, blue: 0.32),
+                                Color(red: 0.96, green: 0.56, blue: 0.10)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay {
+                        Circle()
+                            .stroke(Color.white.opacity(0.55), lineWidth: 1)
+                    }
+                    .shadow(color: Color.orange.opacity(0.28), radius: 8, y: 4)
+                Image(systemName: "crown.fill")
+                    .font(.system(size: showsText ? 16 : 14, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+            .frame(width: showsText ? 34 : 30, height: showsText ? 34 : 30)
+
+            if showsText {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("完整功能已解锁".t)
+                        .font(.nocBody.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text("完整功能".t)
+                        .font(.nocLabel)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("完整功能已解锁".t)
+    }
+}
+
+/// 顶部工具栏里的完整功能图标，使用系统符号避免 toolbar 生成方形底色。
+struct PremiumToolbarIcon: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 1.0, green: 0.84, blue: 0.35),
+                            Color(red: 0.98, green: 0.55, blue: 0.10)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .shadow(color: Color.orange.opacity(0.28), radius: 8, y: 4)
+            Image(systemName: "crown.fill")
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(.white)
+        }
+        .frame(width: 30, height: 30)
+            .accessibilityLabel("完整功能已解锁".t)
+    }
+}
+
 // MARK: - 加载/空态/错误状态
 
 /// 通用加载占位。

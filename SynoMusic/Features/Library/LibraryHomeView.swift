@@ -62,9 +62,13 @@ struct LibraryHomeView: View {
             Haptics.tap()
             paywallFeature = .allAccess
         } label: {
-            Image(systemName: purchase.hasFullAccess ? "checkmark.seal" : "sparkles")
-                .accessibilityLabel("购买与订阅".t)
+            if purchase.hasFullAccess {
+                PremiumToolbarIcon()
+            } else {
+                Image(systemName: "sparkles")
+            }
         }
+        .accessibilityLabel(purchase.hasFullAccess ? "完整功能已解锁".t : "购买与订阅".t)
     }
 
     /// 带轻触反馈的导航栏图标入口。
@@ -117,6 +121,16 @@ private struct QuickActions: View {
                         subtitle: isShuffling ? "正在抓取…".t : "从全库抽 100 首".t,
                         icon: "shuffle",
                         gradient: [Color(red: 0.95, green: 0.42, blue: 0.65), Color(red: 0.55, green: 0.20, blue: 0.95)]
+                    )
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink(value: BrowseRoute.smartMixes) {
+                    ActionCard(
+                        title: "智能歌单".t,
+                        subtitle: "自动整理".t,
+                        icon: "wand.and.stars",
+                        gradient: [Color(red: 0.95, green: 0.68, blue: 0.22), Color(red: 0.88, green: 0.28, blue: 0.48)]
                     )
                 }
                 .buttonStyle(.plain)

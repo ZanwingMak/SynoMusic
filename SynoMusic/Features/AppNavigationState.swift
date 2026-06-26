@@ -12,12 +12,15 @@ enum MainTab: Hashable {
 enum SettingsRoute: Hashable {
     case downloads
     case login(ServerProfile)
+    case widgets
+    case localImports
 }
 
 /// App 内部导航状态：让全屏播放器等浮层可以请求切换 Tab 或进入设置子页。
 @MainActor
 final class AppNavigationState: ObservableObject {
     @Published var selectedTab: MainTab
+    @Published var browsePath = NavigationPath()
     @Published var settingsPath = NavigationPath()
 
     /// 按调试启动参数决定初始 Tab，普通启动默认进入资料库。
@@ -43,6 +46,27 @@ final class AppNavigationState: ObservableObject {
         selectedTab = .settings
         settingsPath = NavigationPath()
         settingsPath.append(SettingsRoute.downloads)
+    }
+
+    /// 切到设置页并打开小组件管理。
+    func openWidgets() {
+        selectedTab = .settings
+        settingsPath = NavigationPath()
+        settingsPath.append(SettingsRoute.widgets)
+    }
+
+    /// 切到设置页并打开本地音乐导入。
+    func openLocalImports() {
+        selectedTab = .settings
+        settingsPath = NavigationPath()
+        settingsPath.append(SettingsRoute.localImports)
+    }
+
+    /// 切到浏览页并打开智能歌单。
+    func openSmartMixes() {
+        selectedTab = .browse
+        browsePath = NavigationPath()
+        browsePath.append(BrowseRoute.smartMixes)
     }
 
     /// 切到设置页并打开指定服务器的手动登录页。

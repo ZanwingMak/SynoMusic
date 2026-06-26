@@ -14,6 +14,8 @@ struct SynoMusicApp: App {
     @StateObject private var playlists = PlaylistStore()
     /// 下载管理器：播放器、歌曲菜单和设置页共享同一个缓存索引。
     @StateObject private var downloads = DownloadManager()
+    /// 本地导入音乐库。
+    @StateObject private var localImports = LocalImportStore()
     /// 主题（accent 色 + 外观偏好）。
     @StateObject private var theme = ThemeManager.shared
     /// 多语言。
@@ -35,6 +37,7 @@ struct SynoMusicApp: App {
                 .environmentObject(session)
                 .environmentObject(playlists)
                 .environmentObject(downloads)
+                .environmentObject(localImports)
                 .environmentObject(theme)
                 .environmentObject(lm)
                 .environmentObject(playbackSettings)
@@ -44,7 +47,7 @@ struct SynoMusicApp: App {
                 .onAppear {
                     playback.applyPlaybackSettings(playbackSettings)
                     playback.downloadManager = downloads
-                    cloudSync.configure(serverStore: serverStore, playlistStore: playlists)
+                    cloudSync.configure(serverStore: serverStore, playlistStore: playlists, themeManager: theme)
                     applyPurchaseLimits()
                 }
                 .task {
@@ -63,6 +66,12 @@ struct SynoMusicApp: App {
                 .onReceive(playlists.$playlists.dropFirst()) { _ in
                     cloudSync.pushLocalSnapshotIfNeeded()
                 }
+                .onReceive(theme.$currentID.dropFirst()) { _ in
+                    cloudSync.pushLocalSnapshotIfNeeded()
+                }
+                .onReceive(theme.$appearance.dropFirst()) { _ in
+                    cloudSync.pushLocalSnapshotIfNeeded()
+                }
                 .tint(theme.current.accent(in: .dark))
                 .preferredColorScheme(theme.appearance.colorScheme)
                 // 只对语言变化重建整树（翻译值仅在 body 重算时才会刷新）；
@@ -74,7 +83,12 @@ struct SynoMusicApp: App {
     /// 根据购买状态强制应用免费版限制。
     private func applyPurchaseLimits() {
         guard purchaseStore.hasLoadedEntitlements else { return }
-        guard !purchaseStore.hasFullAccess else { return }
+        guard !purchaseStore.hasFullAccess else {
+            if playbackSettings.backgroundPlaybackEnabled == false {
+                playbackSettings.backgroundPlaybackEnabled = true
+            }
+            return
+        }
         playbackSettings.backgroundPlaybackEnabled = false
         if cloudSync.isEnabled {
             cloudSync.setEnabled(false)

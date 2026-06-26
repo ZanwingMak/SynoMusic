@@ -1,6 +1,7 @@
 import SwiftUI
 import StoreKit
 import UIKit
+import UniformTypeIdentifiers
 
 /// 设置：服务器、音质、下载、关于。
 struct SettingsView: View {
@@ -23,6 +24,7 @@ struct SettingsView: View {
     @State private var isChangingIcon: Bool = false
     @State private var switchingProfileID: UUID?
     @State private var refreshingQuickConnectID: UUID?
+    @State private var isSyncingCloud: Bool = false
 
     var body: some View {
         Form {
@@ -32,11 +34,18 @@ struct SettingsView: View {
             themeSection
             languageSection
             qualitySection
+            playbackEnhancementSection
             cacheSection
             othersSection
             purchaseSection
+            widgetSection
             cloudSyncSection
             aboutSection
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if playback.currentSong != nil {
+                Color.clear.frame(height: Metrics.miniPlayerHeight + 16)
+            }
         }
         .tint(theme.current.accent(in: colorScheme))
         .id("settings-\(theme.currentID)-\(theme.appearance.rawValue)")
@@ -252,6 +261,53 @@ struct SettingsView: View {
         }
     }
 
+    private var playbackEnhancementSection: some View {
+        Section {
+            if purchase.canUse(.playbackEnhancements) {
+                Picker("播放器样式".t, selection: $playbackSettings.playerArtworkStyle) {
+                    ForEach(PlayerArtworkStyle.allCases) { style in
+                        Text(style.titleKey.t).tag(style)
+                    }
+                }
+                Toggle(isOn: $playbackSettings.crossfadeEnabled) {
+                    Label("歌曲淡入淡出".t, systemImage: "waveform")
+                }
+                if playbackSettings.crossfadeEnabled {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("淡入淡出时长".t)
+                            Spacer()
+                            Text(String(format: "%.0f s", playbackSettings.crossfadeDuration))
+                                .foregroundStyle(.secondary)
+                        }
+                        Slider(value: $playbackSettings.crossfadeDuration, in: 1...8, step: 1)
+                    }
+                }
+                Picker("均衡器预设".t, selection: $playbackSettings.equalizerPreset) {
+                    ForEach(EqualizerPreset.allCases) { preset in
+                        Text(preset.titleKey.t).tag(preset)
+                    }
+                }
+            } else {
+                Button {
+                    showPaywall(for: .playbackEnhancements)
+                } label: {
+                    HStack {
+                        Label("播放增强".t, systemImage: "slider.horizontal.3")
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        } header: {
+            Text("播放增强".t)
+        } footer: {
+            Text("黑胶播放器、淡入淡出和均衡器预设属于完整功能。".t)
+        }
+    }
+
     private var cacheSection: some View {
         Section("下载与缓存".t) {
             if purchase.canUse(.songDownloads) {
@@ -269,6 +325,16 @@ struct SettingsView: View {
                     HStack {
                         Label("已下载歌曲".t, systemImage: "arrow.down.circle")
                         Spacer()
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            NavigationLink(value: SettingsRoute.localImports) {
+                HStack {
+                    Label("本地音乐导入".t, systemImage: "square.and.arrow.down")
+                    Spacer()
+                    if !purchase.canUse(.localImport) {
                         Image(systemName: "lock.fill")
                             .foregroundStyle(.secondary)
                     }
@@ -308,8 +374,18 @@ struct SettingsView: View {
     private var purchaseSection: some View {
         Section {
             if purchase.hasFullAccess {
-                Label("完整功能已解锁".t, systemImage: "checkmark.seal.fill")
-                    .foregroundStyle(.green)
+                Button {
+                    showPaywall(for: .allAccess)
+                } label: {
+                    HStack {
+                        PremiumAccessBadge(showsText: true)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .buttonStyle(.plain)
             } else {
                 Button {
                     showPaywall(for: .allAccess)
@@ -345,6 +421,25 @@ struct SettingsView: View {
         }
     }
 
+    private var widgetSection: some View {
+        Section {
+            NavigationLink(value: SettingsRoute.widgets) {
+                HStack {
+                    Label("小组件管理".t, systemImage: "rectangle.3.group")
+                    Spacer()
+                    if !purchase.canUse(.systemIntegrations) {
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        } header: {
+            Text("Siri 与小组件".t)
+        } footer: {
+            Text("管理桌面小组件入口、快捷指令和深链动作。".t)
+        }
+    }
+
     private var cloudSyncSection: some View {
         Section {
             Toggle(isOn: cloudSyncBinding) {
@@ -352,10 +447,18 @@ struct SettingsView: View {
             }
             if cloudSync.isEnabled {
                 Button {
-                    cloudSync.pushLocalSnapshotIfNeeded()
+                    Task { await syncCloudNow() }
                 } label: {
-                    Label("立即同步配置".t, systemImage: "arrow.triangle.2.circlepath")
+                    HStack {
+                        if isSyncingCloud {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                        }
+                        Text(isSyncingCloud ? "正在同步 iCloud".t : "立即同步配置".t)
+                    }
                 }
+                .disabled(isSyncingCloud)
             }
             if let message = cloudSync.statusMessage {
                 Text(message)
@@ -365,7 +468,7 @@ struct SettingsView: View {
         } header: {
             Text("iCloud".t)
         } footer: {
-            Text("仅同步服务器地址、用户名和本地歌单；密码仍保存在本机 Keychain。".t)
+            Text("同步服务器地址、用户名、本地歌单、主题和外观偏好；密码仍保存在本机 Keychain。".t)
         }
     }
 
@@ -522,6 +625,16 @@ struct SettingsView: View {
     private func showPaywall(for feature: PremiumFeature) {
         Haptics.tap()
         paywallFeature = feature
+    }
+
+    /// 手动触发 iCloud 同步，并保留短暂 loading 反馈。
+    private func syncCloudNow() async {
+        guard !isSyncingCloud else { return }
+        isSyncingCloud = true
+        cloudSync.pushLocalSnapshotIfNeeded()
+        try? await Task.sleep(nanoseconds: 650_000_000)
+        isSyncingCloud = false
+        Haptics.success()
     }
 
     /// 调用系统好评弹窗。
@@ -806,12 +919,241 @@ private struct ServerRowItem: View {
 }
 
 /// 已下载歌曲管理。
+struct WidgetManagerView: View {
+    @EnvironmentObject private var playback: PlaybackEngine
+
+    private let widgets: [WidgetShowcase] = [
+        WidgetShowcase(title: "黑胶唱片", subtitle: "在桌面快速进入播放体验", icon: "record.circle", colors: [.black, Color(red: 0.35, green: 0.22, blue: 0.12)]),
+        WidgetShowcase(title: "特色功能", subtitle: "智能歌单、下载和小组件管理", icon: "sparkles.rectangle.stack", colors: [Color(red: 0.95, green: 0.25, blue: 0.48), Color(red: 0.36, green: 0.27, blue: 0.92)]),
+        WidgetShowcase(title: "最近播放", subtitle: "快速回到上次听到的音乐", icon: "clock.arrow.circlepath", colors: [Color(red: 0.07, green: 0.42, blue: 0.72), Color(red: 0.15, green: 0.68, blue: 0.78)]),
+        WidgetShowcase(title: "实时歌词", subtitle: "一眼查看歌词和播放状态", icon: "quote.bubble.fill", colors: [Color(red: 0.58, green: 0.16, blue: 0.22), Color(red: 0.92, green: 0.36, blue: 0.25)])
+    ]
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                ForEach(widgets) { widget in
+                    WidgetShowcaseCard(widget: widget) {
+                        playback.setStatus("长按主屏幕空白处，点左上角 +，搜索 SynoMusic 添加小组件。".t)
+                        Haptics.success()
+                    }
+                }
+            }
+            .padding(16)
+        }
+        .navigationTitle("小组件管理".t)
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+    }
+}
+
+/// 小组件管理页的一张展示卡。
+private struct WidgetShowcaseCard: View {
+    let widget: WidgetShowcase
+    let onAdd: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(widget.title.t)
+                        .font(.nocSection)
+                    Text(widget.subtitle.t)
+                        .font(.nocCaption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("添加".t, action: onAdd)
+                    .font(.nocBody.weight(.semibold))
+                    .buttonStyle(.borderedProminent)
+                    .buttonBorderShape(.capsule)
+            }
+            WidgetPreview(widget: widget)
+        }
+        .padding(16)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+}
+
+/// 小组件管理页的预览图，模拟桌面小组件排布。
+private struct WidgetPreview: View {
+    let widget: WidgetShowcase
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color(.systemGroupedBackground))
+                .overlay(alignment: .trailing) {
+                    LazyVGrid(columns: [GridItem(.fixed(52)), GridItem(.fixed(52))], spacing: 12) {
+                        ForEach(0..<4, id: \.self) { _ in
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color.primary.opacity(0.05))
+                                .frame(width: 52, height: 52)
+                        }
+                    }
+                    .padding(.trailing, 22)
+                }
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(LinearGradient(colors: widget.colors, startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 154, height: 104)
+                .overlay(alignment: .topTrailing) {
+                    Image(systemName: widget.icon)
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.28))
+                        .padding(12)
+                }
+                .overlay(alignment: .bottomLeading) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(widget.title.t)
+                            .font(.nocBody.weight(.bold))
+                            .foregroundStyle(.white)
+                        Text("SynoMusic")
+                            .font(.nocLabel)
+                            .foregroundStyle(.white.opacity(0.76))
+                    }
+                    .padding(14)
+                }
+                .padding(.leading, 22)
+        }
+        .frame(height: 150)
+    }
+}
+
+/// 小组件展示数据。
+private struct WidgetShowcase: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let icon: String
+    let colors: [Color]
+}
+
+/// 本地导入音乐管理。
+struct LocalImportView: View {
+    @EnvironmentObject private var localImports: LocalImportStore
+    @EnvironmentObject private var playback: PlaybackEngine
+    @State private var remoteURL = ""
+    @State private var showFileImporter = false
+
+    var body: some View {
+        List {
+            Section {
+                TextField("粘贴音乐链接".t, text: $remoteURL)
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.URL)
+                Button {
+                    Task { await importRemoteURL() }
+                } label: {
+                    if localImports.isImporting {
+                        Label("正在导入".t, systemImage: "hourglass")
+                    } else {
+                        Label("从链接下载导入".t, systemImage: "link.badge.plus")
+                    }
+                }
+                .disabled(localImports.isImporting || remoteURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Button {
+                    showFileImporter = true
+                } label: {
+                    Label("从文件导入".t, systemImage: "folder")
+                }
+                .disabled(localImports.isImporting)
+                if let message = localImports.statusMessage {
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("导入音乐".t)
+            } footer: {
+                Text("导入的音乐保存在本机沙盒，可离线播放，不会上传到服务器。".t)
+            }
+
+            Section("本地音乐".t) {
+                if localImports.tracks.isEmpty {
+                    Text("还没有导入音乐。".t)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(Array(localImports.tracks.enumerated()), id: \.element.id) { index, track in
+                        Button {
+                            playImportedTrack(at: index)
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(track.title)
+                                        .foregroundStyle(.primary)
+                                    Text(formatDuration(track.duration))
+                                        .font(.nocLabel)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "play.circle")
+                                    .foregroundStyle(Theme.accent)
+                            }
+                        }
+                        .swipeActions {
+                            Button(role: .destructive) {
+                                localImports.delete(track)
+                            } label: {
+                                Label("删除".t, systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("本地音乐导入".t)
+        .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.audio], allowsMultipleSelection: false) { result in
+            handleFileImport(result)
+        }
+    }
+
+    /// 从链接下载并导入音乐。
+    private func importRemoteURL() async {
+        await localImports.importRemote(from: remoteURL)
+        if localImports.statusMessage?.hasPrefix("已导入音乐".t) == true {
+            remoteURL = ""
+        }
+    }
+
+    /// 处理系统文件选择器返回结果。
+    private func handleFileImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            Task { await localImports.importFile(from: url) }
+        case .failure(let error):
+            playback.setStatus("导入失败".t + "：\(error.localizedDescription)")
+        }
+    }
+
+    /// 播放本地导入音乐，并把全部导入条目作为队列。
+    private func playImportedTrack(at index: Int) {
+        let songs = localImports.tracks.map(\.song)
+        playback.play(queue: songs, startAt: index, honoringShuffle: false, contextTitle: "本地导入".t)
+    }
+
+    /// 格式化导入音乐时长。
+    private func formatDuration(_ duration: TimeInterval) -> String {
+        let total = max(0, Int(duration))
+        return String(format: "%d:%02d", total / 60, total % 60)
+    }
+}
+
+/// 已下载歌曲管理。
 struct DownloadsListView: View {
+    @EnvironmentObject private var session: AppSession
+    @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var downloads: DownloadManager
+    @State private var isDownloadingQueue = false
+    @State private var queueProgress: (done: Int, total: Int) = (0, 0)
+
     var body: some View {
         Group {
             if downloads.entries.isEmpty {
-                EmptyStateView(systemImage: "arrow.down.circle", title: "尚无下载".t, message: "在歌曲长按菜单选择「下载」。".t)
+                VStack(spacing: Metrics.l) {
+                    EmptyStateView(systemImage: "arrow.down.circle", title: "尚无下载".t, message: "在歌曲长按菜单选择「下载」。".t)
+                    queueDownloadButton
+                        .padding(.horizontal, Metrics.l)
+                }
             } else {
                 List {
                     Section {
@@ -821,6 +1163,16 @@ struct DownloadsListView: View {
                             Text(downloads.totalBytes.humanSize)
                                 .foregroundStyle(.secondary)
                         }
+                        HStack {
+                            Text("下载统计".t)
+                            Spacer()
+                            Text(downloadSummary)
+                                .foregroundStyle(.secondary)
+                        }
+                        Toggle(isOn: $downloads.allowCellularDownload) {
+                            Label("允许蜂窝网络下载".t, systemImage: "antenna.radiowaves.left.and.right")
+                        }
+                        queueDownloadButton
                         Button(role: .destructive) { downloads.clearAll() } label: {
                             Text("清空全部下载".t)
                         }
@@ -848,6 +1200,80 @@ struct DownloadsListView: View {
             }
         }
         .navigationTitle("下载管理".t)
+    }
+
+    /// 当前下载统计摘要。
+    private var downloadSummary: String {
+        let completed = downloads.entries.filter { $0.status == .completed }.count
+        let failed = downloads.entries.filter { $0.status == .failed }.count
+        return "\(completed) " + "已完成".t + " · \(failed) " + "失败".t
+    }
+
+    /// 批量下载当前播放队列的按钮。
+    private var queueDownloadButton: some View {
+        Button {
+            Task { await downloadCurrentQueue() }
+        } label: {
+            HStack {
+                if isDownloadingQueue {
+                    ProgressView()
+                } else {
+                    Image(systemName: "tray.and.arrow.down")
+                }
+                Text(queueDownloadTitle)
+                Spacer()
+                if isDownloadingQueue {
+                    Text("\(queueProgress.done)/\(queueProgress.total)")
+                        .font(.nocLabel)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .disabled(isDownloadingQueue || playback.queue.isEmpty)
+    }
+
+    /// 下载按钮根据状态展示不同标题。
+    private var queueDownloadTitle: String {
+        if isDownloadingQueue { return "正在下载当前队列".t }
+        return playback.queue.isEmpty ? "当前队列为空".t : "下载当前队列".t
+    }
+
+    /// 按当前播放队列顺序批量下载歌曲。
+    private func downloadCurrentQueue() async {
+        guard let api = session.client?.audioStation else {
+            playback.setStatus("请先连接服务器再下载".t)
+            return
+        }
+        let songs = playback.queue.filter { song in
+            !song.id.hasPrefix("radio:") && downloads.status(for: song.id) != .completed
+        }
+        guard !songs.isEmpty else {
+            playback.setStatus("当前队列没有需要下载的歌曲".t)
+            return
+        }
+        isDownloadingQueue = true
+        queueProgress = (0, songs.count)
+        defer { isDownloadingQueue = false }
+        for song in songs {
+            guard let url = api.streamURL(songID: song.id, format: playback.quality.streamFormat) else {
+                queueProgress.done += 1
+                continue
+            }
+            let fileExtension = playback.quality == .original ? (song.codec ?? "mp3") : "mp3"
+            do {
+                try await downloads.download(
+                    song: song,
+                    streamURL: url,
+                    fileExtension: fileExtension,
+                    allowInvalidCertificate: session.client?.profile.ignoreInvalidCertificate == true
+                )
+            } catch {
+                playback.setStatus("下载失败".t + "：\(song.title)")
+            }
+            queueProgress.done += 1
+        }
+        playback.setStatus("队列下载完成".t)
+        Haptics.success()
     }
 
     /// 下载状态标签，帮助用户区分下载中、失败和已完成。

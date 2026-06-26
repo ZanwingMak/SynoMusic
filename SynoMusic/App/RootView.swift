@@ -7,7 +7,9 @@ struct RootView: View {
     @EnvironmentObject private var serverStore: ServerStore
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var theme: ThemeManager
+    @EnvironmentObject private var navigation: AppNavigationState
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showFullPlayer: Bool = false
     @State private var isAutoLogging: Bool = false
 
@@ -54,6 +56,13 @@ struct RootView: View {
             showFullPlayer = true
         }
         .task { await attemptAutoLogin() }
+        .onAppear { handlePendingShortcutAction() }
+        .onOpenURL { handleDeepLink($0) }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                handlePendingShortcutAction()
+            }
+        }
         #if DEBUG
         .onAppear {
             let args = ProcessInfo.processInfo.arguments
@@ -99,6 +108,41 @@ struct RootView: View {
         } catch {
             // 静默失败：用户进入 LoginFlowView 手动处理
             playback.setStatus("自动登录失败：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
+        }
+    }
+
+    /// 处理 Siri / 快捷指令留下的待导航动作。
+    private func handlePendingShortcutAction() {
+        guard let raw = UserDefaults.standard.string(forKey: SynoMusicShortcutAction.pendingKey),
+              let action = SynoMusicShortcutAction(rawValue: raw) else {
+            return
+        }
+        UserDefaults.standard.removeObject(forKey: SynoMusicShortcutAction.pendingKey)
+        openShortcutAction(action)
+    }
+
+    /// 处理小组件和外部 URL 的深链。
+    private func handleDeepLink(_ url: URL) {
+        let target = url.host ?? url.pathComponents.dropFirst().first
+        switch target {
+        case "smart-mixes":
+            openShortcutAction(.smartMixes)
+        case "downloads":
+            openShortcutAction(.downloads)
+        case "widgets":
+            navigation.openWidgets()
+        default:
+            break
+        }
+    }
+
+    /// 根据动作切换到对应页面。
+    private func openShortcutAction(_ action: SynoMusicShortcutAction) {
+        switch action {
+        case .smartMixes:
+            navigation.openSmartMixes()
+        case .downloads:
+            navigation.openDownloads()
         }
     }
 }

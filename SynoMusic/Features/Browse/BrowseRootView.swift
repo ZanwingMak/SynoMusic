@@ -7,6 +7,7 @@ struct BrowseRootView: View {
 
     private let categories: [(label: String, icon: String, route: BrowseRoute, gradient: [Color])] = [
         ("所有歌曲".t, "music.note", .allSongs, [Color(red: 0.55, green: 0.4, blue: 0.95), Color(red: 0.25, green: 0.25, blue: 0.65)]),
+        ("智能歌单".t, "wand.and.stars", .smartMixes, [Color(red: 0.95, green: 0.68, blue: 0.22), Color(red: 0.88, green: 0.28, blue: 0.48)]),
         ("电台".t, "antenna.radiowaves.left.and.right", .radio, [Color(red: 0.95, green: 0.42, blue: 0.5), Color(red: 0.55, green: 0.2, blue: 0.85)]),
         ("我的歌单".t, "music.note.list", .localPlaylists, [Color(red: 0.95, green: 0.6, blue: 0.3), Color(red: 0.85, green: 0.3, blue: 0.3)]),
         ("我喜欢的".t, "heart.fill", .favorites, [Color(red: 0.99, green: 0.4, blue: 0.55), Color(red: 0.85, green: 0.15, blue: 0.45)]),

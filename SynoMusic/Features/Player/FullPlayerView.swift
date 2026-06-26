@@ -11,6 +11,7 @@ struct FullPlayerView: View {
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var navigation: AppNavigationState
     @EnvironmentObject private var purchase: PurchaseStore
+    @EnvironmentObject private var playbackSettings: PlaybackSettings
     @Binding var isPresented: Bool
     @State private var showLyrics = false
     @State private var showQueue = false
@@ -27,6 +28,7 @@ struct FullPlayerView: View {
     @State private var isSeeking: Bool = false
     @State private var seekDraft: TimeInterval = 0
     @State private var showLyricSettings = false
+    @State private var showResearchSheet = false
     @State private var draftLyricFontSize: Double = 18
     @State private var draftLyricAutoScroll: Bool = true
     @State private var draftLyricDelay: Double = 0
@@ -79,6 +81,7 @@ struct FullPlayerView: View {
                         onOpenDownloadManager: { openDownloadManager() },
                         onShowInfo: { showSongInfo = true },
                         onShowEdit: { showSongEdit = true },
+                        onResearch: { openResearchSheet() },
                         onOpenLyricEditor: { openLyricEditorFromMenu() },
                         currentRating: ratingPending ?? playback.currentSong?.rating,
                         onRate: { stars in Task { await applyRating(stars) } },
@@ -168,15 +171,24 @@ struct FullPlayerView: View {
                 fontSize: $draftLyricFontSize,
                 autoScroll: $draftLyricAutoScroll,
                 delay: $draftLyricDelay,
+                lyrics: playback.lyrics,
                 onSave: saveLyricSettings,
-                onCancel: cancelLyricSettings
+                onCancel: cancelLyricSettings,
+                onCopyLyrics: copyCurrentLyrics,
+                onReset: resetLyricDraft
             )
-            .presentationDetents([.height(360), .medium])
+            .presentationDetents([.medium, .large])
         }
         .sheet(item: $paywallFeature) { feature in
             PaywallView(feature: feature)
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showResearchSheet) {
+            if let song = playback.currentSong {
+                SongResearchSheet(song: song, coverURL: session.client?.audioStation.songCoverURL(songID: song.id))
+                    .presentationDetents([.medium, .large])
+            }
         }
     }
 
@@ -384,6 +396,7 @@ private struct PlayerTopMenuOverlay: View {
     let onOpenDownloadManager: () -> Void
     let onShowInfo: () -> Void
     let onShowEdit: () -> Void
+    let onResearch: () -> Void
     let onOpenLyricEditor: () -> Void
     let currentRating: Int?
     let onRate: (Int) -> Void
@@ -448,6 +461,9 @@ private struct PlayerTopMenuOverlay: View {
             }
             PlayerMenuRow(icon: "square.and.pencil", title: "编辑歌曲信息".t) {
                 perform(onShowEdit)
+            }
+            PlayerMenuRow(icon: "globe", title: "网上搜索".t) {
+                perform(onResearch)
             }
             PlayerMenuRow(icon: "tray.and.arrow.down", title: "下载管理".t) {
                 perform(onOpenDownloadManager)
@@ -650,8 +666,19 @@ extension FullPlayerView {
                 )
                     .transition(.opacity)
             } else {
-                CoverHero(songID: playback.currentSong?.id, seed: playback.currentSong?.id ?? "", side: artSide)
+                switch playbackSettings.playerArtworkStyle {
+                case .cover:
+                    CoverHero(songID: playback.currentSong?.id, seed: playback.currentSong?.id ?? "", side: artSide)
+                        .transition(.opacity)
+                case .vinyl:
+                    VinylHero(
+                        songID: playback.currentSong?.id,
+                        seed: playback.currentSong?.id ?? "",
+                        side: artSide,
+                        isPlaying: playback.isPlaying
+                    )
                     .transition(.opacity)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -938,6 +965,15 @@ extension FullPlayerView {
         openLyricSettings()
     }
 
+    /// 打开歌曲与歌手的在线资料工具。
+    private func openResearchSheet() {
+        guard purchase.canUse(.onlineMetadata) else {
+            paywallFeature = .onlineMetadata
+            return
+        }
+        showResearchSheet = true
+    }
+
     /// 保存歌词设置草稿，并写入播放引擎和本地偏好。
     private func saveLyricSettings() {
         let fontDelta = draftLyricFontSize - playback.lyricFontSize
@@ -954,6 +990,27 @@ extension FullPlayerView {
     private func cancelLyricSettings() {
         Haptics.tap()
         showLyricSettings = false
+    }
+
+    /// 复制当前歌曲歌词文本。
+    private func copyCurrentLyrics() {
+        let text = playback.lyrics.map(\.text).joined(separator: "\n")
+        guard !text.isEmpty else {
+            playback.setStatus("暂无歌词".t)
+            Haptics.warning()
+            return
+        }
+        UIPasteboard.general.string = text
+        playback.setStatus("歌词已复制".t)
+        Haptics.success()
+    }
+
+    /// 把歌词设置草稿恢复到推荐值。
+    private func resetLyricDraft() {
+        draftLyricFontSize = 18
+        draftLyricAutoScroll = true
+        draftLyricDelay = 0
+        Haptics.tap()
     }
 
     /// Slider 拖动中只更新本地预览，松手后再执行一次真实 seek，避免连续 seek 卡顿。
@@ -1008,6 +1065,94 @@ private struct CoverHero: View {
         )
         .frame(width: side, height: side)
         .shadow(color: .black.opacity(0.35), radius: 40, y: 16)
+    }
+}
+
+private struct VinylHero: View {
+    @EnvironmentObject private var session: AppSession
+    let songID: String?
+    let seed: String
+    let side: CGFloat
+    let isPlaying: Bool
+    @State private var rotation: Double = 0
+
+    var body: some View {
+        ZStack {
+            vinylDisc
+                .rotationEffect(.degrees(rotation))
+                .onAppear { updateRotation(isPlaying: isPlaying) }
+                .onChange(of: isPlaying) { _, playing in updateRotation(isPlaying: playing) }
+                .onChange(of: songID) { _, _ in rotation = 0; updateRotation(isPlaying: isPlaying) }
+
+            toneArm
+                .offset(x: side * 0.24, y: -side * 0.36)
+                .rotationEffect(.degrees(isPlaying ? 9 : -8), anchor: .topTrailing)
+                .animation(.spring(response: 0.5, dampingFraction: 0.78), value: isPlaying)
+        }
+        .frame(width: side, height: side)
+        .shadow(color: .black.opacity(0.42), radius: 34, y: 18)
+    }
+
+    /// 黑胶唱片主体。
+    private var vinylDisc: some View {
+        ZStack {
+            Circle()
+                .fill(Color.black)
+            ForEach(0..<9, id: \.self) { index in
+                Circle()
+                    .stroke(Color.white.opacity(index.isMultiple(of: 2) ? 0.055 : 0.035), lineWidth: 1)
+                    .padding(CGFloat(index) * side * 0.034 + 10)
+            }
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color.white.opacity(0.22), Color.clear],
+                        center: .topLeading,
+                        startRadius: 4,
+                        endRadius: side * 0.58
+                    )
+                )
+                .blendMode(.screen)
+            CoverArt(
+                url: songID.flatMap { session.client?.audioStation.songCoverURL(songID: $0) },
+                cornerRadius: side * 0.24,
+                fallbackSeed: seed
+            )
+            .frame(width: side * 0.46, height: side * 0.46)
+            .clipShape(Circle())
+            .overlay(Circle().stroke(Color.white.opacity(0.25), lineWidth: 2))
+            Circle()
+                .fill(Color.white.opacity(0.92))
+                .frame(width: side * 0.05, height: side * 0.05)
+        }
+    }
+
+    /// 唱臂装饰，随播放状态轻微摆动。
+    private var toneArm: some View {
+        ZStack(alignment: .topTrailing) {
+            Capsule()
+                .fill(Color.white.opacity(0.92))
+                .frame(width: side * 0.36, height: 7)
+                .rotationEffect(.degrees(28), anchor: .topTrailing)
+                .offset(x: -side * 0.04, y: side * 0.08)
+            Circle()
+                .fill(Color.white)
+                .frame(width: 24, height: 24)
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(Color.white.opacity(0.92))
+                .frame(width: 32, height: 17)
+                .rotationEffect(.degrees(18))
+                .offset(x: -side * 0.33, y: side * 0.22)
+        }
+        .frame(width: side * 0.5, height: side * 0.34)
+    }
+
+    /// 根据播放状态启动或停止黑胶旋转动画。
+    private func updateRotation(isPlaying: Bool) {
+        guard isPlaying else { return }
+        withAnimation(.linear(duration: 8).repeatForever(autoreverses: false)) {
+            rotation += 360
+        }
     }
 }
 
@@ -1102,8 +1247,11 @@ private struct LyricSettingsSheet: View {
     @Binding var fontSize: Double
     @Binding var autoScroll: Bool
     @Binding var delay: Double
+    let lyrics: [LyricLine]
     let onSave: () -> Void
     let onCancel: () -> Void
+    let onCopyLyrics: () -> Void
+    let onReset: () -> Void
 
     var body: some View {
         NavigationStack {
@@ -1139,6 +1287,8 @@ private struct LyricSettingsSheet: View {
                     .padding(.horizontal, 16)
                     .frame(height: 58)
                     .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+                    lyricToolsCard
                 }
                 .padding(.horizontal, 22)
                 .padding(.top, 18)
@@ -1156,6 +1306,54 @@ private struct LyricSettingsSheet: View {
                 }
             }
         }
+    }
+
+    /// 歌词工具卡片：复制歌词和重置显示设置。
+    private var lyricToolsCard: some View {
+        VStack(spacing: 0) {
+            Button {
+                onCopyLyrics()
+            } label: {
+                lyricToolRow(icon: "doc.on.doc", title: "复制歌词", subtitle: lyrics.isEmpty ? "暂无歌词".t : "\(lyrics.count) " + "行歌词".t)
+            }
+            .buttonStyle(.plain)
+            .disabled(lyrics.isEmpty)
+
+            Divider().overlay(.white.opacity(0.08))
+
+            Button {
+                onReset()
+            } label: {
+                lyricToolRow(icon: "arrow.counterclockwise", title: "重置歌词设置", subtitle: "恢复推荐显示效果".t)
+            }
+            .buttonStyle(.plain)
+        }
+        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    /// 歌词工具中的单行按钮。
+    private func lyricToolRow(icon: String, title: String, subtitle: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Theme.accent)
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title.t)
+                    .font(.nocBody.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(subtitle)
+                    .font(.nocLabel)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 16)
+        .frame(height: 62)
+        .contentShape(Rectangle())
     }
 
     /// 当前歌词延迟的展示文本。
@@ -1217,6 +1415,111 @@ private struct LyricSettingsSheet: View {
     private func roundedDelay(_ value: Double) -> Double {
         let clamped = min(3, max(-3, value))
         return (clamped * 10).rounded() / 10
+    }
+}
+
+// MARK: 在线资料工具
+
+private struct SongResearchSheet: View {
+    @Environment(\.openURL) private var openURL
+    @Environment(\.dismiss) private var dismiss
+    let song: Song
+    let coverURL: URL?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("歌曲与歌手".t) {
+                    researchRow("Google", icon: "magnifyingglass", url: googleURL(for: songQuery))
+                    researchRow("百度".t, icon: "magnifyingglass", url: baiduURL(for: songQuery))
+                    researchRow("维基百科".t, icon: "book", url: wikipediaURL(for: artistQuery))
+                    researchRow("萌娘百科".t, icon: "sparkles", url: moegirlURL(for: artistQuery))
+                }
+                Section("封面".t) {
+                    researchRow("Google 图片".t, icon: "photo.on.rectangle", url: googleImageURL(for: coverQuery))
+                    researchRow("百度图片".t, icon: "photo", url: baiduImageURL(for: coverQuery))
+                    if let coverURL {
+                        Button {
+                            UIPasteboard.general.string = coverURL.absoluteString
+                            Haptics.success()
+                        } label: {
+                            Label("复制当前封面链接".t, systemImage: "doc.on.doc")
+                        }
+                    }
+                }
+            }
+            .navigationTitle("在线资料工具".t)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("完成".t) { dismiss() }
+                }
+            }
+        }
+    }
+
+    /// 当前歌曲搜索关键词。
+    private var songQuery: String {
+        [song.title, song.artist ?? ""].filter { !$0.isEmpty }.joined(separator: " ")
+    }
+
+    /// 当前歌手搜索关键词。
+    private var artistQuery: String {
+        let artist = song.artist ?? song.albumArtist ?? song.title
+        return artist.isEmpty ? song.title : artist
+    }
+
+    /// 当前封面搜索关键词。
+    private var coverQuery: String {
+        [song.album ?? song.title, song.artist ?? "", "album cover"].filter { !$0.isEmpty }.joined(separator: " ")
+    }
+
+    /// 单个搜索入口行。
+    private func researchRow(_ title: String, icon: String, url: URL?) -> some View {
+        Button {
+            guard let url else { return }
+            openURL(url)
+        } label: {
+            Label(title, systemImage: icon)
+        }
+        .disabled(url == nil)
+    }
+
+    /// Google 搜索 URL。
+    private func googleURL(for query: String) -> URL? {
+        searchURL(base: "https://www.google.com/search", queryName: "q", query: query)
+    }
+
+    /// 百度搜索 URL。
+    private func baiduURL(for query: String) -> URL? {
+        searchURL(base: "https://www.baidu.com/s", queryName: "wd", query: query)
+    }
+
+    /// 维基百科搜索 URL。
+    private func wikipediaURL(for query: String) -> URL? {
+        searchURL(base: "https://www.wikipedia.org/search-redirect.php", queryName: "search", query: query)
+    }
+
+    /// 萌娘百科搜索 URL。
+    private func moegirlURL(for query: String) -> URL? {
+        searchURL(base: "https://zh.moegirl.org.cn/index.php", queryName: "search", query: query)
+    }
+
+    /// Google 图片搜索 URL。
+    private func googleImageURL(for query: String) -> URL? {
+        searchURL(base: "https://www.google.com/search", queryName: "q", query: query, extra: [URLQueryItem(name: "tbm", value: "isch")])
+    }
+
+    /// 百度图片搜索 URL。
+    private func baiduImageURL(for query: String) -> URL? {
+        searchURL(base: "https://image.baidu.com/search/index", queryName: "tn", query: "baiduimage", extra: [URLQueryItem(name: "word", value: query)])
+    }
+
+    /// 根据 base 和 query 参数构造搜索 URL。
+    private func searchURL(base: String, queryName: String, query: String, extra: [URLQueryItem] = []) -> URL? {
+        guard var components = URLComponents(string: base) else { return nil }
+        components.queryItems = [URLQueryItem(name: queryName, value: query)] + extra
+        return components.url
     }
 }
 

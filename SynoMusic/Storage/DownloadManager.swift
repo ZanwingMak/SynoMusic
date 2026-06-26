@@ -19,12 +19,21 @@ struct DownloadedSong: Identifiable, Codable, Hashable {
 @MainActor
 final class DownloadManager: ObservableObject {
     @Published private(set) var entries: [DownloadedSong] = []
-    @Published var allowCellularDownload: Bool = false
+    @Published var allowCellularDownload: Bool {
+        didSet {
+            UserDefaults.standard.set(allowCellularDownload, forKey: cellularKey)
+            UserDefaults.standard.synchronize()
+        }
+    }
 
     private let fileManager = FileManager.default
     private let indexKey = "noc.downloads.index"
+    private let cellularKey = "noc.downloads.allowCellular"
 
-    init() { load() }
+    init() {
+        self.allowCellularDownload = UserDefaults.standard.bool(forKey: cellularKey)
+        load()
+    }
 
     /// 下载目录的绝对 URL。
     var downloadsDir: URL {
@@ -106,6 +115,14 @@ final class DownloadManager: ObservableObject {
         entries.filter { $0.status == .completed }.reduce(0) { $0 + $1.size }
     }
 
+    /// 已完成下载的歌曲快照，用于智能歌单离线播放。
+    var completedSongSnapshots: [Song] {
+        entries
+            .filter { $0.status == .completed }
+            .sorted { $0.addedAt > $1.addedAt }
+            .map { $0.songSnapshot }
+    }
+
     // MARK: 持久化
 
     /// 插入或替换下载索引中的条目。
@@ -136,6 +153,7 @@ final class DownloadManager: ObservableObject {
     /// 创建下载用 URLSession；必要时允许用户已信任的自签名证书。
     private func makeSession(allowInvalidCertificate: Bool) -> URLSession {
         let config = URLSessionConfiguration.default
+        config.allowsCellularAccess = allowCellularDownload
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 600
         guard allowInvalidCertificate else {
@@ -177,6 +195,30 @@ private final class DownloadCertDelegate: NSObject, URLSessionDelegate, URLSessi
         } else {
             completionHandler(.performDefaultHandling, nil)
         }
+    }
+}
+
+extension DownloadedSong {
+    /// 将下载索引中的轻量信息还原成可播放队列使用的歌曲快照。
+    var songSnapshot: Song {
+        Song(
+            id: id,
+            title: title,
+            album: album,
+            artist: artist,
+            albumArtist: artist,
+            genre: nil,
+            composer: nil,
+            trackNumber: nil,
+            discNumber: nil,
+            year: nil,
+            duration: 0,
+            bitrate: nil,
+            codec: URL(fileURLWithPath: fileURLPath).pathExtension,
+            filesize: size,
+            path: nil,
+            rating: nil
+        )
     }
 }
 

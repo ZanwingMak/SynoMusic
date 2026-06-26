@@ -63,6 +63,13 @@ enum PremiumFeature: String, Identifiable {
     case songDownloads
     case lyricEditing
     case iCloudSync
+    case smartMixes
+    case downloadQueue
+    case lyricTools
+    case systemIntegrations
+    case playbackEnhancements
+    case onlineMetadata
+    case localImport
 
     var id: String { rawValue }
 
@@ -79,6 +86,13 @@ enum PremiumFeature: String, Identifiable {
         case .songDownloads: return "歌曲下载"
         case .lyricEditing: return "歌词编辑"
         case .iCloudSync: return "iCloud 云同步"
+        case .smartMixes: return "智能歌单"
+        case .downloadQueue: return "下载队列"
+        case .lyricTools: return "歌词工具"
+        case .systemIntegrations: return "Siri 与小组件"
+        case .playbackEnhancements: return "播放增强"
+        case .onlineMetadata: return "在线资料工具"
+        case .localImport: return "本地音乐导入"
         }
     }
 
@@ -105,6 +119,20 @@ enum PremiumFeature: String, Identifiable {
             return "歌词编辑需要解锁完整功能后使用。"
         case .iCloudSync:
             return "iCloud 云同步需要解锁完整功能后使用。"
+        case .smartMixes:
+            return "智能歌单需要解锁完整功能后使用。"
+        case .downloadQueue:
+            return "下载队列需要解锁完整功能后使用。"
+        case .lyricTools:
+            return "歌词工具需要解锁完整功能后使用。"
+        case .systemIntegrations:
+            return "Siri 与小组件需要解锁完整功能后使用。"
+        case .playbackEnhancements:
+            return "播放增强需要解锁完整功能后使用。"
+        case .onlineMetadata:
+            return "在线资料工具需要解锁完整功能后使用。"
+        case .localImport:
+            return "本地音乐导入需要解锁完整功能后使用。"
         }
     }
 }

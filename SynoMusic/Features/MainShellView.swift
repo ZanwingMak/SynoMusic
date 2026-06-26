@@ -20,7 +20,7 @@ struct MainShellView: View {
                     .tabItem { Label("资料库".t, systemImage: "rectangle.stack.fill") }
                     .tag(MainTab.library)
 
-                NavigationStack {
+                NavigationStack(path: $navigation.browsePath) {
                     BrowseRootView()
                         .browseRoutes(reserveMiniPlayer: playback.currentSong != nil)
                 }
@@ -42,6 +42,14 @@ struct MainShellView: View {
                                 }
                             case .login(let profile):
                                 LoginView(profile: profile)
+                            case .widgets:
+                                PremiumFeatureGate(feature: .systemIntegrations) {
+                                    WidgetManagerView()
+                                }
+                            case .localImports:
+                                PremiumFeatureGate(feature: .localImport) {
+                                    LocalImportView()
+                                }
                             }
                         }
                 }
