@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 /// 应用入口：装配根环境对象并展示首屏。
@@ -21,6 +22,10 @@ struct SynoMusicApp: App {
     @StateObject private var playbackSettings = PlaybackSettings()
     /// App 内部导航状态，用于播放器等浮层跳转主框架页面。
     @StateObject private var navigation = AppNavigationState()
+    /// StoreKit 购买状态。
+    @StateObject private var purchaseStore = PurchaseStore()
+    /// iCloud 配置同步状态。
+    @StateObject private var cloudSync = CloudSyncStore()
 
     var body: some Scene {
         WindowGroup {
@@ -34,15 +39,45 @@ struct SynoMusicApp: App {
                 .environmentObject(lm)
                 .environmentObject(playbackSettings)
                 .environmentObject(navigation)
+                .environmentObject(purchaseStore)
+                .environmentObject(cloudSync)
                 .onAppear {
                     playback.applyPlaybackSettings(playbackSettings)
                     playback.downloadManager = downloads
+                    cloudSync.configure(serverStore: serverStore, playlistStore: playlists)
+                    applyPurchaseLimits()
+                }
+                .task {
+                    await purchaseStore.start()
+                    applyPurchaseLimits()
+                }
+                .onChange(of: purchaseStore.hasFullAccess) { _, _ in
+                    applyPurchaseLimits()
+                }
+                .onReceive(serverStore.$profiles.dropFirst()) { _ in
+                    cloudSync.pushLocalSnapshotIfNeeded()
+                }
+                .onReceive(serverStore.$activeProfileID.dropFirst()) { _ in
+                    cloudSync.pushLocalSnapshotIfNeeded()
+                }
+                .onReceive(playlists.$playlists.dropFirst()) { _ in
+                    cloudSync.pushLocalSnapshotIfNeeded()
                 }
                 .tint(theme.current.accent(in: .dark))
                 .preferredColorScheme(theme.appearance.colorScheme)
                 // 只对语言变化重建整树（翻译值仅在 body 重算时才会刷新）；
                 // 主题强调色由 RootView / MainShellView 订阅刷新，避免切换主题就跳回首页。
                 .id(lm.current.rawValue)
+        }
+    }
+
+    /// 根据购买状态强制应用免费版限制。
+    private func applyPurchaseLimits() {
+        guard purchaseStore.hasLoadedEntitlements else { return }
+        guard !purchaseStore.hasFullAccess else { return }
+        playbackSettings.backgroundPlaybackEnabled = false
+        if cloudSync.isEnabled {
+            cloudSync.setEnabled(false)
         }
     }
 }

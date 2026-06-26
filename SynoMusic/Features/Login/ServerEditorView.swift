@@ -5,6 +5,7 @@ struct ServerEditorView: View {
     @EnvironmentObject private var serverStore: ServerStore
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var purchase: PurchaseStore
     @Environment(\.dismiss) private var dismiss
 
     @State var profile: ServerProfile
@@ -271,6 +272,7 @@ struct ServerEditorView: View {
     #endif
 
     private func saveOnly() {
+        guard canSaveProfileUnderLimit() else { return }
         var p = applyMode(to: profile)
         if p.name.trimmingCharacters(in: .whitespaces).isEmpty { p.name = displayName(of: p) }
         serverStore.upsert(p)
@@ -324,6 +326,7 @@ struct ServerEditorView: View {
 
     private func connectAndSave() async {
         guard canSubmit else { return }
+        guard canSaveProfileUnderLimit() else { return }
         isConnecting = true
         progressMessage = "正在连接...".t
         defer {
@@ -366,5 +369,17 @@ struct ServerEditorView: View {
             self.error = error.localizedDescription + "\n\n" + "配置已保存到「服务器」列表。".t
             Haptics.warning()
         }
+    }
+
+    /// 校验免费版服务器数量限制，避免新增入口以外的路径写入超量配置。
+    private func canSaveProfileUnderLimit() -> Bool {
+        guard !isEditingExisting,
+              !purchase.canUse(.serverProfiles),
+              serverStore.profiles.count >= PurchaseLimits.maxFreeServerProfiles else {
+            return true
+        }
+        error = PremiumFeature.serverProfiles.lockedMessage.t
+        Haptics.warning()
+        return false
     }
 }

@@ -158,6 +158,13 @@ final class PlaylistStore: ObservableObject {
         playlists.filter { $0.contains(songID) }.map(\.id)
     }
 
+    /// 用云端快照替换本地歌单，并补齐内置「我喜欢的」歌单。
+    func replacePlaylists(_ newPlaylists: [LocalPlaylist]) {
+        playlists = newPlaylists
+        ensureFavorites()
+        save()
+    }
+
     // MARK: 「喜欢」语义快捷方法
 
     func isFavorite(_ song: Song) -> Bool {

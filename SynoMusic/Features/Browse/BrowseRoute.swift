@@ -36,12 +36,18 @@ extension BrowseRoute {
         case .playlist(let playlist): PlaylistDetailView(playlist: playlist)
         case .genre(let genre): GenreDetailView(genre: genre)
         case .folder(let folder): FolderBrowseView(folder: folder)
-        case .radio: RadioBrowseView()
+        case .radio:
+            PremiumFeatureGate(feature: .radio) {
+                RadioBrowseView()
+            }
         case .favorites: LocalPlaylistDetailView(playlistID: PlaylistStore.favoritesID)
         case .allSongs: AllSongsView()
         case .localPlaylists: LocalPlaylistsView()
         case .localPlaylist(let id): LocalPlaylistDetailView(playlistID: id)
-        case .playbackHistory: PlaybackHistoryView()
+        case .playbackHistory:
+            PremiumFeatureGate(feature: .playbackHistory) {
+                PlaybackHistoryView()
+            }
         case .settings: SettingsView()
         }
     }

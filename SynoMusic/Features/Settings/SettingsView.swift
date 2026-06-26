@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 import UIKit
 
 /// 设置：服务器、音质、下载、关于。
@@ -10,12 +11,14 @@ struct SettingsView: View {
     @EnvironmentObject private var lm: LanguageManager
     @EnvironmentObject private var playbackSettings: PlaybackSettings
     @EnvironmentObject private var navigation: AppNavigationState
+    @EnvironmentObject private var purchase: PurchaseStore
+    @EnvironmentObject private var cloudSync: CloudSyncStore
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var serverInfo: [String: String] = [:]
     @State private var editingProfile: ServerProfile?
     @State private var pendingDelete: ServerProfile?
-    @State private var showSponsors: Bool = false
+    @State private var paywallFeature: PremiumFeature?
     @State private var selectedIconName: String? = UIApplication.shared.alternateIconName
     @State private var isChangingIcon: Bool = false
     @State private var switchingProfileID: UUID?
@@ -31,6 +34,8 @@ struct SettingsView: View {
             qualitySection
             cacheSection
             othersSection
+            purchaseSection
+            cloudSyncSection
             aboutSection
         }
         .tint(theme.current.accent(in: colorScheme))
@@ -41,9 +46,9 @@ struct SettingsView: View {
             ServerEditorView(profile: profile)
                 .presentationDetents([.large])
         }
-        .sheet(isPresented: $showSponsors) {
-            SponsorListSheet()
-                .presentationDetents([.medium, .large])
+        .sheet(item: $paywallFeature) { feature in
+            PaywallView(feature: feature)
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
         .alert(
@@ -129,14 +134,14 @@ struct SettingsView: View {
                 }
             }
             Button {
-                editingProfile = ServerProfile(host: "", username: "")
+                startAddingServer()
             } label: {
                 Label("添加服务器".t, systemImage: "plus")
             }
         } header: {
             Text("服务器".t)
         } footer: {
-            Text("点击行设为默认；下次启动 App 会用默认服务器自动登录。点 ⓘ 编辑配置；左滑删除。".t)
+            Text(serverSectionFooter)
         }
     }
 
@@ -208,11 +213,12 @@ struct SettingsView: View {
                     HStack(spacing: 14) {
                         ForEach(AppIconChoice.all) { choice in
                             Button {
-                                applyAppIcon(choice)
+                                handleAppIconTap(choice)
                             } label: {
                                 AppIconChoiceView(
                                     choice: choice,
-                                    isSelected: selectedIconName == choice.alternateName
+                                    isSelected: selectedIconName == choice.alternateName,
+                                    isLocked: !purchase.canUse(.appIcon) && selectedIconName != choice.alternateName
                                 )
                             }
                             .buttonStyle(.plain)
@@ -228,7 +234,7 @@ struct SettingsView: View {
         } header: {
             Text("App 图标".t)
         } footer: {
-            Text("选择后系统会立即替换主屏幕图标。".t)
+            Text(purchase.canUse(.appIcon) ? "选择后系统会立即替换主屏幕图标。".t : "免费版暂不支持更换 App 图标。".t)
         }
     }
 
@@ -248,11 +254,24 @@ struct SettingsView: View {
 
     private var cacheSection: some View {
         Section("下载与缓存".t) {
-            NavigationLink(value: SettingsRoute.downloads) {
-                HStack {
-                    Label("已下载歌曲".t, systemImage: "arrow.down.circle")
-                    Spacer()
-                    Text("管理".t).foregroundStyle(.secondary)
+            if purchase.canUse(.songDownloads) {
+                NavigationLink(value: SettingsRoute.downloads) {
+                    HStack {
+                        Label("已下载歌曲".t, systemImage: "arrow.down.circle")
+                        Spacer()
+                        Text("管理".t).foregroundStyle(.secondary)
+                    }
+                }
+            } else {
+                Button {
+                    showPaywall(for: .songDownloads)
+                } label: {
+                    HStack {
+                        Label("已下载歌曲".t, systemImage: "arrow.down.circle")
+                        Spacer()
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
         }
@@ -260,8 +279,22 @@ struct SettingsView: View {
 
     private var othersSection: some View {
         Section {
-            Toggle(isOn: $playbackSettings.backgroundPlaybackEnabled) {
-                Label("后台播放".t, systemImage: "play.circle")
+            if purchase.canUse(.backgroundPlayback) {
+                Toggle(isOn: $playbackSettings.backgroundPlaybackEnabled) {
+                    Label("后台播放".t, systemImage: "play.circle")
+                }
+            } else {
+                Button {
+                    showPaywall(for: .backgroundPlayback)
+                } label: {
+                    HStack {
+                        Label("后台播放".t, systemImage: "play.circle")
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
             fixedPlaybackFeatureRow("锁屏控制".t, systemImage: "lock.open")
             fixedPlaybackFeatureRow("AirPlay".t, systemImage: "airplayaudio")
@@ -272,42 +305,110 @@ struct SettingsView: View {
         }
     }
 
+    private var purchaseSection: some View {
+        Section {
+            if purchase.hasFullAccess {
+                Label("完整功能已解锁".t, systemImage: "checkmark.seal.fill")
+                    .foregroundStyle(.green)
+            } else {
+                Button {
+                    showPaywall(for: .allAccess)
+                } label: {
+                    HStack {
+                        Label("解锁完整功能".t, systemImage: "sparkles")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+            Button {
+                Task { await purchase.restorePurchases() }
+            } label: {
+                Label("已经购买？恢复购买".t, systemImage: "arrow.clockwise.circle")
+            }
+            Button {
+                Task { await purchase.redeemOfferCode() }
+            } label: {
+                Label("App 兑换".t, systemImage: "giftcard")
+            }
+            if let message = purchase.statusMessage {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("完整功能".t)
+        } footer: {
+            Text("订阅与终身版由 App Store 处理；订阅试用需在 App Store Connect 中配置。".t)
+        }
+    }
+
+    private var cloudSyncSection: some View {
+        Section {
+            Toggle(isOn: cloudSyncBinding) {
+                Label("iCloud 云同步配置".t, systemImage: "icloud")
+            }
+            if cloudSync.isEnabled {
+                Button {
+                    cloudSync.pushLocalSnapshotIfNeeded()
+                } label: {
+                    Label("立即同步配置".t, systemImage: "arrow.triangle.2.circlepath")
+                }
+            }
+            if let message = cloudSync.statusMessage {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("iCloud".t)
+        } footer: {
+            Text("仅同步服务器地址、用户名和本地歌单；密码仍保存在本机 Keychain。".t)
+        }
+    }
+
     private var aboutSection: some View {
         Section("关于".t) {
             infoRow("版本".t, Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
             Button {
                 Haptics.tap()
-                showSponsors = true
+                requestReview()
             } label: {
-                HStack {
-                    Label {
-                        Text("赞助支持".t).foregroundStyle(.primary)
-                    } icon: {
-                        Image(systemName: "heart.circle.fill")
-                            .foregroundStyle(.pink)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                }
-                .contentShape(Rectangle())
+                Label("给个好评".t, systemImage: "star.bubble.fill")
             }
-            .buttonStyle(.plain)
-            .listRowSeparator(.visible)
-            Link(destination: URL(string: "https://github.com/ZanwingMak/SynoMusic/issues")!) {
-                Label("反馈问题".t, systemImage: "exclamationmark.bubble.fill")
-            }
-            Link(destination: URL(string: "https://github.com/ZanwingMak/SynoMusic")!) {
-                Label("GitHub 仓库".t, systemImage: "chevron.left.forwardslash.chevron.right")
-            }
-            Link(destination: URL(string: "https://github.com/ZanwingMak/SynoMusic/blob/main/CHANGELOG.md")!) {
-                Label("更新日志".t, systemImage: "list.bullet.rectangle")
+            ShareLink(item: shareMessage) {
+                Label("分享好友".t, systemImage: "square.and.arrow.up")
             }
             Text("SynoMusic 是一个非官方的 Audio Station 客户端。Synology 商标与 Audio Station 名称归群晖科技所有。".t)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private var serverSectionFooter: String {
+        if purchase.canUse(.serverProfiles) {
+            return "点击行设为默认；下次启动 App 会用默认服务器自动登录。点 ⓘ 编辑配置；左滑删除。".t
+        }
+        return "免费版最多保存 1 个服务器配置；解锁后可添加多个服务器。".t
+    }
+
+    private var cloudSyncBinding: Binding<Bool> {
+        Binding(
+            get: { cloudSync.isEnabled },
+            set: { enabled in
+                if enabled, !purchase.canUse(.iCloudSync) {
+                    showPaywall(for: .iCloudSync)
+                    return
+                }
+                cloudSync.setEnabled(enabled)
+            }
+        )
+    }
+
+    private var shareMessage: String {
+        "我正在用 SynoMusic 连接自己的 Audio Station 音乐库。".t
     }
 
     /// 形如 "字段 ······ 值" 的行。
@@ -397,6 +498,43 @@ struct SettingsView: View {
                 .foregroundStyle(.secondary)
         }
         .contentShape(Rectangle())
+    }
+
+    /// 打开添加服务器编辑器，免费版超过数量限制时改为展示付费墙。
+    private func startAddingServer() {
+        guard purchase.canUse(.serverProfiles) || serverStore.profiles.count < PurchaseLimits.maxFreeServerProfiles else {
+            showPaywall(for: .serverProfiles)
+            return
+        }
+        editingProfile = ServerProfile(host: "", username: "")
+    }
+
+    /// 点击图标时先检查购买状态，再执行系统图标切换。
+    private func handleAppIconTap(_ choice: AppIconChoice) {
+        guard purchase.canUse(.appIcon) || selectedIconName == choice.alternateName else {
+            showPaywall(for: .appIcon)
+            return
+        }
+        applyAppIcon(choice)
+    }
+
+    /// 统一打开付费墙，减少各入口的状态赋值重复。
+    private func showPaywall(for feature: PremiumFeature) {
+        Haptics.tap()
+        paywallFeature = feature
+    }
+
+    /// 调用系统好评弹窗。
+    private func requestReview() {
+        guard let scene = activeWindowScene else { return }
+        SKStoreReviewController.requestReview(in: scene)
+    }
+
+    /// 当前前台窗口场景，用于系统好评弹窗。
+    private var activeWindowScene: UIWindowScene? {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
     }
 
     /// 停止播放并退出当前服务器会话。
@@ -522,6 +660,7 @@ private struct AppIconChoice: Identifiable {
 private struct AppIconChoiceView: View {
     let choice: AppIconChoice
     let isSelected: Bool
+    let isLocked: Bool
 
     var body: some View {
         VStack(spacing: 6) {
@@ -538,6 +677,14 @@ private struct AppIconChoiceView: View {
                             .font(.system(size: 18, weight: .bold))
                             .foregroundStyle(.white, Theme.accent)
                             .offset(x: 5, y: 5)
+                    }
+                    if isLocked {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(5)
+                            .background(Color.black.opacity(0.55), in: Circle())
+                            .offset(x: 5, y: -5)
                     }
                 }
             Text(choice.title.t)

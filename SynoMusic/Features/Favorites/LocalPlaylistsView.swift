@@ -3,15 +3,17 @@ import SwiftUI
 /// 「我的歌单」入口：列出本地全部歌单（含我喜欢的 + 用户自建），支持新建/删除/重命名。
 struct LocalPlaylistsView: View {
     @EnvironmentObject private var playlists: PlaylistStore
+    @EnvironmentObject private var purchase: PurchaseStore
     @State private var showCreate: Bool = false
     @State private var newName: String = ""
     @State private var newColor: Int = 1
+    @State private var paywallFeature: PremiumFeature?
 
     var body: some View {
         List {
             Section {
                 Button {
-                    showCreate = true
+                    startCreatingPlaylist()
                 } label: {
                     HStack(spacing: Metrics.m) {
                         ZStack {
@@ -52,6 +54,11 @@ struct LocalPlaylistsView: View {
         .sheet(isPresented: $showCreate) {
             createSheet.presentationDetents([.medium])
         }
+        .sheet(item: $paywallFeature) { feature in
+            PaywallView(feature: feature)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     private var createSheet: some View {
@@ -90,6 +97,10 @@ struct LocalPlaylistsView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("创建".t) {
+                        guard canCreatePlaylist else {
+                            paywallFeature = .localPlaylists
+                            return
+                        }
                         playlists.create(name: newName, colorIndex: newColor)
                         Haptics.success()
                         reset()
@@ -100,6 +111,22 @@ struct LocalPlaylistsView: View {
         }
     }
 
+    /// 打开新建歌单弹窗，免费版达到上限时展示付费墙。
+    private func startCreatingPlaylist() {
+        guard canCreatePlaylist else {
+            Haptics.tap()
+            paywallFeature = .localPlaylists
+            return
+        }
+        showCreate = true
+    }
+
+    /// 判断当前购买状态下是否还能创建本地歌单。
+    private var canCreatePlaylist: Bool {
+        purchase.canUse(.localPlaylists) || playlists.userPlaylists.count < PurchaseLimits.maxFreeUserPlaylists
+    }
+
+    /// 重置新建歌单表单。
     private func reset() {
         showCreate = false
         newName = ""

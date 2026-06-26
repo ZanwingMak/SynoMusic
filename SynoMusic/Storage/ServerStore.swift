@@ -54,6 +54,17 @@ final class ServerStore: ObservableObject {
         defaults.set(profile.id.uuidString, forKey: activeKey)
     }
 
+    /// 用云端快照替换本地非敏感服务器配置；密码仍保留在本机 Keychain。
+    func replaceProfiles(_ newProfiles: [ServerProfile], activeProfileID newActiveID: UUID?) {
+        profiles = newProfiles
+        if let newActiveID, profiles.contains(where: { $0.id == newActiveID }) {
+            activeProfileID = newActiveID
+        } else {
+            activeProfileID = profiles.first?.id
+        }
+        save()
+    }
+
     /// 保存密码。
     func savePassword(_ password: String, for profile: ServerProfile) throws {
         try KeychainStore.setPassword(password, account: profile.id.uuidString)

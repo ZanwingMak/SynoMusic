@@ -10,6 +10,7 @@ struct FullPlayerView: View {
     @EnvironmentObject private var downloads: DownloadManager
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var navigation: AppNavigationState
+    @EnvironmentObject private var purchase: PurchaseStore
     @Binding var isPresented: Bool
     @State private var showLyrics = false
     @State private var showQueue = false
@@ -29,6 +30,7 @@ struct FullPlayerView: View {
     @State private var draftLyricFontSize: Double = 18
     @State private var draftLyricAutoScroll: Bool = true
     @State private var draftLyricDelay: Double = 0
+    @State private var paywallFeature: PremiumFeature?
 
     /// 创建全屏播放器，并在调试参数要求时预展开右上角菜单。
     init(isPresented: Binding<Bool>) {
@@ -171,6 +173,11 @@ struct FullPlayerView: View {
             )
             .presentationDetents([.height(360), .medium])
         }
+        .sheet(item: $paywallFeature) { feature in
+            PaywallView(feature: feature)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     /// 删除确认提示文案，避免内联插值让 SwiftUI 编译器超时。
@@ -228,6 +235,10 @@ struct FullPlayerView: View {
 
     /// 下载当前歌曲到本地缓存，并同步设置页下载管理。
     private func downloadCurrent() async {
+        guard purchase.canUse(.songDownloads) else {
+            paywallFeature = .songDownloads
+            return
+        }
         guard let song = playback.currentSong, !song.id.hasPrefix("radio:") else {
             playback.setStatus("无法下载当前歌曲".t)
             return
@@ -267,6 +278,10 @@ struct FullPlayerView: View {
 
     /// 关闭播放器并跳转到设置里的下载管理。
     private func openDownloadManager() {
+        guard purchase.canUse(.songDownloads) else {
+            paywallFeature = .songDownloads
+            return
+        }
         isPresented = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
             navigation.openDownloads()
@@ -911,6 +926,10 @@ extension FullPlayerView {
 
     /// 从右上角菜单进入歌词编辑；先切到歌词页，确保实时预览能被看到。
     private func openLyricEditorFromMenu() {
+        guard purchase.canUse(.lyricEditing) else {
+            paywallFeature = .lyricEditing
+            return
+        }
         if !showLyrics {
             withAnimation(.easeInOut(duration: 0.24)) {
                 showLyrics = true

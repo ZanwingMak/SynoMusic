@@ -37,7 +37,9 @@ struct MainShellView: View {
                         .navigationDestination(for: SettingsRoute.self) { route in
                             switch route {
                             case .downloads:
-                                DownloadsListView()
+                                PremiumFeatureGate(feature: .songDownloads) {
+                                    DownloadsListView()
+                                }
                             case .login(let profile):
                                 LoginView(profile: profile)
                             }
