@@ -15,6 +15,8 @@ enum BrowseRoute: Hashable {
     case allSongs
     case smartMixes
     case radio
+    case podcasts
+    case podcastShow(PodcastShow)
     case favorites
     case localPlaylists
     case localPlaylist(UUID)
@@ -40,6 +42,14 @@ extension BrowseRoute {
         case .radio:
             PremiumFeatureGate(feature: .radio) {
                 RadioBrowseView()
+            }
+        case .podcasts:
+            PremiumFeatureGate(feature: .podcasts) {
+                PodcastBrowseView()
+            }
+        case .podcastShow(let show):
+            PremiumFeatureGate(feature: .podcasts) {
+                PodcastShowDetailView(show: show)
             }
         case .favorites: LocalPlaylistDetailView(playlistID: PlaylistStore.favoritesID)
         case .allSongs: AllSongsView()

@@ -23,6 +23,11 @@ struct Song: Identifiable, Hashable, Codable {
 }
 
 extension Song {
+    /// 标记电台和播客这类直接使用远程 URL 播放的媒体。
+    var isDirectRemoteStream: Bool {
+        id.hasPrefix("radio:") || id.hasPrefix("podcast:")
+    }
+
     /// 返回只更新评分的新歌曲快照，用于接口成功后刷新本地队列状态。
     func withRating(_ newRating: Int?) -> Song {
         Song(

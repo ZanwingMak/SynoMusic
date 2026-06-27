@@ -251,7 +251,7 @@ struct FullPlayerView: View {
             paywallFeature = .songDownloads
             return
         }
-        guard let song = playback.currentSong, !song.id.hasPrefix("radio:") else {
+        guard let song = playback.currentSong, !song.isDirectRemoteStream else {
             playback.setStatus("无法下载当前歌曲".t)
             return
         }
@@ -408,7 +408,7 @@ private struct PlayerTopMenuOverlay: View {
     /// 当前歌曲是否允许删除文件。
     private var canDeleteCurrentSong: Bool {
         guard let song else { return false }
-        return !song.id.hasPrefix("radio:") && !(song.path ?? "").isEmpty
+        return !song.isDirectRemoteStream && !(song.path ?? "").isEmpty
     }
 
     var body: some View {
@@ -509,7 +509,7 @@ private struct PlayerTopMenuOverlay: View {
     /// 判断当前歌曲是否支持本地下载。
     private var canDownloadCurrentSong: Bool {
         guard let song else { return false }
-        return !song.id.hasPrefix("radio:")
+        return !song.isDirectRemoteStream
     }
 
     /// 评分子面板。

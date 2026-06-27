@@ -387,6 +387,8 @@ struct SettingsView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.tertiary)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             } else {
@@ -400,6 +402,8 @@ struct SettingsView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.tertiary)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
             }
             Button {
@@ -1272,7 +1276,7 @@ struct DownloadsListView: View {
             return
         }
         let songs = playback.queue.filter { song in
-            !song.id.hasPrefix("radio:") && downloads.status(for: song.id) != .completed
+            !song.isDirectRemoteStream && downloads.status(for: song.id) != .completed
         }
         guard !songs.isEmpty else {
             playback.setStatus("当前队列没有需要下载的歌曲".t)

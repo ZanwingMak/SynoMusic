@@ -2262,6 +2262,23 @@ enum L10n {
 
     /// 1.4.x 商业功能增量翻译，避免改动既有大表结构。
     static let commercialAdditions: [String: [String: String]] = [
+        "zh-Hans": [
+            "播客": "播客",
+            "播客搜索与播放需要解锁完整功能后使用。": "播客搜索与播放需要解锁完整功能后使用。",
+            "搜索播客": "搜索播客",
+            "播客资源来自 Apple Podcasts 搜索与公开 RSS。": "播客资源来自 Apple Podcasts 搜索与公开 RSS。",
+            "已订阅播客": "已订阅播客",
+            "热门播客": "热门播客",
+            "搜索结果": "搜索结果",
+            "没找到播客": "没找到播客",
+            "输入关键词搜索 Apple Podcasts 资源。": "输入关键词搜索 Apple Podcasts 资源。",
+            "订阅": "订阅",
+            "取消订阅": "取消订阅",
+            "加载节目失败": "加载节目失败",
+            "没有可播放的节目": "没有可播放的节目",
+            "换个播客或稍后重试。": "换个播客或稍后重试。",
+            "播客单集": "播客单集"
+        ],
         "zh-Hant": [
             "播放增强": "播放增強",
             "在线资料工具": "線上資料工具",
@@ -2317,7 +2334,22 @@ enum L10n {
             "封面": "封面",
             "Google 图片": "Google 圖片",
             "百度图片": "百度圖片",
-            "复制当前封面链接": "複製目前封面連結"
+            "复制当前封面链接": "複製目前封面連結",
+            "播客": "Podcast",
+            "播客搜索与播放需要解锁完整功能后使用。": "Podcast 搜尋與播放需要解鎖完整功能後使用。",
+            "搜索播客": "搜尋 Podcast",
+            "播客资源来自 Apple Podcasts 搜索与公开 RSS。": "Podcast 資源來自 Apple Podcasts 搜尋與公開 RSS。",
+            "已订阅播客": "已訂閱 Podcast",
+            "热门播客": "熱門 Podcast",
+            "搜索结果": "搜尋結果",
+            "没找到播客": "找不到 Podcast",
+            "输入关键词搜索 Apple Podcasts 资源。": "輸入關鍵字搜尋 Apple Podcasts 資源。",
+            "订阅": "訂閱",
+            "取消订阅": "取消訂閱",
+            "加载节目失败": "載入節目失敗",
+            "没有可播放的节目": "沒有可播放的節目",
+            "换个播客或稍后重试。": "換個 Podcast 或稍後重試。",
+            "播客单集": "Podcast 單集"
         ],
         "en": [
             "播放增强": "Playback Enhancements",
@@ -2374,7 +2406,22 @@ enum L10n {
             "封面": "Cover Art",
             "Google 图片": "Google Images",
             "百度图片": "Baidu Images",
-            "复制当前封面链接": "Copy Current Cover Link"
+            "复制当前封面链接": "Copy Current Cover Link",
+            "播客": "Podcasts",
+            "播客搜索与播放需要解锁完整功能后使用。": "Podcast search and playback require Full Access.",
+            "搜索播客": "Search Podcasts",
+            "播客资源来自 Apple Podcasts 搜索与公开 RSS。": "Podcast resources come from Apple Podcasts search and public RSS feeds.",
+            "已订阅播客": "Subscribed Podcasts",
+            "热门播客": "Popular Podcasts",
+            "搜索结果": "Search Results",
+            "没找到播客": "No Podcasts Found",
+            "输入关键词搜索 Apple Podcasts 资源。": "Enter keywords to search Apple Podcasts resources.",
+            "订阅": "Subscribe",
+            "取消订阅": "Unsubscribe",
+            "加载节目失败": "Failed to Load Episodes",
+            "没有可播放的节目": "No Playable Episodes",
+            "换个播客或稍后重试。": "Try another podcast or try again later.",
+            "播客单集": "Podcast Episodes"
         ],
         "ja": [
             "播放增强": "再生拡張",
@@ -2431,7 +2478,22 @@ enum L10n {
             "封面": "カバー",
             "Google 图片": "Google画像",
             "百度图片": "Baidu画像",
-            "复制当前封面链接": "現在のカバーリンクをコピー"
+            "复制当前封面链接": "現在のカバーリンクをコピー",
+            "播客": "ポッドキャスト",
+            "播客搜索与播放需要解锁完整功能后使用。": "ポッドキャスト検索と再生には全機能の解放が必要です。",
+            "搜索播客": "ポッドキャストを検索",
+            "播客资源来自 Apple Podcasts 搜索与公开 RSS。": "ポッドキャストは Apple Podcasts 検索と公開 RSS から取得します。",
+            "已订阅播客": "購読中のポッドキャスト",
+            "热门播客": "人気のポッドキャスト",
+            "搜索结果": "検索結果",
+            "没找到播客": "ポッドキャストが見つかりません",
+            "输入关键词搜索 Apple Podcasts 资源。": "キーワードを入力して Apple Podcasts を検索してください。",
+            "订阅": "購読",
+            "取消订阅": "購読解除",
+            "加载节目失败": "エピソードの読み込みに失敗しました",
+            "没有可播放的节目": "再生できるエピソードがありません",
+            "换个播客或稍后重试。": "別のポッドキャストを選ぶか、後でもう一度お試しください。",
+            "播客单集": "エピソード"
         ],
         "ko": [
             "播放增强": "재생 향상",
@@ -2488,7 +2550,22 @@ enum L10n {
             "封面": "커버",
             "Google 图片": "Google 이미지",
             "百度图片": "Baidu 이미지",
-            "复制当前封面链接": "현재 커버 링크 복사"
+            "复制当前封面链接": "현재 커버 링크 복사",
+            "播客": "팟캐스트",
+            "播客搜索与播放需要解锁完整功能后使用。": "팟캐스트 검색과 재생은 전체 기능 잠금 해제 후 사용할 수 있습니다.",
+            "搜索播客": "팟캐스트 검색",
+            "播客资源来自 Apple Podcasts 搜索与公开 RSS。": "팟캐스트 리소스는 Apple Podcasts 검색과 공개 RSS에서 가져옵니다.",
+            "已订阅播客": "구독한 팟캐스트",
+            "热门播客": "인기 팟캐스트",
+            "搜索结果": "검색 결과",
+            "没找到播客": "팟캐스트를 찾지 못했습니다",
+            "输入关键词搜索 Apple Podcasts 资源。": "키워드를 입력해 Apple Podcasts 리소스를 검색하세요.",
+            "订阅": "구독",
+            "取消订阅": "구독 취소",
+            "加载节目失败": "에피소드 불러오기 실패",
+            "没有可播放的节目": "재생 가능한 에피소드가 없습니다",
+            "换个播客或稍后重试。": "다른 팟캐스트를 선택하거나 나중에 다시 시도하세요.",
+            "播客单集": "팟캐스트 에피소드"
         ],
         "de": [
             "播放增强": "Wiedergabe-Extras",
@@ -2545,7 +2622,22 @@ enum L10n {
             "封面": "Cover",
             "Google 图片": "Google Bilder",
             "百度图片": "Baidu Bilder",
-            "复制当前封面链接": "Aktuellen Cover-Link kopieren"
+            "复制当前封面链接": "Aktuellen Cover-Link kopieren",
+            "播客": "Podcasts",
+            "播客搜索与播放需要解锁完整功能后使用。": "Podcast-Suche und Wiedergabe erfordern Vollzugriff.",
+            "搜索播客": "Podcasts suchen",
+            "播客资源来自 Apple Podcasts 搜索与公开 RSS。": "Podcast-Ressourcen stammen aus Apple Podcasts Suche und öffentlichen RSS-Feeds.",
+            "已订阅播客": "Abonnierte Podcasts",
+            "热门播客": "Beliebte Podcasts",
+            "搜索结果": "Suchergebnisse",
+            "没找到播客": "Keine Podcasts gefunden",
+            "输入关键词搜索 Apple Podcasts 资源。": "Gib Suchbegriffe ein, um Apple Podcasts zu durchsuchen.",
+            "订阅": "Abonnieren",
+            "取消订阅": "Abo beenden",
+            "加载节目失败": "Episoden konnten nicht geladen werden",
+            "没有可播放的节目": "Keine abspielbaren Episoden",
+            "换个播客或稍后重试。": "Wähle einen anderen Podcast oder versuche es später erneut.",
+            "播客单集": "Podcast-Episoden"
         ],
         "fr": [
             "播放增强": "Améliorations de lecture",
@@ -2602,7 +2694,22 @@ enum L10n {
             "封面": "Pochette",
             "Google 图片": "Google Images",
             "百度图片": "Baidu Images",
-            "复制当前封面链接": "Copier le lien de la pochette actuelle"
+            "复制当前封面链接": "Copier le lien de la pochette actuelle",
+            "播客": "Podcasts",
+            "播客搜索与播放需要解锁完整功能后使用。": "La recherche et la lecture de podcasts nécessitent l’accès complet.",
+            "搜索播客": "Rechercher des podcasts",
+            "播客资源来自 Apple Podcasts 搜索与公开 RSS。": "Les podcasts proviennent de la recherche Apple Podcasts et de flux RSS publics.",
+            "已订阅播客": "Podcasts abonnés",
+            "热门播客": "Podcasts populaires",
+            "搜索结果": "Résultats de recherche",
+            "没找到播客": "Aucun podcast trouvé",
+            "输入关键词搜索 Apple Podcasts 资源。": "Saisissez des mots-clés pour rechercher dans Apple Podcasts.",
+            "订阅": "S’abonner",
+            "取消订阅": "Se désabonner",
+            "加载节目失败": "Échec du chargement des épisodes",
+            "没有可播放的节目": "Aucun épisode lisible",
+            "换个播客或稍后重试。": "Essayez un autre podcast ou réessayez plus tard.",
+            "播客单集": "Épisodes de podcast"
         ]
     ]
 }

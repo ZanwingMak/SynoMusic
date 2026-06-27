@@ -60,6 +60,7 @@ enum PremiumFeature: String, Identifiable {
     case localPlaylists
     case playbackHistory
     case radio
+    case podcasts
     case songDownloads
     case lyricEditing
     case iCloudSync
@@ -83,6 +84,7 @@ enum PremiumFeature: String, Identifiable {
         case .localPlaylists: return "更多本地歌单"
         case .playbackHistory: return "历史记录"
         case .radio: return "电台"
+        case .podcasts: return "播客"
         case .songDownloads: return "歌曲下载"
         case .lyricEditing: return "歌词编辑"
         case .iCloudSync: return "iCloud 云同步"
@@ -113,6 +115,8 @@ enum PremiumFeature: String, Identifiable {
             return "历史记录需要解锁完整功能后使用。"
         case .radio:
             return "电台需要解锁完整功能后使用。"
+        case .podcasts:
+            return "播客搜索与播放需要解锁完整功能后使用。"
         case .songDownloads:
             return "歌曲下载需要解锁完整功能后使用。"
         case .lyricEditing:

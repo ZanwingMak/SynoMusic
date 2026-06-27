@@ -452,7 +452,7 @@ final class PlaybackEngine: ObservableObject {
         lyrics = []
         currentLyricIndex = nil
         isBuffering = true
-        // 1. 电台：song.id 以 "radio:" 开头，直接用 song.path 作为 stream URL
+        // 1. 电台/播客：song.id 以 "radio:" / "podcast:" 开头，直接用 song.path 作为 stream URL
         // 2. 已登录：走 Audio Station streamURL
         // 3. 未登录：走 Demo 模拟
         let url: URL?
@@ -460,7 +460,7 @@ final class PlaybackEngine: ObservableObject {
             url = localURL
         } else if song.id.hasPrefix("local:"), let path = song.path {
             url = URL(fileURLWithPath: path)
-        } else if song.id.hasPrefix("radio:"), let path = song.path {
+        } else if song.isDirectRemoteStream, let path = song.path {
             url = URL(string: path)
         } else if let api = apiClient?.audioStation {
             let effective = transcodeOverride ?? quality
@@ -663,7 +663,7 @@ final class PlaybackEngine: ObservableObject {
                 case .failed:
                     let reason = item?.error?.localizedDescription ?? "未知错误".t
                     // 兜底：原始流失败时，自动用 MP3 转码再试一次（仅 NAS 流，不针对电台）
-                    let isNasStream = !(self.currentSong?.id.hasPrefix("radio:") ?? false)
+                    let isNasStream = !(self.currentSong?.isDirectRemoteStream ?? false)
                     let usingRaw = (self.transcodeOverride ?? self.quality).streamFormat == "raw"
                     if isNasStream, usingRaw, !self.fallbackTried {
                         self.fallbackTried = true

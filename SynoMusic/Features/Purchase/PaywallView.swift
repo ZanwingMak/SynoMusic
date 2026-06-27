@@ -64,6 +64,7 @@ struct PaywallView: View {
             PaywallFeatureRow(icon: "music.note.list", title: "更多本地歌单")
             PaywallFeatureRow(icon: "clock.arrow.circlepath", title: "历史记录")
             PaywallFeatureRow(icon: "antenna.radiowaves.left.and.right", title: "电台")
+            PaywallFeatureRow(icon: "podcasts", title: "播客")
             PaywallFeatureRow(icon: "wand.and.stars", title: "智能歌单")
             PaywallFeatureRow(icon: "arrow.down.circle", title: "歌曲下载")
             PaywallFeatureRow(icon: "tray.and.arrow.down", title: "下载队列")

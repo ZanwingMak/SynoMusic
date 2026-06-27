@@ -165,6 +165,16 @@ private struct QuickActions: View {
                 }
                 .buttonStyle(.plain)
 
+                NavigationLink(value: BrowseRoute.podcasts) {
+                    ActionCard(
+                        title: "播客".t,
+                        subtitle: "网上搜索".t,
+                        icon: "podcasts",
+                        gradient: [Color(red: 0.95, green: 0.35, blue: 0.72), Color(red: 0.48, green: 0.28, blue: 0.88)]
+                    )
+                }
+                .buttonStyle(.plain)
+
                 NavigationLink(value: BrowseRoute.allAlbums) {
                     ActionCard(
                         title: "全部专辑".t,
