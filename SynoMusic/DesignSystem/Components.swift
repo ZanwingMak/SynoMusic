@@ -193,6 +193,65 @@ struct EmptyStateView: View {
     }
 }
 
+/// 未添加服务器时的通用空态，附带跳转添加服务器的主按钮。
+struct ServerRequiredEmptyState: View {
+    var systemImage: String = "externaldrive.connected.to.line.below"
+    var title: String = "请添加您的服务器"
+    var message: String = "请添加您的服务器加载 NAS 里的音乐。"
+    let action: () -> Void
+
+    var body: some View {
+        VStack(spacing: Metrics.m) {
+            Image(systemName: systemImage)
+                .font(.system(size: 48, weight: .regular))
+                .foregroundStyle(.tertiary)
+            Text(title.t)
+                .font(.nocSection)
+            Text(message.t)
+                .font(.nocCaption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button {
+                Haptics.tap()
+                action()
+            } label: {
+                Label("添加服务器".t, systemImage: "plus")
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .frame(maxWidth: 240)
+            .padding(.top, Metrics.s)
+        }
+        .padding(.horizontal, Metrics.xl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// 需要服务器的入口确认框，确定后进入添加服务器流程。
+struct ServerRequiredPromptModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    let onConfirm: () -> Void
+
+    /// 给当前视图挂载“需要服务器”的确认弹窗。
+    func body(content: Content) -> some View {
+        content.alert("需要添加服务器".t, isPresented: $isPresented) {
+            Button("取消".t, role: .cancel) { }
+            Button("确定".t) {
+                Haptics.tap()
+                onConfirm()
+            }
+        } message: {
+            Text("请添加您的服务器加载 NAS 里的音乐。".t)
+        }
+    }
+}
+
+extension View {
+    /// 展示需要服务器的确认框。
+    func serverRequiredPrompt(isPresented: Binding<Bool>, onConfirm: @escaping () -> Void) -> some View {
+        modifier(ServerRequiredPromptModifier(isPresented: isPresented, onConfirm: onConfirm))
+    }
+}
+
 /// 通用错误态。
 struct ErrorStateView: View {
     let title: String

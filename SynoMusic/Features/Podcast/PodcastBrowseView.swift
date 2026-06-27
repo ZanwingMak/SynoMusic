@@ -70,7 +70,7 @@ struct PodcastBrowseView: View {
     private var presetSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             PodcastFilterRow(title: "内容分类".t, options: PodcastCategory.items, selection: $selectedCategory)
-            PodcastFilterRow(title: "国家".t, options: PodcastCountry.items, selection: $selectedCountry)
+            PodcastFilterRow(title: "国家或地区".t, options: PodcastCountry.items, selection: $selectedCountry)
             PodcastFilterRow(title: "语言筛选".t, options: PodcastLanguage.items, selection: $selectedLanguage)
         }
         .padding(14)

@@ -22,6 +22,7 @@ final class AppNavigationState: ObservableObject {
     @Published var selectedTab: MainTab
     @Published var browsePath = NavigationPath()
     @Published var settingsPath = NavigationPath()
+    @Published var addServerRequestID: UUID?
 
     /// 按调试启动参数决定初始 Tab，普通启动默认进入资料库。
     init() {
@@ -60,6 +61,18 @@ final class AppNavigationState: ObservableObject {
         selectedTab = .settings
         settingsPath = NavigationPath()
         settingsPath.append(SettingsRoute.localImports)
+    }
+
+    /// 切到设置页并请求打开添加服务器表单。
+    func openAddServer() {
+        selectedTab = .settings
+        settingsPath = NavigationPath()
+        addServerRequestID = UUID()
+    }
+
+    /// 消费添加服务器请求，避免设置页重新出现时重复弹出表单。
+    func consumeAddServerRequest() {
+        addServerRequestID = nil
     }
 
     /// 切到浏览页并打开智能歌单。

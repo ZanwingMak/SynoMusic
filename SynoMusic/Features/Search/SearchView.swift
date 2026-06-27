@@ -5,6 +5,7 @@ struct SearchView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var reviewMode: AppReviewMode
+    @EnvironmentObject private var navigation: AppNavigationState
 
     @State private var keyword: String = ""
     @State private var results: [Song] = []
@@ -15,7 +16,11 @@ struct SearchView: View {
 
     var body: some View {
         Group {
-            if keyword.isEmpty {
+            if session.client == nil && !reviewMode.isEnabled {
+                ServerRequiredEmptyState(systemImage: "magnifyingglass") {
+                    navigation.openAddServer()
+                }
+            } else if keyword.isEmpty {
                 historyView
             } else if isLoading {
                 LoadingState()

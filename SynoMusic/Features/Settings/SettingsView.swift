@@ -52,6 +52,8 @@ struct SettingsView: View {
         .tint(theme.current.accent(in: colorScheme))
         .id("settings-\(theme.currentID)-\(theme.appearance.rawValue)")
         .navigationTitle("设置".t)
+        .onAppear { handleAddServerRequest() }
+        .onChange(of: navigation.addServerRequestID) { _, _ in handleAddServerRequest() }
         .task { await loadServerInfo() }
         .sheet(item: $editingProfile) { profile in
             ServerEditorView(profile: profile)
@@ -626,6 +628,13 @@ struct SettingsView: View {
             return
         }
         editingProfile = ServerProfile(host: "", username: "")
+    }
+
+    /// 响应其它页面发来的添加服务器请求，并立即消费该请求。
+    private func handleAddServerRequest() {
+        guard navigation.addServerRequestID != nil else { return }
+        navigation.consumeAddServerRequest()
+        startAddingServer()
     }
 
     /// 点击图标时允许免费恢复默认图标，备用图标再检查购买状态。

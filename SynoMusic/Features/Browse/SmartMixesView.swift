@@ -5,9 +5,12 @@ struct SmartMixesView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var downloads: DownloadManager
+    @EnvironmentObject private var navigation: AppNavigationState
+    @EnvironmentObject private var reviewMode: AppReviewMode
 
     @State private var loadingMixID: String?
     @State private var errorMessage: String?
+    @State private var showServerPrompt = false
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
 
@@ -72,6 +75,9 @@ struct SmartMixesView: View {
         }
         .background(Color(.systemBackground).ignoresSafeArea())
         .navigationTitle("智能歌单".t)
+        .serverRequiredPrompt(isPresented: $showServerPrompt) {
+            navigation.openAddServer()
+        }
     }
 
     /// 绘制一个智能歌单入口卡片。
@@ -139,8 +145,12 @@ struct SmartMixesView: View {
 
     /// 从服务器随机抓取歌曲并播放。
     private func playRandomSongs() async {
+        if reviewMode.isEnabled {
+            playSongs(DemoMode.songs.shuffled(), title: "随机探索")
+            return
+        }
+        guard requireServerOrPrompt() else { return }
         guard let api = session.client?.audioStation else {
-            errorMessage = "请先连接服务器。".t
             return
         }
         do {
@@ -153,8 +163,13 @@ struct SmartMixesView: View {
 
     /// 拉取较大范围歌曲后筛选高评分歌曲播放。
     private func playHighlyRatedSongs() async {
+        if reviewMode.isEnabled {
+            let rated = DemoMode.songs.filter { ($0.rating ?? 0) >= 4 }
+            playSongs(rated.isEmpty ? DemoMode.songs : rated, title: "高评分歌曲")
+            return
+        }
+        guard requireServerOrPrompt() else { return }
         guard let api = session.client?.audioStation else {
-            errorMessage = "请先连接服务器。".t
             return
         }
         do {
@@ -168,8 +183,12 @@ struct SmartMixesView: View {
 
     /// 播放最近添加的服务器歌曲。
     private func playRecentAdditions() async {
+        if reviewMode.isEnabled {
+            playSongs(DemoMode.songs, title: "最近添加精选")
+            return
+        }
+        guard requireServerOrPrompt() else { return }
         guard let api = session.client?.audioStation else {
-            errorMessage = "请先连接服务器。".t
             return
         }
         do {
@@ -200,5 +219,14 @@ struct SmartMixesView: View {
     private func showError(_ error: Error) {
         errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         Haptics.warning()
+    }
+
+    /// 没有服务器时弹出确认框；已连接时允许继续执行。
+    private func requireServerOrPrompt() -> Bool {
+        guard session.client == nil && !reviewMode.isEnabled else { return true }
+        showServerPrompt = true
+        loadingMixID = nil
+        Haptics.warning()
+        return false
     }
 }

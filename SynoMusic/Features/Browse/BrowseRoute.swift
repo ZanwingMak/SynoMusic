@@ -29,16 +29,26 @@ extension BrowseRoute {
     @MainActor @ViewBuilder
     var destination: some View {
         switch self {
-        case .allAlbums: AllAlbumsView()
-        case .allArtists: AllArtistsView()
-        case .allPlaylists: AllPlaylistsView()
-        case .allGenres: AllGenresView()
-        case .allFolders: FolderBrowseView(folder: nil)
-        case .album(let album): AlbumDetailView(album: album)
-        case .artist(let artist): ArtistDetailView(artist: artist)
-        case .playlist(let playlist): PlaylistDetailView(playlist: playlist)
-        case .genre(let genre): GenreDetailView(genre: genre)
-        case .folder(let folder): FolderBrowseView(folder: folder)
+        case .allAlbums:
+            ServerRequiredGate { AllAlbumsView() }
+        case .allArtists:
+            ServerRequiredGate { AllArtistsView() }
+        case .allPlaylists:
+            ServerRequiredGate { AllPlaylistsView() }
+        case .allGenres:
+            ServerRequiredGate { AllGenresView() }
+        case .allFolders:
+            ServerRequiredGate { FolderBrowseView(folder: nil) }
+        case .album(let album):
+            ServerRequiredGate { AlbumDetailView(album: album) }
+        case .artist(let artist):
+            ServerRequiredGate { ArtistDetailView(artist: artist) }
+        case .playlist(let playlist):
+            ServerRequiredGate { PlaylistDetailView(playlist: playlist) }
+        case .genre(let genre):
+            ServerRequiredGate { GenreDetailView(genre: genre) }
+        case .folder(let folder):
+            ServerRequiredGate { FolderBrowseView(folder: folder) }
         case .radio:
             PremiumFeatureGate(feature: .radio) {
                 RadioBrowseView()
@@ -52,7 +62,8 @@ extension BrowseRoute {
                 PodcastShowDetailView(show: show)
             }
         case .favorites: LocalPlaylistDetailView(playlistID: PlaylistStore.favoritesID)
-        case .allSongs: AllSongsView()
+        case .allSongs:
+            ServerRequiredGate { AllSongsView() }
         case .smartMixes:
             PremiumFeatureGate(feature: .smartMixes) {
                 SmartMixesView()
@@ -66,6 +77,17 @@ extension BrowseRoute {
         case .settings: SettingsView()
         }
     }
+
+    /// 是否属于必须连接 NAS 才能读取的媒体库页面。
+    var requiresServer: Bool {
+        switch self {
+        case .album, .artist, .playlist, .genre, .folder,
+             .allAlbums, .allArtists, .allPlaylists, .allGenres, .allFolders, .allSongs:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 extension View {
@@ -75,6 +97,24 @@ extension View {
         navigationDestination(for: BrowseRoute.self) { route in
             route.destination
                 .reserveMiniPlayer(visible: reserveMiniPlayer)
+        }
+    }
+}
+
+/// 对需要 NAS 的页面做统一空态保护。
+private struct ServerRequiredGate<Content: View>: View {
+    @EnvironmentObject private var session: AppSession
+    @EnvironmentObject private var navigation: AppNavigationState
+    @EnvironmentObject private var reviewMode: AppReviewMode
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        if session.client == nil && !reviewMode.isEnabled {
+            ServerRequiredEmptyState {
+                navigation.openAddServer()
+            }
+        } else {
+            content()
         }
     }
 }

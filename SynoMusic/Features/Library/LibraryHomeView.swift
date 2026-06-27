@@ -6,6 +6,7 @@ struct LibraryHomeView: View {
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var purchase: PurchaseStore
     @EnvironmentObject private var reviewMode: AppReviewMode
+    @EnvironmentObject private var navigation: AppNavigationState
     @StateObject private var vm = LibraryHomeViewModel()
     @State private var paywallFeature: PremiumFeature?
 
@@ -14,7 +15,12 @@ struct LibraryHomeView: View {
             VStack(alignment: .leading, spacing: Metrics.l) {
                 Header()
                 QuickActions()
-                if vm.isLoading && vm.recentAlbums.isEmpty {
+                if session.client == nil && !reviewMode.isEnabled {
+                    ServerRequiredEmptyState {
+                        navigation.openAddServer()
+                    }
+                    .frame(minHeight: 300)
+                } else if vm.isLoading && vm.recentAlbums.isEmpty {
                     LoadingState().frame(height: 280)
                 } else if let err = vm.error {
                     ErrorStateView(title: "加载失败".t, message: err) { Task { await vm.load(client: session.client, useMockData: reviewMode.isEnabled) } }
@@ -140,12 +146,14 @@ private struct QuickActions: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var reviewMode: AppReviewMode
+    @EnvironmentObject private var navigation: AppNavigationState
     @State private var isShuffling = false
+    @State private var showServerPrompt = false
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Metrics.m) {
-                Button { Task { await randomShuffleAll() } } label: {
+                Button { handleShuffleTap() } label: {
                     ActionCard(
                         title: "随机歌单".t,
                         subtitle: isShuffling ? "正在抓取…".t : "从全库抽 100 首".t,
@@ -175,15 +183,13 @@ private struct QuickActions: View {
                 }
                 .buttonStyle(.plain)
 
-                NavigationLink(value: BrowseRoute.allSongs) {
-                    ActionCard(
-                        title: "所有歌曲".t,
-                        subtitle: "整库浏览".t,
-                        icon: "music.note",
-                        gradient: [Color(red: 0.55, green: 0.4, blue: 0.95), Color(red: 0.25, green: 0.25, blue: 0.65)]
-                    )
-                }
-                .buttonStyle(.plain)
+                serverAwareRouteCard(
+                    route: .allSongs,
+                    title: "所有歌曲".t,
+                    subtitle: "整库浏览".t,
+                    icon: "music.note",
+                    gradient: [Color(red: 0.55, green: 0.4, blue: 0.95), Color(red: 0.25, green: 0.25, blue: 0.65)]
+                )
 
                 if !reviewMode.isEnabled {
                     NavigationLink(value: BrowseRoute.radio) {
@@ -207,21 +213,56 @@ private struct QuickActions: View {
                     .buttonStyle(.plain)
                 }
 
-                NavigationLink(value: BrowseRoute.allAlbums) {
-                    ActionCard(
-                        title: "全部专辑".t,
-                        subtitle: "整库浏览".t,
-                        icon: "square.stack.fill",
-                        gradient: [Color(red: 0.95, green: 0.6, blue: 0.3), Color(red: 0.85, green: 0.3, blue: 0.3)]
-                    )
-                }
-                .buttonStyle(.plain)
+                serverAwareRouteCard(
+                    route: .allAlbums,
+                    title: "全部专辑".t,
+                    subtitle: "整库浏览".t,
+                    icon: "square.stack.fill",
+                    gradient: [Color(red: 0.95, green: 0.6, blue: 0.3), Color(red: 0.85, green: 0.3, blue: 0.3)]
+                )
             }
         }
         .scrollClipDisabled()
+        .serverRequiredPrompt(isPresented: $showServerPrompt) {
+            navigation.openAddServer()
+        }
     }
 
+    /// 点击随机播放时先检查是否已连接服务器。
+    private func handleShuffleTap() {
+        guard session.client != nil || reviewMode.isEnabled else {
+            Haptics.tap()
+            showServerPrompt = true
+            return
+        }
+        Task { await randomShuffleAll() }
+    }
+
+    /// 绘制需要服务器的快捷入口；未连接时改为确认弹窗。
+    @ViewBuilder
+    private func serverAwareRouteCard(route: BrowseRoute, title: String, subtitle: String, icon: String, gradient: [Color]) -> some View {
+        if route.requiresServer && session.client == nil && !reviewMode.isEnabled {
+            Button {
+                Haptics.tap()
+                showServerPrompt = true
+            } label: {
+                ActionCard(title: title, subtitle: subtitle, icon: icon, gradient: gradient)
+            }
+            .buttonStyle(.plain)
+        } else {
+            NavigationLink(value: route) {
+                ActionCard(title: title, subtitle: subtitle, icon: icon, gradient: gradient)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    /// 从服务器随机抓取歌曲，审核模式或未连接由入口提前处理。
     private func randomShuffleAll() async {
+        if reviewMode.isEnabled {
+            playback.play(queue: DemoMode.songs.shuffled(), startAt: 0, honoringShuffle: false, contextTitle: "随机100首".t)
+            return
+        }
         guard let api = session.client?.audioStation else {
             playback.setStatus("请先连接服务器再随机播放".t)
             return

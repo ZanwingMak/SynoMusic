@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 根视图：根据是否已登录决定显示主框架或登录流程。
+/// 根视图：直接显示主框架；若有默认服务器和密码则后台静默登录。
 /// 启动时若有默认服务器档案且 Keychain 中存了密码，则后台静默登录。
 struct RootView: View {
     @EnvironmentObject private var session: AppSession
@@ -25,17 +25,12 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            if session.isLoggedIn || isDemo || reviewMode.isEnabled {
-                MainShellView(showFullPlayer: $showFullPlayer)
-                    // 关键：用当前会话的 profile.id 当 stable identity。
-                    // 切换不同账号时整个子树会重建，所有 @State / @StateObject 的
-                    // 缓存（专辑/艺术家/歌曲列表）随之失效，下一次出现立即重新加载。
-                    .id(shellIdentity)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-            } else {
-                LoginFlowView(autoLoggingIn: isAutoLogging)
-                    .transition(.opacity)
-            }
+            MainShellView(showFullPlayer: $showFullPlayer)
+                // 关键：用当前会话的 profile.id 当 stable identity。
+                // 切换不同账号时整个子树会重建，所有 @State / @StateObject 的
+                // 缓存（专辑/艺术家/歌曲列表）随之失效，下一次出现立即重新加载。
+                .id(shellIdentity)
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
             // 顶部 Toast：播放/连接状态消息
             if let message = playback.statusMessage {
                 StatusToast(message: message) { playback.dismissStatus() }
@@ -87,6 +82,7 @@ struct RootView: View {
     private var shellIdentity: String {
         if let id = session.client?.profile.id.uuidString { return id }
         if reviewMode.isEnabled { return AppReviewMode.shellIdentity }
+        if !serverStore.profiles.isEmpty { return "no-active-session-with-profiles" }
         return "demo-mode"
     }
 
