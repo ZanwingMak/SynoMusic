@@ -3,6 +3,7 @@ import SwiftUI
 /// 全部专辑：网格视图 + 排序切换。
 struct AllAlbumsView: View {
     @EnvironmentObject private var session: AppSession
+    @EnvironmentObject private var reviewMode: AppReviewMode
     @State private var albums: [Album] = []
     @State private var isLoading: Bool = false
     @State private var error: String?
@@ -67,7 +68,12 @@ struct AllAlbumsView: View {
         .task { await load() }
     }
 
+    /// 加载专辑列表；审核模式使用本地假数据。
     private func load(force: Bool = false) async {
+        if reviewMode.isEnabled {
+            albums = DemoMode.albums
+            return
+        }
         guard let api = session.client?.audioStation else { return }
         if !force && !albums.isEmpty { return }
         isLoading = true

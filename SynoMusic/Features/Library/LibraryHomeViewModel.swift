@@ -11,8 +11,8 @@ final class LibraryHomeViewModel: ObservableObject {
 
     private var loaded: Bool = false
 
-    /// 拉取首页数据；并发抓取，提升首屏速度。
-    func load(client: SynologyClient?, force: Bool = false) async {
+    /// 拉取首页数据；审核/Demo 使用 mock 数据，真实会话并发抓取以提升首屏速度。
+    func load(client: SynologyClient?, force: Bool = false, useMockData: Bool = false) async {
         #if DEBUG
         if DemoMode.isEnabled {
             self.recentAlbums = Array(DemoMode.albums.prefix(8))
@@ -22,6 +22,13 @@ final class LibraryHomeViewModel: ObservableObject {
             return
         }
         #endif
+        if useMockData {
+            self.recentAlbums = Array(DemoMode.albums.prefix(8))
+            self.albums = DemoMode.albums
+            self.artists = DemoMode.artists
+            self.loaded = true
+            return
+        }
         guard let client else { return }
         if loaded && !force { return }
         isLoading = true

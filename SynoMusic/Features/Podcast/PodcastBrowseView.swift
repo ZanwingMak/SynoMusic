@@ -9,6 +9,9 @@ struct PodcastBrowseView: View {
     @State private var isSearching = false
     @State private var error: String?
     @State private var hasLoadedDefault = false
+    @State private var selectedCountry = PodcastCountry.systemDefault
+    @State private var selectedLanguage = PodcastLanguage.all
+    @State private var selectedCategory = PodcastCategory.all
 
     private let api = PodcastAPI.shared
 
@@ -16,6 +19,7 @@ struct PodcastBrowseView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Metrics.l) {
                 infoBanner
+                presetSection
                 subscriptionsSection
                 searchResultsSection
             }
@@ -31,20 +35,29 @@ struct PodcastBrowseView: View {
         .task {
             guard !hasLoadedDefault else { return }
             hasLoadedDefault = true
-            await search("music", titleOnly: true)
+            await loadPreset()
+        }
+        .onChange(of: selectedCountry) { _, _ in
+            Task { await loadPreset() }
+        }
+        .onChange(of: selectedLanguage) { _, _ in
+            Task { await loadPreset() }
+        }
+        .onChange(of: selectedCategory) { _, _ in
+            Task { await loadPreset() }
         }
         .reserveMiniPlayer(visible: playback.currentSong != nil)
     }
 
     private var infoBanner: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "podcasts")
+            Image(systemName: "mic.circle.fill")
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(Theme.accent)
             VStack(alignment: .leading, spacing: 4) {
-                Text("网上搜索".t)
+                Text("预设探索".t)
                     .font(.nocSection)
-                Text("播客资源来自 Apple Podcasts 搜索与公开 RSS。".t)
+                Text("Apple Podcasts 热门榜与公开 RSS。".t)
                     .font(.nocCaption)
                     .foregroundStyle(.secondary)
             }
@@ -52,6 +65,16 @@ struct PodcastBrowseView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private var presetSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            PodcastFilterRow(title: "内容分类".t, options: PodcastCategory.items, selection: $selectedCategory)
+            PodcastFilterRow(title: "国家".t, options: PodcastCountry.items, selection: $selectedCountry)
+            PodcastFilterRow(title: "语言筛选".t, options: PodcastLanguage.items, selection: $selectedLanguage)
+        }
+        .padding(14)
+        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     @ViewBuilder
@@ -80,7 +103,7 @@ struct PodcastBrowseView: View {
                 ErrorStateView(title: "加载失败".t, message: error) { Task { await search(query) } }
                     .frame(height: 220)
             } else if results.isEmpty {
-                EmptyStateView(systemImage: "podcasts", title: "没找到播客".t, message: "输入关键词搜索 Apple Podcasts 资源。".t)
+                EmptyStateView(systemImage: "mic.circle", title: "没找到播客".t, message: "当前筛选没有找到播客。".t)
                     .frame(height: 220)
             } else {
                 ForEach(results) { show in
@@ -96,21 +119,159 @@ struct PodcastBrowseView: View {
         query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "热门播客".t : "搜索结果".t
     }
 
+    /// 根据当前预设加载热门榜；语言筛选存在时用关键词搜索近似匹配。
+    private func loadPreset() async {
+        let keyword = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !keyword.isEmpty {
+            await search(keyword, titleOnly: true)
+            return
+        }
+        isSearching = true
+        error = nil
+        do {
+            if selectedLanguage.code == nil {
+                results = try await api.topPodcasts(options: searchOptions)
+            } else {
+                results = try await api.search(defaultPresetKeyword, options: searchOptions)
+            }
+        } catch {
+            do {
+                results = try await api.search(defaultPresetKeyword, options: searchOptions)
+            } catch {
+                self.error = error.localizedDescription
+            }
+        }
+        isSearching = false
+    }
+
     /// 搜索在线播客资源，并可静默作为默认热门内容加载。
     private func search(_ rawQuery: String, titleOnly: Bool = false) async {
         let keyword = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !keyword.isEmpty else { return }
+        guard !keyword.isEmpty else {
+            await loadPreset()
+            return
+        }
         isSearching = true
         error = nil
         if !titleOnly {
             Haptics.tap()
         }
         do {
-            results = try await api.search(keyword)
+            results = try await api.search(keyword, options: searchOptions)
         } catch {
             self.error = error.localizedDescription
         }
         isSearching = false
+    }
+
+    /// 当前播客筛选项转换成 API 参数。
+    private var searchOptions: PodcastSearchOptions {
+        PodcastSearchOptions(
+            countryCode: selectedCountry.code,
+            languageCode: selectedLanguage.code,
+            genreID: selectedCategory.genreID
+        )
+    }
+
+    /// 空搜索时用于语言筛选的默认关键词。
+    private var defaultPresetKeyword: String {
+        let value = [selectedCategory.searchTerm, selectedLanguage.searchHint]
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+        return value.isEmpty ? "podcast" : value
+    }
+}
+
+private protocol PodcastFilterOption: Identifiable, Hashable {
+    var titleKey: String { get }
+}
+
+private struct PodcastCategory: PodcastFilterOption {
+    let id: String
+    let titleKey: String
+    let genreID: Int?
+    let searchTerm: String
+
+    static let all = PodcastCategory(id: "all", titleKey: "全部分类", genreID: nil, searchTerm: "podcast")
+    static let items: [PodcastCategory] = [
+        .all,
+        PodcastCategory(id: "music", titleKey: "音乐", genreID: 1310, searchTerm: "music podcast"),
+        PodcastCategory(id: "news", titleKey: "新闻", genreID: 1489, searchTerm: "news podcast"),
+        PodcastCategory(id: "technology", titleKey: "科技", genreID: 1318, searchTerm: "technology podcast"),
+        PodcastCategory(id: "comedy", titleKey: "喜剧", genreID: 1303, searchTerm: "comedy podcast"),
+        PodcastCategory(id: "education", titleKey: "教育", genreID: 1304, searchTerm: "education podcast"),
+        PodcastCategory(id: "business", titleKey: "商业", genreID: 1321, searchTerm: "business podcast"),
+        PodcastCategory(id: "health", titleKey: "健康", genreID: 1512, searchTerm: "health podcast"),
+        PodcastCategory(id: "sports", titleKey: "体育", genreID: 1545, searchTerm: "sports podcast"),
+        PodcastCategory(id: "stories", titleKey: "故事", genreID: 1488, searchTerm: "story podcast"),
+        PodcastCategory(id: "culture", titleKey: "社会文化", genreID: 1324, searchTerm: "culture podcast")
+    ]
+}
+
+private struct PodcastCountry: PodcastFilterOption {
+    let id: String
+    let titleKey: String
+    let code: String
+
+    static let systemDefault = PodcastCountry(id: "current", titleKey: "系统地区", code: Locale.current.region?.identifier ?? "US")
+    static let items: [PodcastCountry] = [
+        .systemDefault,
+        PodcastCountry(id: "us", titleKey: "美国", code: "US"),
+        PodcastCountry(id: "cn", titleKey: "中国大陆", code: "CN"),
+        PodcastCountry(id: "gb", titleKey: "英国", code: "GB"),
+        PodcastCountry(id: "jp", titleKey: "日本", code: "JP"),
+        PodcastCountry(id: "kr", titleKey: "韩国", code: "KR"),
+        PodcastCountry(id: "tw", titleKey: "台湾", code: "TW"),
+        PodcastCountry(id: "hk", titleKey: "香港", code: "HK")
+    ]
+}
+
+private struct PodcastLanguage: PodcastFilterOption {
+    let id: String
+    let titleKey: String
+    let code: String?
+    let searchHint: String
+
+    static let all = PodcastLanguage(id: "all", titleKey: "不限语言", code: nil, searchHint: "")
+    static let items: [PodcastLanguage] = [
+        .all,
+        PodcastLanguage(id: "zh-hans", titleKey: "简体中文", code: "zh_cn", searchHint: "中文"),
+        PodcastLanguage(id: "zh-hant", titleKey: "繁体中文", code: "zh_tw", searchHint: "中文"),
+        PodcastLanguage(id: "en", titleKey: "英语", code: "en_us", searchHint: "english"),
+        PodcastLanguage(id: "ja", titleKey: "日语", code: "ja_jp", searchHint: "japanese"),
+        PodcastLanguage(id: "ko", titleKey: "韩语", code: "ko_kr", searchHint: "korean")
+    ]
+}
+
+private struct PodcastFilterRow<Option: PodcastFilterOption>: View {
+    let title: String
+    let options: [Option]
+    @Binding var selection: Option
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.nocLabel)
+                .foregroundStyle(.secondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(options) { option in
+                        Button {
+                            Haptics.tap()
+                            selection = option
+                        } label: {
+                            Text(option.titleKey.t)
+                                .font(.nocLabel.weight(.semibold))
+                                .foregroundStyle(selection == option ? .white : .primary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(selection == option ? Theme.accent : Color.primary.opacity(0.07), in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -186,7 +347,7 @@ struct PodcastShowDetailView: View {
                     ErrorStateView(title: "加载节目失败".t, message: error) { Task { await loadEpisodes() } }
                         .frame(height: 220)
                 } else if episodes.isEmpty {
-                    EmptyStateView(systemImage: "podcasts", title: "没有可播放的节目".t, message: "换个播客或稍后重试。".t)
+                    EmptyStateView(systemImage: "mic.circle", title: "没有可播放的节目".t, message: "换个播客或稍后重试。".t)
                         .frame(height: 220)
                 } else {
                     VStack(alignment: .leading, spacing: Metrics.s) {
@@ -337,7 +498,7 @@ private struct PodcastArtwork: View {
             default:
                 ZStack {
                     Theme.accentGradient
-                    Image(systemName: "podcasts")
+                    Image(systemName: "mic.fill")
                         .font(.system(size: size * 0.38, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.92))
                 }

@@ -8,6 +8,7 @@ struct RootView: View {
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var navigation: AppNavigationState
+    @EnvironmentObject private var reviewMode: AppReviewMode
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
     @State private var showFullPlayer: Bool = false
@@ -24,12 +25,12 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            if session.isLoggedIn || isDemo {
+            if session.isLoggedIn || isDemo || reviewMode.isEnabled {
                 MainShellView(showFullPlayer: $showFullPlayer)
                     // 关键：用当前会话的 profile.id 当 stable identity。
                     // 切换不同账号时整个子树会重建，所有 @State / @StateObject 的
                     // 缓存（专辑/艺术家/歌曲列表）随之失效，下一次出现立即重新加载。
-                    .id(session.client?.profile.id ?? UUID())
+                    .id(shellIdentity)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             } else {
                 LoginFlowView(autoLoggingIn: isAutoLogging)
@@ -82,9 +83,16 @@ struct RootView: View {
         #endif
     }
 
+    /// 主框架身份：真实会话按服务器区分，审核/Demo 使用稳定值避免反复重建。
+    private var shellIdentity: String {
+        if let id = session.client?.profile.id.uuidString { return id }
+        if reviewMode.isEnabled { return AppReviewMode.shellIdentity }
+        return "demo-mode"
+    }
+
     /// 启动时尝试用默认档案 + Keychain 密码静默登录。
     private func attemptAutoLogin() async {
-        guard !session.isLoggedIn, !isDemo else { return }
+        guard !session.isLoggedIn, !isDemo, !reviewMode.isEnabled else { return }
         guard let p = serverStore.defaultProfile,
               let pwd = serverStore.password(for: p), !pwd.isEmpty else { return }
         isAutoLogging = true

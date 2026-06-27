@@ -142,13 +142,13 @@ struct PremiumToolbarIcon: View {
                         endPoint: .bottomTrailing
                     )
                 )
-                .shadow(color: Color.orange.opacity(0.28), radius: 8, y: 4)
             Image(systemName: "crown.fill")
                 .font(.system(size: 15, weight: .black))
                 .foregroundStyle(.white)
         }
         .frame(width: 30, height: 30)
-            .accessibilityLabel("完整功能已解锁".t)
+        .contentShape(Circle())
+        .accessibilityLabel("完整功能已解锁".t)
     }
 }
 

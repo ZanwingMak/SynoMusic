@@ -48,6 +48,13 @@ struct PlaybackHistoryView: View {
                         QueueHistoryRow(snapshot: snapshot)
                     }
                     .buttonStyle(.plain)
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            playback.removeQueueHistory(id: snapshot.id)
+                        } label: {
+                            Label("删除".t, systemImage: "trash")
+                        }
+                    }
                 }
             }
         }
@@ -68,6 +75,13 @@ struct PlaybackHistoryView: View {
                         isPlaying: playback.isPlaying
                     ) {
                         playback.play(queue: playback.playedHistory, startAt: index, honoringShuffle: false, contextTitle: "最近播放".t)
+                    }
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            playback.removePlayedHistory(songID: song.id)
+                        } label: {
+                            Label("删除".t, systemImage: "trash")
+                        }
                     }
                 }
             }

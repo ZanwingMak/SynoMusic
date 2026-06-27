@@ -6,6 +6,7 @@ struct ServerEditorView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var purchase: PurchaseStore
+    @EnvironmentObject private var reviewMode: AppReviewMode
     @Environment(\.dismiss) private var dismiss
 
     @State var profile: ServerProfile
@@ -222,6 +223,9 @@ struct ServerEditorView: View {
     // MARK: 行为
 
     private var canSubmit: Bool {
+        if isReviewCredential {
+            return true
+        }
         guard !profile.username.trimmingCharacters(in: .whitespaces).isEmpty,
               !password.isEmpty else { return false }
         switch mode {
@@ -238,6 +242,11 @@ struct ServerEditorView: View {
             return progressMessage ?? "正在连接...".t
         }
         return "连接并保存".t
+    }
+
+    /// 当前输入是否命中 App Store 审核账号。
+    private var isReviewCredential: Bool {
+        AppReviewMode.matches(username: profile.username, password: password)
     }
 
     private func setupOnAppear() {
@@ -326,6 +335,10 @@ struct ServerEditorView: View {
 
     private func connectAndSave() async {
         guard canSubmit else { return }
+        if isReviewCredential {
+            enterReviewMode()
+            return
+        }
         guard canSaveProfileUnderLimit() else { return }
         isConnecting = true
         progressMessage = "正在连接...".t
@@ -369,6 +382,15 @@ struct ServerEditorView: View {
             self.error = error.localizedDescription + "\n\n" + "配置已保存到「服务器」列表。".t
             Haptics.warning()
         }
+    }
+
+    /// 进入审核模式，不保存真实服务器配置，也不发起网络登录。
+    private func enterReviewMode() {
+        reviewMode.activate()
+        playback.stop()
+        playback.setStatus("已进入审核模式".t)
+        Haptics.success()
+        dismiss()
     }
 
     /// 校验免费版服务器数量限制，避免新增入口以外的路径写入超量配置。

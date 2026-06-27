@@ -43,6 +43,13 @@ struct PodcastEpisode: Identifiable, Hashable {
     }
 }
 
+/// 播客搜索筛选项，集中传给 Apple Podcasts 搜索和热门榜接口。
+struct PodcastSearchOptions: Hashable {
+    var countryCode: String
+    var languageCode: String?
+    var genreID: Int?
+}
+
 /// Apple Podcasts 搜索和公开 RSS 解析客户端。
 final class PodcastAPI: @unchecked Sendable {
     static let shared = PodcastAPI()
@@ -58,33 +65,85 @@ final class PodcastAPI: @unchecked Sendable {
     }
 
     /// 通过 Apple Podcasts 搜索在线播客资源。
-    func search(_ keyword: String, limit: Int = 30) async throws -> [PodcastShow] {
+    func search(_ keyword: String, limit: Int = 30, options: PodcastSearchOptions? = nil) async throws -> [PodcastShow] {
+        let resolved = options ?? PodcastSearchOptions(countryCode: Locale.current.region?.identifier ?? "US", languageCode: nil, genreID: nil)
         var components = URLComponents()
         components.scheme = "https"
         components.host = "itunes.apple.com"
         components.path = "/search"
-        components.queryItems = [
+        var queryItems = [
             URLQueryItem(name: "term", value: keyword),
             URLQueryItem(name: "media", value: "podcast"),
             URLQueryItem(name: "entity", value: "podcast"),
             URLQueryItem(name: "limit", value: String(limit)),
-            URLQueryItem(name: "country", value: Locale.current.region?.identifier ?? "US")
+            URLQueryItem(name: "country", value: resolved.countryCode)
         ]
+        if let languageCode = resolved.languageCode {
+            queryItems.append(URLQueryItem(name: "lang", value: languageCode))
+        }
+        if let genreID = resolved.genreID {
+            queryItems.append(URLQueryItem(name: "genreId", value: String(genreID)))
+        }
+        components.queryItems = queryItems
         guard let url = components.url else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
-        request.setValue("SynoMusic/1.4.3 (iOS)", forHTTPHeaderField: "User-Agent")
+        request.setValue("SynoMusic/1.4.4 (iOS)", forHTTPHeaderField: "User-Agent")
         let (data, _) = try await session.data(for: request)
         let response = try decoder.decode(ITunesPodcastResponse.self, from: data)
         return response.results.compactMap { $0.show }
     }
 
+    /// 拉取指定国家与分类的 Apple Podcasts 热门榜，并补齐 RSS feed。
+    func topPodcasts(limit: Int = 30, options: PodcastSearchOptions) async throws -> [PodcastShow] {
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "itunes.apple.com"
+        let country = options.countryCode.lowercased()
+        if let genreID = options.genreID {
+            components.path = "/\(country)/rss/toppodcasts/limit=\(limit)/genre=\(genreID)/json"
+        } else {
+            components.path = "/\(country)/rss/toppodcasts/limit=\(limit)/json"
+        }
+        guard let url = components.url else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.setValue("SynoMusic/1.4.4 (iOS)", forHTTPHeaderField: "User-Agent")
+        let (data, _) = try await session.data(for: request)
+        let feed = try decoder.decode(ITunesTopPodcastResponse.self, from: data)
+        let ids = feed.feed.entry?.compactMap(\.collectionID) ?? []
+        return try await lookupPodcasts(ids: ids, countryCode: options.countryCode)
+    }
+
     /// 读取播客 RSS feed 并解析可播放单集。
     func episodes(for show: PodcastShow) async throws -> [PodcastEpisode] {
         var request = URLRequest(url: show.feedURL)
-        request.setValue("SynoMusic/1.4.3 (iOS)", forHTTPHeaderField: "User-Agent")
+        request.setValue("SynoMusic/1.4.4 (iOS)", forHTTPHeaderField: "User-Agent")
         let (data, _) = try await session.data(for: request)
         let parser = PodcastRSSParser(defaultArtworkURL: show.artworkURL)
         return try parser.parse(data)
+    }
+
+    /// 根据 Apple Podcasts collection id 查询完整节目资料。
+    private func lookupPodcasts(ids: [String], countryCode: String) async throws -> [PodcastShow] {
+        guard !ids.isEmpty else { return [] }
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "itunes.apple.com"
+        components.path = "/lookup"
+        components.queryItems = [
+            URLQueryItem(name: "id", value: ids.joined(separator: ",")),
+            URLQueryItem(name: "entity", value: "podcast"),
+            URLQueryItem(name: "country", value: countryCode)
+        ]
+        guard let url = components.url else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.setValue("SynoMusic/1.4.4 (iOS)", forHTTPHeaderField: "User-Agent")
+        let (data, _) = try await session.data(for: request)
+        let response = try decoder.decode(ITunesPodcastResponse.self, from: data)
+        let showsByID = Dictionary(uniqueKeysWithValues: response.results.compactMap { result -> (String, PodcastShow)? in
+            guard let show = result.show else { return nil }
+            return (String(result.collectionId), show)
+        })
+        return ids.compactMap { showsByID[$0] }
     }
 }
 
@@ -113,6 +172,39 @@ private struct ITunesPodcastResult: Decodable {
             artworkURL: artwork.flatMap(URL.init(string:)),
             genre: primaryGenreName
         )
+    }
+}
+
+private struct ITunesTopPodcastResponse: Decodable {
+    let feed: ITunesTopPodcastFeed
+}
+
+private struct ITunesTopPodcastFeed: Decodable {
+    let entry: [ITunesTopPodcastEntry]?
+}
+
+private struct ITunesTopPodcastEntry: Decodable {
+    let id: ITunesTopPodcastID
+
+    /// 热门榜 entry 中的 Apple collection id。
+    var collectionID: String? {
+        id.attributes.imID
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+    }
+}
+
+private struct ITunesTopPodcastID: Decodable {
+    let attributes: ITunesTopPodcastAttributes
+}
+
+private struct ITunesTopPodcastAttributes: Decodable {
+    let imID: String
+
+    private enum CodingKeys: String, CodingKey {
+        case imID = "im:id"
     }
 }
 

@@ -5,6 +5,7 @@ struct LibraryHomeView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var purchase: PurchaseStore
+    @EnvironmentObject private var reviewMode: AppReviewMode
     @StateObject private var vm = LibraryHomeViewModel()
     @State private var paywallFeature: PremiumFeature?
 
@@ -16,7 +17,7 @@ struct LibraryHomeView: View {
                 if vm.isLoading && vm.recentAlbums.isEmpty {
                     LoadingState().frame(height: 280)
                 } else if let err = vm.error {
-                    ErrorStateView(title: "加载失败".t, message: err) { Task { await vm.load(client: session.client) } }
+                    ErrorStateView(title: "加载失败".t, message: err) { Task { await vm.load(client: session.client, useMockData: reviewMode.isEnabled) } }
                         .frame(height: 280)
                 } else {
                     if !vm.recentAlbums.isEmpty {
@@ -36,7 +37,7 @@ struct LibraryHomeView: View {
             .padding(.horizontal, Metrics.l)
             .padding(.top, Metrics.s)
         }
-        .refreshable { await vm.load(client: session.client, force: true) }
+        .refreshable { await vm.load(client: session.client, force: true, useMockData: reviewMode.isEnabled) }
         .background(Color(.systemBackground).ignoresSafeArea())
         .navigationTitle("SynoMusic")
         .navigationBarTitleDisplayMode(.large)
@@ -44,7 +45,6 @@ struct LibraryHomeView: View {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 purchaseButton
                 toolbarLink(value: BrowseRoute.localPlaylists, systemImage: "music.note.list", label: "我的歌单".t)
-                toolbarLink(value: BrowseRoute.radio, systemImage: "antenna.radiowaves.left.and.right", label: "电台".t)
                 toolbarLink(value: BrowseRoute.settings, systemImage: "gearshape", label: "设置".t)
             }
         }
@@ -53,7 +53,7 @@ struct LibraryHomeView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
-        .task { await vm.load(client: session.client) }
+        .task { await vm.load(client: session.client, useMockData: reviewMode.isEnabled) }
     }
 
     /// 首页右上角的购买与订阅入口。
@@ -69,6 +69,7 @@ struct LibraryHomeView: View {
             }
         }
         .accessibilityLabel(purchase.hasFullAccess ? "完整功能已解锁".t : "购买与订阅".t)
+        .buttonStyle(.plain)
     }
 
     /// 带轻触反馈的导航栏图标入口。
@@ -86,22 +87,50 @@ struct LibraryHomeView: View {
 private struct Header: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(timeGreeting())
+            Text(timeGreeting().t)
                 .font(.nocCaption)
                 .foregroundStyle(.secondary)
-            Text("听听今天该听的".t)
+            Text(headline().t)
                 .font(.system(.title, design: .rounded).weight(.bold))
         }
         .padding(.top, Metrics.s)
     }
+
+    /// 根据当前日期稳定挑选一句首页主文案，避免每次刷新跳动。
+    private func headline() -> String {
+        let lines = [
+            "听听今天该听的",
+            "今天想听点什么？",
+            "让音乐接管这一刻",
+            "从一首歌开始",
+            "把喜欢的声音找回来",
+            "适合安静听歌的时刻"
+        ]
+        return pick(from: lines, salt: 17)
+    }
+
+    /// 从候选文案中按日期和小时挑一个稳定值。
+    private func pick(from values: [String], salt: Int) -> String {
+        guard !values.isEmpty else { return "" }
+        let day = Calendar.current.ordinality(of: .day, in: .era, for: Date()) ?? 0
+        let hour = Calendar.current.component(.hour, from: Date())
+        return values[(day + hour + salt) % values.count]
+    }
+
+    /// 当前时段的问候语，增加更多变化但保持同一时段语义。
     private func timeGreeting() -> String {
         let h = Calendar.current.component(.hour, from: Date())
         switch h {
-        case 5..<11: return "早安".t
-        case 11..<14: return "中午好".t
-        case 14..<18: return "下午好".t
-        case 18..<23: return "晚上好".t
-        default: return "夜深了".t
+        case 5..<11:
+            return pick(from: ["早安", "早上好，先放一首喜欢的", "新的早晨，新的播放队列"], salt: 3)
+        case 11..<14:
+            return pick(from: ["中午好", "午间换个节奏", "让午休多一点声音"], salt: 5)
+        case 14..<18:
+            return pick(from: ["下午好", "下午适合慢慢听", "给下午一点律动"], salt: 7)
+        case 18..<23:
+            return pick(from: ["晚上好", "夜色刚好，音乐也刚好", "今晚从哪首开始？"], salt: 11)
+        default:
+            return pick(from: ["夜深了", "深夜适合小声播放", "晚点了，听点温柔的"], salt: 13)
         }
     }
 }
@@ -110,6 +139,7 @@ private struct Header: View {
 private struct QuickActions: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var reviewMode: AppReviewMode
     @State private var isShuffling = false
 
     var body: some View {
@@ -155,25 +185,27 @@ private struct QuickActions: View {
                 }
                 .buttonStyle(.plain)
 
-                NavigationLink(value: BrowseRoute.radio) {
-                    ActionCard(
-                        title: "电台".t,
-                        subtitle: "全球电台".t,
-                        icon: "antenna.radiowaves.left.and.right",
-                        gradient: [Color(red: 0.4, green: 0.85, blue: 0.7), Color(red: 0.1, green: 0.55, blue: 0.55)]
-                    )
-                }
-                .buttonStyle(.plain)
+                if !reviewMode.isEnabled {
+                    NavigationLink(value: BrowseRoute.radio) {
+                        ActionCard(
+                            title: "电台".t,
+                            subtitle: "全球电台".t,
+                            icon: "antenna.radiowaves.left.and.right",
+                            gradient: [Color(red: 0.4, green: 0.85, blue: 0.7), Color(red: 0.1, green: 0.55, blue: 0.55)]
+                        )
+                    }
+                    .buttonStyle(.plain)
 
-                NavigationLink(value: BrowseRoute.podcasts) {
-                    ActionCard(
-                        title: "播客".t,
-                        subtitle: "网上搜索".t,
-                        icon: "podcasts",
-                        gradient: [Color(red: 0.95, green: 0.35, blue: 0.72), Color(red: 0.48, green: 0.28, blue: 0.88)]
-                    )
+                    NavigationLink(value: BrowseRoute.podcasts) {
+                        ActionCard(
+                            title: "播客".t,
+                            subtitle: "网上搜索".t,
+                            icon: "mic.circle.fill",
+                            gradient: [Color(red: 0.95, green: 0.35, blue: 0.72), Color(red: 0.48, green: 0.28, blue: 0.88)]
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
                 NavigationLink(value: BrowseRoute.allAlbums) {
                     ActionCard(

@@ -4,6 +4,7 @@ import SwiftUI
 /// 付费墙：展示完整功能说明、StoreKit 商品、恢复购买和兑换入口。
 struct PaywallView: View {
     @EnvironmentObject private var purchase: PurchaseStore
+    @EnvironmentObject private var reviewMode: AppReviewMode
     @Environment(\.dismiss) private var dismiss
 
     let feature: PremiumFeature
@@ -58,27 +59,41 @@ struct PaywallView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("包含功能".t)
                 .font(.headline)
-            PaywallFeatureRow(icon: "app.badge", title: "更换 App 图标")
-            PaywallFeatureRow(icon: "play.circle", title: "后台播放")
-            PaywallFeatureRow(icon: "server.rack", title: "多个服务器配置")
-            PaywallFeatureRow(icon: "music.note.list", title: "更多本地歌单")
-            PaywallFeatureRow(icon: "clock.arrow.circlepath", title: "历史记录")
-            PaywallFeatureRow(icon: "antenna.radiowaves.left.and.right", title: "电台")
-            PaywallFeatureRow(icon: "podcasts", title: "播客")
-            PaywallFeatureRow(icon: "wand.and.stars", title: "智能歌单")
-            PaywallFeatureRow(icon: "arrow.down.circle", title: "歌曲下载")
-            PaywallFeatureRow(icon: "tray.and.arrow.down", title: "下载队列")
-            PaywallFeatureRow(icon: "slider.horizontal.3", title: "播放增强")
-            PaywallFeatureRow(icon: "quote.bubble", title: "歌词编辑")
-            PaywallFeatureRow(icon: "text.badge.checkmark", title: "歌词工具")
-            PaywallFeatureRow(icon: "globe", title: "在线资料工具")
-            PaywallFeatureRow(icon: "square.and.arrow.down", title: "本地音乐导入")
-            PaywallFeatureRow(icon: "icloud", title: "iCloud 云同步")
-            PaywallFeatureRow(icon: "sparkles.rectangle.stack", title: "Siri 与小组件")
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                ForEach(featureItems, id: \.title) { item in
+                    PaywallFeatureRow(icon: item.icon, title: item.title)
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private var featureItems: [(icon: String, title: String)] {
+        let items: [(icon: String, title: String)] = [
+            ("app.badge", "更换 App 图标"),
+            ("play.circle", "后台播放"),
+            ("server.rack", "多个服务器配置"),
+            ("music.note.list", "更多本地歌单"),
+            ("clock.arrow.circlepath", "历史记录"),
+            ("antenna.radiowaves.left.and.right", "电台"),
+            ("mic.circle.fill", "播客"),
+            ("wand.and.stars", "智能歌单"),
+            ("arrow.down.circle", "歌曲下载"),
+            ("tray.and.arrow.down", "下载队列"),
+            ("slider.horizontal.3", "播放增强"),
+            ("quote.bubble", "歌词编辑"),
+            ("text.badge.checkmark", "歌词工具"),
+            ("globe", "在线资料工具"),
+            ("square.and.arrow.down", "本地音乐导入"),
+            ("icloud", "iCloud 云同步"),
+            ("sparkles.rectangle.stack", "Siri 与小组件")
+        ]
+        guard reviewMode.isEnabled else { return items }
+        return items.filter { (item: (icon: String, title: String)) -> Bool in
+            item.title != "电台" && item.title != "播客" && item.title != "本地音乐导入"
+        }
     }
 
     @ViewBuilder
@@ -220,11 +235,14 @@ private struct PaywallFeatureRow: View {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Theme.accent)
-                .frame(width: 24)
+                .frame(width: 22)
             Text(title.t)
-                .font(.subheadline)
-            Spacer()
+                .font(.footnote.weight(.medium))
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
+            Spacer(minLength: 0)
         }
+        .frame(minHeight: 34, alignment: .leading)
     }
 }
 

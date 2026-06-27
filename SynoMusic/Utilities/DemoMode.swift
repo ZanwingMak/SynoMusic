@@ -1,11 +1,14 @@
-#if DEBUG
 import Foundation
 
-/// 仅 DEBUG：通过 `-demo` 启动参数开启的预览模式，提供假数据用于截图与设计审查。
+/// 预览与审核数据：DEBUG 可通过 `-demo` 启动参数启用，审核模式也复用这些假数据。
 enum DemoMode {
     /// 是否启用 demo 模式。
     static var isEnabled: Bool {
+        #if DEBUG
         ProcessInfo.processInfo.arguments.contains("-demo")
+        #else
+        false
+        #endif
     }
 
     /// 预制服务器档案（仅用于设置页样式预览，不真实连接）。
@@ -64,4 +67,3 @@ enum DemoMode {
         Song(id: "s4", title: "Pyramids", album: "Blonde", artist: "Frank Ocean", albumArtist: "Frank Ocean", genre: "R&B", composer: nil, trackNumber: 9, discNumber: 1, year: 2016, duration: 587, bitrate: 320_000, codec: "flac", filesize: 60_000_000, path: nil, rating: 5)
     ]
 }
-#endif

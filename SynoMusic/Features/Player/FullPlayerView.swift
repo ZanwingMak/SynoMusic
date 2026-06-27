@@ -668,7 +668,11 @@ extension FullPlayerView {
             } else {
                 switch playbackSettings.playerArtworkStyle {
                 case .cover:
-                    CoverHero(song: playback.currentSong, side: artSide)
+                    CoverHero(
+                        song: playback.currentSong,
+                        side: artSide,
+                        isPlaying: playback.isPlaying && !playback.isBuffering
+                    )
                         .transition(.opacity)
                 case .vinyl:
                     VinylHero(
@@ -714,10 +718,7 @@ extension FullPlayerView {
     private var trackInfo: some View {
         HStack(alignment: .center, spacing: Metrics.m) {
             VStack(alignment: .leading, spacing: 6) {
-                Text(playback.currentSong?.title ?? "")
-                    .font(.nocTitleHero)
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
+                MarqueeTitleText(text: playback.currentSong?.title ?? "")
                 HStack(spacing: 8) {
                     Text(playback.currentSong?.artist ?? "")
                         .font(.nocBody)
@@ -1055,6 +1056,8 @@ private struct CoverHero: View {
     @EnvironmentObject private var session: AppSession
     let song: Song?
     let side: CGFloat
+    let isPlaying: Bool
+
     var body: some View {
         CoverArt(
             url: song.flatMap { session.client?.audioStation.songCoverURL(songID: $0.id) },
@@ -1063,7 +1066,54 @@ private struct CoverHero: View {
             lookup: song.map(CoverLookupQuery.init(song:))
         )
         .frame(width: side, height: side)
+        .scaleEffect(isPlaying ? 1.0 : 0.94)
         .shadow(color: .black.opacity(0.35), radius: 40, y: 16)
+        .animation(.spring(response: 0.38, dampingFraction: 0.82), value: isPlaying)
+    }
+}
+
+private struct MarqueeTitleText: View {
+    let text: String
+
+    var body: some View {
+        GeometryReader { proxy in
+            let shouldScroll = text.count > 18
+            let estimatedWidth = CGFloat(text.count) * 13
+            let travel = max(estimatedWidth - proxy.size.width + 44, 0)
+            TimelineView(.animation(paused: !shouldScroll || travel <= 0)) { timeline in
+                let offset = marqueeOffset(date: timeline.date, travel: travel)
+                HStack(spacing: 44) {
+                    titleText
+                    if shouldScroll {
+                        titleText
+                    }
+                }
+                .offset(x: -offset)
+            }
+        }
+        .frame(height: 34)
+        .clipped()
+        .accessibilityLabel(text)
+    }
+
+    private var titleText: some View {
+        Text(text)
+            .font(.system(.title2, design: .rounded).weight(.bold))
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+    }
+
+    /// 按时间计算跑马灯偏移，开头和结尾都保留短暂停顿。
+    private func marqueeOffset(date: Date, travel: CGFloat) -> CGFloat {
+        guard travel > 0 else { return 0 }
+        let hold: TimeInterval = 1.1
+        let moving: TimeInterval = max(4.0, TimeInterval(travel / 28))
+        let cycle = hold * 2 + moving
+        let elapsed = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: cycle)
+        if elapsed < hold { return 0 }
+        if elapsed > hold + moving { return travel }
+        return CGFloat((elapsed - hold) / moving) * travel
     }
 }
 

@@ -5,6 +5,7 @@ import UIKit
 struct AlbumDetailView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var reviewMode: AppReviewMode
 
     let album: Album
     @State private var songs: [Song] = []
@@ -90,7 +91,13 @@ struct AlbumDetailView: View {
         }
     }
 
+    /// 加载专辑歌曲；审核模式按专辑名筛选内置歌曲。
     private func load() async {
+        if reviewMode.isEnabled {
+            let matched = DemoMode.songs.filter { $0.album == album.name }
+            songs = matched.isEmpty ? DemoMode.songs : matched
+            return
+        }
         guard let api = session.client?.audioStation else { return }
         isLoading = true
         defer { isLoading = false }

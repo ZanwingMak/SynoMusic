@@ -28,6 +28,8 @@ struct SynoMusicApp: App {
     @StateObject private var purchaseStore = PurchaseStore()
     /// iCloud 配置同步状态。
     @StateObject private var cloudSync = CloudSyncStore()
+    /// App Store 审核模式：审核账号登录后使用 mock 数据。
+    @StateObject private var reviewMode = AppReviewMode()
 
     var body: some Scene {
         WindowGroup {
@@ -44,6 +46,7 @@ struct SynoMusicApp: App {
                 .environmentObject(navigation)
                 .environmentObject(purchaseStore)
                 .environmentObject(cloudSync)
+                .environmentObject(reviewMode)
                 .onAppear {
                     playback.applyPlaybackSettings(playbackSettings)
                     playback.downloadManager = downloads

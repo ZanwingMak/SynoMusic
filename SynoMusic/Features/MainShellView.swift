@@ -7,6 +7,7 @@ struct MainShellView: View {
     @EnvironmentObject private var playlists: PlaylistStore
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var navigation: AppNavigationState
+    @EnvironmentObject private var reviewMode: AppReviewMode
     @Environment(\.colorScheme) private var colorScheme
     @Binding var showFullPlayer: Bool
 
@@ -47,8 +48,12 @@ struct MainShellView: View {
                                     WidgetManagerView()
                                 }
                             case .localImports:
-                                PremiumFeatureGate(feature: .localImport) {
-                                    LocalImportView()
+                                if reviewMode.isEnabled {
+                                    EmptyStateView(systemImage: "lock.shield", title: "审核模式".t, message: "正在使用审核模式数据".t)
+                                } else {
+                                    PremiumFeatureGate(feature: .localImport) {
+                                        LocalImportView()
+                                    }
                                 }
                             }
                         }

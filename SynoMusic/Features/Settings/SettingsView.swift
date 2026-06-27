@@ -15,6 +15,7 @@ struct SettingsView: View {
     @EnvironmentObject private var navigation: AppNavigationState
     @EnvironmentObject private var purchase: PurchaseStore
     @EnvironmentObject private var cloudSync: CloudSyncStore
+    @EnvironmentObject private var reviewMode: AppReviewMode
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var serverInfo: [String: String] = [:]
@@ -91,7 +92,13 @@ struct SettingsView: View {
 
     private var currentServerSection: some View {
         Section("当前会话".t) {
-            if let active = session.client?.profile {
+            if reviewMode.isEnabled {
+                infoRow("名称".t, "审核模式".t)
+                infoRow("用户".t, AppReviewMode.reviewUsername)
+                Button(role: .destructive) {
+                    Task { await signOut() }
+                } label: { Text("退出审核模式".t) }
+            } else if let active = session.client?.profile {
                 infoRow("名称".t, active.name)
                 if active.isQuickConnect {
                     infoRow("QuickConnect", active.quickConnectID)
@@ -333,13 +340,15 @@ struct SettingsView: View {
                     }
                 }
             }
-            NavigationLink(value: SettingsRoute.localImports) {
-                HStack {
-                    Label("本地音乐导入".t, systemImage: "square.and.arrow.down")
-                    Spacer()
-                    if !purchase.canUse(.localImport) {
-                        Image(systemName: "lock.fill")
-                            .foregroundStyle(.secondary)
+            if !reviewMode.isEnabled {
+                NavigationLink(value: SettingsRoute.localImports) {
+                    HStack {
+                        Label("本地音乐导入".t, systemImage: "square.and.arrow.down")
+                        Spacer()
+                        if !purchase.canUse(.localImport) {
+                            Image(systemName: "lock.fill")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
@@ -660,6 +669,7 @@ struct SettingsView: View {
     /// 停止播放并退出当前服务器会话。
     private func signOut() async {
         playback.stop()
+        reviewMode.deactivate()
         await session.signOut()
     }
 

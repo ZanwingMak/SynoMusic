@@ -404,6 +404,18 @@ final class PlaybackEngine: ObservableObject {
         persistHistories()
     }
 
+    /// 删除一条最近播放记录。
+    func removePlayedHistory(songID: String) {
+        playedHistory.removeAll { $0.id == songID }
+        persistHistories()
+    }
+
+    /// 删除一条队列历史记录。
+    func removeQueueHistory(id: UUID) {
+        queueHistory.removeAll { $0.id == id }
+        persistHistories()
+    }
+
     /// 用最新评分替换队列和历史里的歌曲快照。
     func updateRating(forSongID id: String, rating: Int) {
         let normalized = max(0, min(rating, 5))

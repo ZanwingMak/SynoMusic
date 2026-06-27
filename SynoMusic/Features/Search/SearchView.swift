@@ -4,6 +4,7 @@ import SwiftUI
 struct SearchView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var reviewMode: AppReviewMode
 
     @State private var keyword: String = ""
     @State private var results: [Song] = []
@@ -87,11 +88,25 @@ struct SearchView: View {
         .padding(Metrics.l)
     }
 
+    /// 重新触发当前关键词搜索。
     private func triggerSearch() {
         Task { await runSearch(keyword) }
     }
 
+    /// 执行歌曲搜索；审核模式在内置歌曲里做本地匹配。
     private func runSearch(_ k: String) async {
+        if reviewMode.isEnabled {
+            let trimmed = k.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { results = []; return }
+            let lower = trimmed.lowercased()
+            results = DemoMode.songs.filter { song in
+                [song.title, song.artist ?? "", song.album ?? ""]
+                    .joined(separator: " ")
+                    .lowercased()
+                    .contains(lower)
+            }
+            return
+        }
         guard let api = session.client?.audioStation else { return }
         let trimmed = k.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { results = []; return }
@@ -138,9 +153,11 @@ enum SearchHistory {
     private static let key = "noc.searchHistory"
     private static let maxCount = 12
 
+    /// 读取搜索历史。
     static func load() -> [String] {
         UserDefaults.standard.stringArray(forKey: key) ?? []
     }
+    /// 追加一条搜索历史，并保持最大数量。
     static func add(_ keyword: String) {
         let k = keyword.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !k.isEmpty else { return }
@@ -149,6 +166,7 @@ enum SearchHistory {
         if list.count > maxCount { list = Array(list.prefix(maxCount)) }
         UserDefaults.standard.set(list, forKey: key)
     }
+    /// 清空搜索历史。
     static func clear() {
         UserDefaults.standard.removeObject(forKey: key)
     }

@@ -5,6 +5,7 @@ struct AllSongsView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var playlists: PlaylistStore
+    @EnvironmentObject private var reviewMode: AppReviewMode
 
     @State private var songs: [Song] = []
     @State private var isLoadingPage: Bool = false
@@ -128,7 +129,13 @@ struct AllSongsView: View {
         }
     }
 
+    /// 重新加载歌曲列表；审核模式直接使用内置歌曲。
     private func reload() async {
+        if reviewMode.isEnabled {
+            songs = DemoMode.songs
+            reachedEnd = true
+            return
+        }
         guard let api = session.client?.audioStation else { return }
         isInitialLoading = true
         defer { isInitialLoading = false }
@@ -149,7 +156,9 @@ struct AllSongsView: View {
         }
     }
 
+    /// 分页加载更多歌曲；审核模式的内置数据不分页。
     private func loadMore() async {
+        if reviewMode.isEnabled { return }
         guard let api = session.client?.audioStation,
               !reachedEnd, !isLoadingPage else { return }
         isLoadingPage = true
