@@ -252,31 +252,101 @@ private struct RetryButton: View {
 
 // MARK: - 网络封面
 
+/// 在线封面查询参数，只保留可发送、可缓存的文本字段。
+struct CoverLookupQuery: Hashable, Sendable {
+    let title: String
+    let artist: String
+    let album: String
+
+    /// 从标题、歌手和专辑名构建在线封面查询。
+    init(title: String, artist: String?, album: String?) {
+        self.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.artist = (artist ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        self.album = (album ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// 从歌曲模型提取在线封面查询字段。
+    init(song: Song) {
+        self.init(title: song.title, artist: song.artist, album: song.album)
+    }
+
+    /// 用于 SwiftUI task 刷新的稳定 key。
+    var cacheKey: String {
+        [title, artist, album].joined(separator: "|").lowercased()
+    }
+
+    /// iTunes 搜索关键字。
+    var searchTerm: String {
+        [title, artist, album].filter { !$0.isEmpty }.joined(separator: " ")
+    }
+}
+
+/// 在线封面查询缓存，避免列表和播放器重复请求同一首歌。
+actor OnlineCoverLookupCache {
+    static let shared = OnlineCoverLookupCache()
+
+    private var cache: [CoverLookupQuery: URL?] = [:]
+
+    /// 查询封面 URL；命中缓存时直接返回。
+    func url(for query: CoverLookupQuery?) async -> URL? {
+        guard let query, !query.searchTerm.isEmpty else { return nil }
+        if let cached = cache[query] { return cached }
+        let result = await Self.fetchArtworkURL(for: query)
+        cache[query] = result
+        return result
+    }
+
+    /// 调用 iTunes Search API 查找最接近的音乐封面。
+    private static func fetchArtworkURL(for query: CoverLookupQuery) async -> URL? {
+        var components = URLComponents(string: "https://itunes.apple.com/search")
+        components?.queryItems = [
+            URLQueryItem(name: "term", value: query.searchTerm),
+            URLQueryItem(name: "media", value: "music"),
+            URLQueryItem(name: "entity", value: "song"),
+            URLQueryItem(name: "limit", value: "1")
+        ]
+        guard let url = components?.url else { return nil }
+        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return nil }
+        guard let response = try? JSONDecoder().decode(Response.self, from: data) else { return nil }
+        guard let raw = response.results.first?.artworkUrl100 else { return nil }
+        return URL(string: raw.replacingOccurrences(of: "100x100bb", with: "600x600bb"))
+            ?? URL(string: raw)
+    }
+
+    private struct Response: Decodable {
+        let results: [Item]
+    }
+
+    private struct Item: Decodable {
+        let artworkUrl100: String?
+    }
+}
+
 /// 远程加载的封面图：失败/未加载时显示渐变占位。
 struct CoverArt: View {
     let url: URL?
     var cornerRadius: CGFloat = 10
     var fallbackSeed: String = ""
+    var lookup: CoverLookupQuery? = nil
+    @State private var primaryFailed: Bool = false
+    @State private var onlineFallbackURL: URL?
 
     var body: some View {
-        AsyncImage(url: url, transaction: Transaction(animation: .easeInOut(duration: 0.35))) { phase in
-            switch phase {
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFill()
-            default:
-                placeholderGradient
-                    .overlay {
-                        Image(systemName: "music.note")
-                            .font(.system(size: 24, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
+        Group {
+            if let url, !primaryFailed {
+                remoteImage(url: url, marksPrimaryFailure: true)
+            } else if let onlineFallbackURL {
+                remoteImage(url: onlineFallbackURL, marksPrimaryFailure: false)
+            } else {
+                placeholder
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipped()
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .task(id: lookupTaskID) { await loadOnlineFallbackIfNeeded() }
+        .onChange(of: url) { _, _ in resetLoadingState() }
+        .onChange(of: lookup) { _, _ in resetLoadingState() }
     }
 
     /// 用种子生成稳定渐变，避免占位看起来千篇一律。
@@ -290,5 +360,61 @@ struct CoverArt: View {
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
+    }
+
+    /// 封面占位图。
+    private var placeholder: some View {
+        placeholderGradient
+            .overlay {
+                Image(systemName: "music.note")
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+    }
+
+    /// 远程图片视图；主封面失败时切换到在线兜底查询。
+    private func remoteImage(url: URL, marksPrimaryFailure: Bool) -> some View {
+        AsyncImage(url: url, transaction: Transaction(animation: .easeInOut(duration: 0.35))) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .scaledToFill()
+            case .failure:
+                placeholder
+                    .onAppear {
+                        if marksPrimaryFailure {
+                            primaryFailed = true
+                        }
+                    }
+            default:
+                placeholder
+            }
+        }
+    }
+
+    /// 在线兜底查询的刷新 key。
+    private var lookupTaskID: String {
+        [
+            lookup?.cacheKey ?? "",
+            url?.absoluteString ?? "",
+            primaryFailed.description
+        ].joined(separator: "|")
+    }
+
+    /// 原封面不可用时，从在线缓存查询封面。
+    private func loadOnlineFallbackIfNeeded() async {
+        guard onlineFallbackURL == nil else { return }
+        guard url == nil || primaryFailed else { return }
+        guard let found = await OnlineCoverLookupCache.shared.url(for: lookup) else { return }
+        await MainActor.run {
+            onlineFallbackURL = found
+        }
+    }
+
+    /// 输入歌曲或封面 URL 变化时重置加载状态。
+    private func resetLoadingState() {
+        primaryFailed = false
+        onlineFallbackURL = nil
     }
 }

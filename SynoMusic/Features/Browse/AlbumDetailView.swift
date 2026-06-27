@@ -40,7 +40,8 @@ struct AlbumDetailView: View {
             CoverArt(
                 url: session.client?.audioStation.albumCoverURL(album: album.name, albumArtist: album.artist),
                 cornerRadius: Theme.cornerHero,
-                fallbackSeed: album.id
+                fallbackSeed: album.id,
+                lookup: CoverLookupQuery(title: album.name, artist: album.artist, album: album.name)
             )
             .frame(width: albumCoverSide, height: albumCoverSide)
             .shadow(color: .black.opacity(0.25), radius: 28, y: 16)

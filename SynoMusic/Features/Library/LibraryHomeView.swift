@@ -262,7 +262,8 @@ private struct FeaturedAlbumCard: View {
             CoverArt(
                 url: session.client?.audioStation.albumCoverURL(album: album.name, albumArtist: album.artist),
                 cornerRadius: 14,
-                fallbackSeed: album.id
+                fallbackSeed: album.id,
+                lookup: CoverLookupQuery(title: album.name, artist: album.artist, album: album.name)
             )
             .frame(width: 220, height: 220)
             .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
@@ -329,7 +330,8 @@ struct AlbumCell: View {
         CoverArt(
             url: session.client?.audioStation.albumCoverURL(album: album.name, albumArtist: album.artist),
             cornerRadius: 10,
-            fallbackSeed: album.id
+            fallbackSeed: album.id,
+            lookup: CoverLookupQuery(title: album.name, artist: album.artist, album: album.name)
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipped()

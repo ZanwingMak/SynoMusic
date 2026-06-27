@@ -184,7 +184,8 @@ struct SongTrackRow: View {
                 CoverArt(
                     url: session.client?.audioStation.songCoverURL(songID: song.id),
                     cornerRadius: 6,
-                    fallbackSeed: song.id
+                    fallbackSeed: song.id,
+                    lookup: CoverLookupQuery(song: song)
                 )
                 .frame(width: 44, height: 44)
                 VStack(alignment: .leading, spacing: 2) {

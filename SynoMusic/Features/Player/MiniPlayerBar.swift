@@ -13,9 +13,10 @@ struct MiniPlayerBar: View {
                 VStack(spacing: 0) {
                     HStack(spacing: Metrics.m) {
                         CoverArt(
-                            url: session.client?.audioStation.songCoverURL(songID: playback.currentSong?.id ?? ""),
+                            url: playback.currentSong.flatMap { session.client?.audioStation.songCoverURL(songID: $0.id) },
                             cornerRadius: 8,
-                            fallbackSeed: playback.currentSong?.id ?? ""
+                            fallbackSeed: playback.currentSong?.id ?? "",
+                            lookup: playback.currentSong.map(CoverLookupQuery.init(song:))
                         )
                         .frame(width: 44, height: 44)
 

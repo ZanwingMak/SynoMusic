@@ -8,7 +8,6 @@ enum SynoMusicWidgetStyle: String, AppEnum {
     case downloads
     case vinyl
     case recent
-    case lyrics
     case widgets
 
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
@@ -21,7 +20,6 @@ enum SynoMusicWidgetStyle: String, AppEnum {
             .downloads: DisplayRepresentation(title: "Downloads"),
             .vinyl: DisplayRepresentation(title: "Vinyl Player"),
             .recent: DisplayRepresentation(title: "Recently Played"),
-            .lyrics: DisplayRepresentation(title: "Live Lyrics"),
             .widgets: DisplayRepresentation(title: "Widget Manager")
         ]
     }
@@ -33,7 +31,6 @@ enum SynoMusicWidgetStyle: String, AppEnum {
         case .downloads: return "下载管理"
         case .vinyl: return "黑胶唱片"
         case .recent: return "最近播放"
-        case .lyrics: return "实时歌词"
         case .widgets: return "小组件管理"
         }
     }
@@ -45,7 +42,6 @@ enum SynoMusicWidgetStyle: String, AppEnum {
         case .downloads: return "离线音乐"
         case .vinyl: return "播放入口"
         case .recent: return "继续聆听"
-        case .lyrics: return "歌词一览"
         case .widgets: return "编辑样式"
         }
     }
@@ -57,7 +53,6 @@ enum SynoMusicWidgetStyle: String, AppEnum {
         case .downloads: return "arrow.down.circle"
         case .vinyl: return "record.circle"
         case .recent: return "clock.arrow.circlepath"
-        case .lyrics: return "quote.bubble.fill"
         case .widgets: return "rectangle.3.group"
         }
     }
@@ -71,7 +66,7 @@ enum SynoMusicWidgetStyle: String, AppEnum {
             return URL(string: "synomusic://downloads")!
         case .widgets:
             return URL(string: "synomusic://widgets")!
-        case .vinyl, .recent, .lyrics:
+        case .vinyl, .recent:
             return URL(string: "synomusic://smart-mixes")!
         }
     }
@@ -87,8 +82,6 @@ enum SynoMusicWidgetStyle: String, AppEnum {
             return [Color(red: 0.08, green: 0.07, blue: 0.07), Color(red: 0.40, green: 0.25, blue: 0.13)]
         case .recent:
             return [Color(red: 0.14, green: 0.31, blue: 0.70), Color(red: 0.52, green: 0.20, blue: 0.82)]
-        case .lyrics:
-            return [Color(red: 0.58, green: 0.10, blue: 0.18), Color(red: 0.95, green: 0.36, blue: 0.24)]
         case .widgets:
             return [Color(red: 0.15, green: 0.16, blue: 0.24), Color(red: 0.44, green: 0.30, blue: 0.86)]
         }
@@ -253,8 +246,6 @@ private struct SynoMusicQuickWidgetView: View {
         switch entry.style {
         case .vinyl:
             vinylPreview
-        case .lyrics:
-            lyricsPreview
         case .recent:
             recentPreview
         case .widgets:
@@ -269,32 +260,27 @@ private struct SynoMusicQuickWidgetView: View {
     /// 黑胶唱片样式预览。
     private var vinylPreview: some View {
         ZStack {
-            Circle().fill(.black.opacity(0.85))
-            ForEach(0..<5, id: \.self) { index in
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [.black.opacity(0.95), .black.opacity(0.72), .white.opacity(0.12)],
+                        center: .center,
+                        startRadius: 6,
+                        endRadius: 58
+                    )
+                )
+            ForEach(0..<7, id: \.self) { index in
                 Circle()
-                    .stroke(.white.opacity(0.06), lineWidth: 1)
-                    .padding(CGFloat(index) * 8 + 8)
+                    .stroke(.white.opacity(index.isMultiple(of: 2) ? 0.08 : 0.04), lineWidth: 1)
+                    .padding(CGFloat(index) * 6 + 7)
             }
             Circle()
-                .fill(.white.opacity(0.90))
-                .frame(width: 34, height: 34)
+                .fill(LinearGradient(colors: [.pink.opacity(0.92), .purple.opacity(0.90)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 36, height: 36)
             Image(systemName: "music.note")
-                .foregroundStyle(.black.opacity(0.70))
+                .foregroundStyle(.white)
                 .font(.system(size: 16, weight: .bold))
         }
-    }
-
-    /// 歌词样式预览。
-    private var lyricsPreview: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            ForEach(0..<4, id: \.self) { index in
-                Capsule()
-                    .fill(.white.opacity(index == 1 ? 0.95 : 0.42))
-                    .frame(width: index == 2 ? 72 : 96, height: index == 1 ? 8 : 6)
-            }
-        }
-        .padding(16)
-        .background(.white.opacity(0.14), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     /// 最近播放样式预览。
@@ -315,7 +301,7 @@ private struct SynoMusicQuickWidgetView: View {
     /// 小组件管理样式预览。
     private var widgetGridPreview: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-            ForEach(["wand.and.stars", "arrow.down.circle", "quote.bubble", "gearshape"], id: \.self) { icon in
+            ForEach(["wand.and.stars", "arrow.down.circle", "record.circle", "gearshape"], id: \.self) { icon in
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(.white.opacity(0.18))
                     .overlay {

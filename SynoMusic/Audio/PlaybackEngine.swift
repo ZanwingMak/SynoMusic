@@ -136,6 +136,8 @@ final class PlaybackEngine: ObservableObject {
     private var activeLoadID = UUID()
     /// 当前 seek 请求版本；切歌和新 seek 会让旧回调失效。
     private var seekRevision: UInt64 = 0
+    /// 正在等待 AVPlayer 完成的 seek；期间忽略旧 timeObserver，避免进度条闪回。
+    private var pendingSeekRevision: UInt64?
     /// 加载提示至少停留的时间，避免缓存命中时 Toast 一闪而过。
     private let loadingStatusMinimumDuration: TimeInterval = 2.4
     /// 当前加载提示文本，用来区分可自动延迟清理的 loading Toast。
@@ -150,6 +152,8 @@ final class PlaybackEngine: ObservableObject {
     private var fallbackTried: Bool = false
     private let onlineLyricsClient = OnlineLyricsClient()
     private var onlineLyricsCache: [String: [LyricLine]] = [:]
+    /// 已下载的锁屏封面缓存，减少切回同一首歌时灵动岛封面延迟。
+    private var nowPlayingArtworkCache: [String: UIImage] = [:]
     private let playedHistoryKey = "syno.playback.history.songs"
     private let queueHistoryKey = "syno.playback.history.queues"
     private let lyricFontSizeKey = "syno.lyrics.fontSize"
@@ -308,6 +312,7 @@ final class PlaybackEngine: ObservableObject {
         guard player.currentItem != nil else { return }
         seekRevision &+= 1
         let revision = seekRevision
+        pendingSeekRevision = revision
         let songID = currentSong?.id
         currentTime = targetSeconds
         updateCurrentLyric()
@@ -317,6 +322,7 @@ final class PlaybackEngine: ObservableObject {
             Task { @MainActor in
                 guard let self else { return }
                 guard self.seekRevision == revision, self.currentSong?.id == songID else { return }
+                self.pendingSeekRevision = nil
                 self.currentTime = targetSeconds
                 self.updateCurrentLyric()
                 self.updateNowPlayingPlaybackState()
@@ -437,6 +443,7 @@ final class PlaybackEngine: ObservableObject {
         recordPlayedSong(song)
         activeLoadID = UUID()
         seekRevision &+= 1
+        pendingSeekRevision = nil
         let loadID = activeLoadID
         fadeTask?.cancel()
         demoTicker?.cancel()
@@ -487,14 +494,14 @@ final class PlaybackEngine: ObservableObject {
             player.volume = 1
             setPlayingState(false)
         }
+        updateNowPlayingMetadata()
+        refreshLiveActivity()
 
         Task { @MainActor in
             await self.refreshDuration(for: item, song: song, loadID: loadID)
             guard self.activeLoadID == loadID, self.currentSong?.id == song.id else { return }
+            self.updateNowPlayingPlaybackState()
             await self.fetchLyricsAsync(for: song)
-            guard self.activeLoadID == loadID, self.currentSong?.id == song.id else { return }
-            self.updateNowPlayingMetadata()
-            self.refreshLiveActivity()
         }
     }
 
@@ -1011,6 +1018,7 @@ final class PlaybackEngine: ObservableObject {
             // queue: .main 保证在 main queue 上，但 Swift 6 严格并发要求显式 actor hop。
             Task { @MainActor in
                 guard let self else { return }
+                guard self.pendingSeekRevision == nil else { return }
                 let seconds = CMTimeGetSeconds(time)
                 guard seconds.isFinite else { return }
                 self.currentTime = max(0, min(seconds, self.duration > 0 ? self.duration : seconds))
@@ -1100,7 +1108,7 @@ final class PlaybackEngine: ObservableObject {
         MPRemoteCommandCenter.shared().likeCommand.isActive = playlistStore?.isFavorite(song) ?? false
         let info: [String: Any] = [
             MPMediaItemPropertyTitle: song.title,
-            MPMediaItemPropertyArtist: song.artist ?? "",
+            MPMediaItemPropertyArtist: nowPlayingSubtitle(for: song),
             MPMediaItemPropertyAlbumTitle: song.album ?? "",
             MPMediaItemPropertyPlaybackDuration: duration,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: currentTime,
@@ -1108,17 +1116,63 @@ final class PlaybackEngine: ObservableObject {
         ]
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
 
+        if let cached = nowPlayingArtworkCache[song.id] {
+            Self.attachArtwork(cached)
+            return
+        }
+
         // 异步抓封面：下载在 @MainActor，但 MPMediaItemArtwork 的 handler 闭包
         // 必须在 nonisolated 上下文里创建——MediaPlayer 会在它自己的 accessQueue
         // 上调用这个闭包，闭包若被绑定到 @MainActor，runtime 会主动 SIGTRAP。
-        if let api = apiClient?.audioStation, let url = api.songCoverURL(songID: song.id) {
+        let coverURL = apiClient?.audioStation.songCoverURL(songID: song.id)
+        let lookup = CoverLookupQuery(song: song)
+        if let url = coverURL {
             Task { @MainActor [weak self] in
-                guard self != nil else { return }
-                guard let (data, _) = try? await URLSession.shared.data(from: url) else { return }
-                guard let image = UIImage(data: data) else { return }
+                guard let self, self.currentSong?.id == song.id else { return }
+                if let image = await Self.loadArtworkImage(from: url) {
+                    guard self.currentSong?.id == song.id else { return }
+                    self.cacheNowPlayingArtwork(image, for: song.id)
+                    Self.attachArtwork(image)
+                } else if let fallbackURL = await OnlineCoverLookupCache.shared.url(for: lookup),
+                          let image = await Self.loadArtworkImage(from: fallbackURL) {
+                    guard self.currentSong?.id == song.id else { return }
+                    self.cacheNowPlayingArtwork(image, for: song.id)
+                    Self.attachArtwork(image)
+                }
+            }
+        } else {
+            Task { @MainActor [weak self] in
+                guard let self, self.currentSong?.id == song.id else { return }
+                guard let fallbackURL = await OnlineCoverLookupCache.shared.url(for: lookup) else { return }
+                guard let image = await Self.loadArtworkImage(from: fallbackURL) else { return }
+                guard self.currentSong?.id == song.id else { return }
+                self.cacheNowPlayingArtwork(image, for: song.id)
                 Self.attachArtwork(image)
             }
         }
+    }
+
+    /// 缓存锁屏封面，并限制缓存数量避免长期播放后占用过多内存。
+    private func cacheNowPlayingArtwork(_ image: UIImage, for songID: String) {
+        nowPlayingArtworkCache[songID] = image
+        if nowPlayingArtworkCache.count > 120, let first = nowPlayingArtworkCache.keys.first {
+            nowPlayingArtworkCache.removeValue(forKey: first)
+        }
+    }
+
+    /// 构造锁屏播放器副标题：有当前歌词时优先展示歌词，没有歌词时展示歌手。
+    private func nowPlayingSubtitle(for song: Song) -> String {
+        if let index = currentLyricIndex, lyrics.indices.contains(index) {
+            let line = lyrics[index].text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !line.isEmpty { return line }
+        }
+        return song.artist ?? ""
+    }
+
+    /// 下载锁屏封面图片，失败时返回 nil。
+    nonisolated private static func loadArtworkImage(from url: URL) async -> UIImage? {
+        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return nil }
+        return UIImage(data: data)
     }
 
     /// nonisolated 静态方法：构造 MPMediaItemArtwork 并合并进 NowPlaying。
@@ -1133,6 +1187,9 @@ final class PlaybackEngine: ObservableObject {
 
     private func updateNowPlayingPlaybackState() {
         var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+        if let song = currentSong {
+            info[MPMediaItemPropertyArtist] = nowPlayingSubtitle(for: song)
+        }
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
         info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
         info[MPMediaItemPropertyPlaybackDuration] = duration
@@ -1219,7 +1276,10 @@ final class PlaybackEngine: ObservableObject {
                 hi = mid - 1
             }
         }
-        if currentLyricIndex != found { currentLyricIndex = found }
+        if currentLyricIndex != found {
+            currentLyricIndex = found
+            updateNowPlayingPlaybackState()
+        }
     }
 
     /// 保证 head 仍在首位，其余打乱。

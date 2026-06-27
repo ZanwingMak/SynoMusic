@@ -668,12 +668,11 @@ extension FullPlayerView {
             } else {
                 switch playbackSettings.playerArtworkStyle {
                 case .cover:
-                    CoverHero(songID: playback.currentSong?.id, seed: playback.currentSong?.id ?? "", side: artSide)
+                    CoverHero(song: playback.currentSong, side: artSide)
                         .transition(.opacity)
                 case .vinyl:
                     VinylHero(
-                        songID: playback.currentSong?.id,
-                        seed: playback.currentSong?.id ?? "",
+                        song: playback.currentSong,
                         side: artSide,
                         isPlaying: playback.isPlaying && !playback.isBuffering
                     )
@@ -1054,14 +1053,14 @@ private extension String {
 
 private struct CoverHero: View {
     @EnvironmentObject private var session: AppSession
-    let songID: String?
-    let seed: String
+    let song: Song?
     let side: CGFloat
     var body: some View {
         CoverArt(
-            url: songID.flatMap { session.client?.audioStation.songCoverURL(songID: $0) },
+            url: song.flatMap { session.client?.audioStation.songCoverURL(songID: $0.id) },
             cornerRadius: Theme.cornerHero,
-            fallbackSeed: seed
+            fallbackSeed: song?.id ?? "",
+            lookup: song.map(CoverLookupQuery.init(song:))
         )
         .frame(width: side, height: side)
         .shadow(color: .black.opacity(0.35), radius: 40, y: 16)
@@ -1070,8 +1069,7 @@ private struct CoverHero: View {
 
 private struct VinylHero: View {
     @EnvironmentObject private var session: AppSession
-    let songID: String?
-    let seed: String
+    let song: Song?
     let side: CGFloat
     let isPlaying: Bool
     @State private var storedRotation: Double = 0
@@ -1083,11 +1081,6 @@ private struct VinylHero: View {
             ZStack {
                 vinylDisc
                     .rotationEffect(.degrees(displayRotation(at: timeline.date)))
-
-                toneArm
-                    .offset(x: side * 0.24, y: -side * 0.36)
-                    .rotationEffect(.degrees(isPlaying ? 9 : -8), anchor: .topTrailing)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.78), value: isPlaying)
             }
             .frame(width: side, height: side)
             .shadow(color: .black.opacity(0.42), radius: 34, y: 18)
@@ -1096,7 +1089,7 @@ private struct VinylHero: View {
         .onChange(of: isPlaying) { _, playing in
             syncSpinState(isPlaying: playing, now: Date())
         }
-        .onChange(of: songID) { _, _ in
+        .onChange(of: song?.id) { _, _ in
             storedRotation = 0
             spinStartDate = isPlaying ? Date() : nil
         }
@@ -1106,16 +1099,30 @@ private struct VinylHero: View {
     private var vinylDisc: some View {
         ZStack {
             Circle()
-                .fill(Color.black)
-            ForEach(0..<9, id: \.self) { index in
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color(red: 0.05, green: 0.05, blue: 0.055),
+                            Color(red: 0.01, green: 0.01, blue: 0.012),
+                            Color.black
+                        ],
+                        center: .center,
+                        startRadius: side * 0.12,
+                        endRadius: side * 0.56
+                    )
+                )
+            Circle()
+                .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                .padding(side * 0.045)
+            ForEach(0..<15, id: \.self) { index in
                 Circle()
-                    .stroke(Color.white.opacity(index.isMultiple(of: 2) ? 0.055 : 0.035), lineWidth: 1)
-                    .padding(CGFloat(index) * side * 0.034 + 10)
+                    .stroke(Color.white.opacity(index.isMultiple(of: 3) ? 0.055 : 0.026), lineWidth: 0.8)
+                    .padding(CGFloat(index) * side * 0.022 + side * 0.075)
             }
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [Color.white.opacity(0.22), Color.clear],
+                        colors: [Color.white.opacity(0.16), Color.clear],
                         center: .topLeading,
                         startRadius: 4,
                         endRadius: side * 0.58
@@ -1123,37 +1130,19 @@ private struct VinylHero: View {
                 )
                 .blendMode(.screen)
             CoverArt(
-                url: songID.flatMap { session.client?.audioStation.songCoverURL(songID: $0) },
-                cornerRadius: side * 0.24,
-                fallbackSeed: seed
+                url: song.flatMap { session.client?.audioStation.songCoverURL(songID: $0.id) },
+                cornerRadius: side * 0.27,
+                fallbackSeed: song?.id ?? "",
+                lookup: song.map(CoverLookupQuery.init(song:))
             )
-            .frame(width: side * 0.46, height: side * 0.46)
+            .frame(width: side * 0.54, height: side * 0.54)
             .clipShape(Circle())
-            .overlay(Circle().stroke(Color.white.opacity(0.25), lineWidth: 2))
+            .overlay(Circle().stroke(Color.white.opacity(0.18), lineWidth: 1.5))
             Circle()
-                .fill(Color.white.opacity(0.92))
+                .fill(Color.black.opacity(0.72))
                 .frame(width: side * 0.05, height: side * 0.05)
+                .overlay(Circle().stroke(Color.white.opacity(0.20), lineWidth: 1))
         }
-    }
-
-    /// 唱臂装饰，随播放状态轻微摆动。
-    private var toneArm: some View {
-        ZStack(alignment: .topTrailing) {
-            Capsule()
-                .fill(Color.white.opacity(0.92))
-                .frame(width: side * 0.36, height: 7)
-                .rotationEffect(.degrees(28), anchor: .topTrailing)
-                .offset(x: -side * 0.04, y: side * 0.08)
-            Circle()
-                .fill(Color.white)
-                .frame(width: 24, height: 24)
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(Color.white.opacity(0.92))
-                .frame(width: 32, height: 17)
-                .rotationEffect(.degrees(18))
-                .offset(x: -side * 0.33, y: side * 0.22)
-        }
-        .frame(width: side * 0.5, height: side * 0.34)
     }
 
     /// 根据当前时间计算唱片角度，暂停时返回冻结角度。

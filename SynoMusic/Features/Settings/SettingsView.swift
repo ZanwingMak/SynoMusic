@@ -228,7 +228,9 @@ struct SettingsView: View {
                                 AppIconChoiceView(
                                     choice: choice,
                                     isSelected: selectedIconName == choice.alternateName,
-                                    isLocked: !purchase.canUse(.appIcon) && selectedIconName != choice.alternateName
+                                    isLocked: choice.alternateName != nil
+                                        && !purchase.canUse(.appIcon)
+                                        && selectedIconName != choice.alternateName
                                 )
                             }
                             .buttonStyle(.plain)
@@ -244,7 +246,7 @@ struct SettingsView: View {
         } header: {
             Text("App 图标".t)
         } footer: {
-            Text(purchase.canUse(.appIcon) ? "选择后系统会立即替换主屏幕图标。".t : "免费版暂不支持更换 App 图标。".t)
+            Text(purchase.canUse(.appIcon) ? "选择后系统会立即替换主屏幕图标。".t : "默认图标可免费恢复；备用图标需要解锁完整功能。".t)
         }
     }
 
@@ -613,9 +615,9 @@ struct SettingsView: View {
         editingProfile = ServerProfile(host: "", username: "")
     }
 
-    /// 点击图标时先检查购买状态，再执行系统图标切换。
+    /// 点击图标时允许免费恢复默认图标，备用图标再检查购买状态。
     private func handleAppIconTap(_ choice: AppIconChoice) {
-        guard purchase.canUse(.appIcon) || selectedIconName == choice.alternateName else {
+        guard choice.alternateName == nil || purchase.canUse(.appIcon) || selectedIconName == choice.alternateName else {
             showPaywall(for: .appIcon)
             return
         }
@@ -919,45 +921,58 @@ private struct ServerRowItem: View {
     }
 }
 
-/// 已下载歌曲管理。
+/// 桌面小组件管理。
 struct WidgetManagerView: View {
     @EnvironmentObject private var playback: PlaybackEngine
 
     private let widgets: [WidgetShowcase] = [
         WidgetShowcase(title: "黑胶唱片", subtitle: "在桌面快速进入播放体验", icon: "record.circle", colors: [.black, Color(red: 0.35, green: 0.22, blue: 0.12)]),
         WidgetShowcase(title: "特色功能", subtitle: "智能歌单、下载和小组件管理", icon: "sparkles.rectangle.stack", colors: [Color(red: 0.95, green: 0.25, blue: 0.48), Color(red: 0.36, green: 0.27, blue: 0.92)]),
-        WidgetShowcase(title: "最近播放", subtitle: "快速回到上次听到的音乐", icon: "clock.arrow.circlepath", colors: [Color(red: 0.07, green: 0.42, blue: 0.72), Color(red: 0.15, green: 0.68, blue: 0.78)]),
-        WidgetShowcase(title: "实时歌词", subtitle: "一眼查看歌词和播放状态", icon: "quote.bubble.fill", colors: [Color(red: 0.58, green: 0.16, blue: 0.22), Color(red: 0.92, green: 0.36, blue: 0.25)])
+        WidgetShowcase(title: "最近播放", subtitle: "快速回到上次听到的音乐", icon: "clock.arrow.circlepath", colors: [Color(red: 0.07, green: 0.42, blue: 0.72), Color(red: 0.15, green: 0.68, blue: 0.78)])
     ]
 
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                Text("iOS 不允许 App 直接替换已添加的小组件；添加后请长按桌面小组件，选择「编辑小组件」切换显示内容。".t)
-                    .font(.nocCaption)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(14)
-                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                ForEach(widgets) { widget in
-                    WidgetShowcaseCard(widget: widget) {
-                        WidgetCenter.shared.reloadAllTimelines()
-                        playback.setStatus("已刷新小组件；如需切换样式，请长按桌面小组件并选择编辑小组件。".t)
-                        Haptics.success()
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("iOS 不允许 App 直接替换已添加的小组件；添加后请长按桌面小组件，选择「编辑小组件」切换显示内容。".t)
+                        .font(.nocCaption)
+                        .foregroundStyle(.secondary)
+                    Button {
+                        refreshWidgets()
+                    } label: {
+                        Label("刷新小组件".t, systemImage: "arrow.clockwise")
+                            .font(.nocBody.weight(.semibold))
                     }
+                    .buttonStyle(.borderedProminent)
+                    .buttonBorderShape(.capsule)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                ForEach(widgets) { widget in
+                    WidgetShowcaseCard(widget: widget)
                 }
             }
             .padding(16)
         }
         .navigationTitle("小组件管理".t)
         .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .reserveMiniPlayer(visible: playback.currentSong != nil)
+    }
+
+    /// 刷新小组件时间线，并说明切换样式仍需要通过系统编辑入口完成。
+    private func refreshWidgets() {
+        WidgetCenter.shared.reloadAllTimelines()
+        playback.setStatus("已刷新小组件；如需切换样式，请长按桌面小组件并选择编辑小组件。".t)
+        Haptics.success()
     }
 }
 
 /// 小组件管理页的一张展示卡。
 private struct WidgetShowcaseCard: View {
     let widget: WidgetShowcase
-    let onAdd: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -970,10 +985,12 @@ private struct WidgetShowcaseCard: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("添加".t, action: onAdd)
-                    .font(.nocBody.weight(.semibold))
-                    .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.capsule)
+                Label("编辑小组件切换".t, systemImage: "hand.tap")
+                    .font(.nocLabel.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.primary.opacity(0.06), in: Capsule())
             }
             WidgetPreview(widget: widget)
         }
@@ -1109,6 +1126,7 @@ struct LocalImportView: View {
             }
         }
         .navigationTitle("本地音乐导入".t)
+        .reserveMiniPlayer(visible: playback.currentSong != nil)
         .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.audio], allowsMultipleSelection: false) { result in
             handleFileImport(result)
         }
@@ -1208,6 +1226,7 @@ struct DownloadsListView: View {
             }
         }
         .navigationTitle("下载管理".t)
+        .reserveMiniPlayer(visible: playback.currentSong != nil)
     }
 
     /// 当前下载统计摘要。
