@@ -132,6 +132,10 @@ final class PlaybackEngine: ObservableObject {
     private var originalQueue: [Song] = []   // 用于关闭随机时还原
     private var demoTicker: Task<Void, Never>?
     private var statusClearTask: Task<Void, Never>?
+    /// 当前播放项的加载标识；切歌时用于丢弃旧异步回调。
+    private var activeLoadID = UUID()
+    /// 当前 seek 请求版本；切歌和新 seek 会让旧回调失效。
+    private var seekRevision: UInt64 = 0
     /// 加载提示至少停留的时间，避免缓存命中时 Toast 一闪而过。
     private let loadingStatusMinimumDuration: TimeInterval = 2.4
     /// 当前加载提示文本，用来区分可自动延迟清理的 loading Toast。
@@ -265,6 +269,7 @@ final class PlaybackEngine: ObservableObject {
         #endif
     }
 
+    /// 切到下一首；队尾按重复模式决定循环或暂停。
     func next() {
         guard !queue.isEmpty else { return }
         if currentIndex + 1 < queue.count {
@@ -278,6 +283,7 @@ final class PlaybackEngine: ObservableObject {
         }
     }
 
+    /// 切到上一首；当前曲目已播放超过 3 秒时先回到曲头。
     func previous() {
         guard !queue.isEmpty else { return }
         // 若播放过 3s，回到曲头；否则上一首。
@@ -291,17 +297,28 @@ final class PlaybackEngine: ObservableObject {
         }
     }
 
+    /// 跳转到指定播放时间，并丢弃切歌前遗留的旧 seek 回调。
     func seek(to time: TimeInterval) {
+        let targetSeconds = max(0, min(time, duration > 0 ? duration : time))
         if isDemoPlayback {
-            currentTime = max(0, min(time, duration))
+            currentTime = targetSeconds
             updateNowPlayingPlaybackState()
             return
         }
-        let target = CMTime(seconds: max(0, time), preferredTimescale: 600)
+        guard player.currentItem != nil else { return }
+        seekRevision &+= 1
+        let revision = seekRevision
+        let songID = currentSong?.id
+        currentTime = targetSeconds
+        updateCurrentLyric()
+        updateNowPlayingPlaybackState()
+        let target = CMTime(seconds: targetSeconds, preferredTimescale: 600)
         player.seek(to: target) { [weak self] _ in
             Task { @MainActor in
                 guard let self else { return }
-                self.currentTime = time
+                guard self.seekRevision == revision, self.currentSong?.id == songID else { return }
+                self.currentTime = targetSeconds
+                self.updateCurrentLyric()
                 self.updateNowPlayingPlaybackState()
             }
         }
@@ -414,9 +431,20 @@ final class PlaybackEngine: ObservableObject {
 
     // MARK: 内部加载
 
+    /// 加载当前曲目，并重置与上一首相关的异步状态。
     private func loadCurrent(autoPlay: Bool) {
         guard let song = currentSong else { return }
         recordPlayedSong(song)
+        activeLoadID = UUID()
+        seekRevision &+= 1
+        let loadID = activeLoadID
+        fadeTask?.cancel()
+        demoTicker?.cancel()
+        currentTime = 0
+        duration = song.duration > 0 ? song.duration : 0
+        lyrics = []
+        currentLyricIndex = nil
+        isBuffering = true
         // 1. 电台：song.id 以 "radio:" 开头，直接用 song.path 作为 stream URL
         // 2. 已登录：走 Audio Station streamURL
         // 3. 未登录：走 Demo 模拟
@@ -440,7 +468,6 @@ final class PlaybackEngine: ObservableObject {
             return
         }
         isDemoPlayback = false
-        demoTicker?.cancel()
 
         let item = AVPlayerItem(url: url)
         player.removeAllItems()
@@ -462,8 +489,10 @@ final class PlaybackEngine: ObservableObject {
         }
 
         Task { @MainActor in
-            await self.refreshDuration()
+            await self.refreshDuration(for: item, song: song, loadID: loadID)
+            guard self.activeLoadID == loadID, self.currentSong?.id == song.id else { return }
             await self.fetchLyricsAsync(for: song)
+            guard self.activeLoadID == loadID, self.currentSong?.id == song.id else { return }
             self.updateNowPlayingMetadata()
             self.refreshLiveActivity()
         }
@@ -645,14 +674,16 @@ final class PlaybackEngine: ObservableObject {
             }
     }
 
-    private func refreshDuration() async {
-        guard let item = player.currentItem else { return }
+    /// 读取当前 AVPlayerItem 的真实时长，忽略切歌前返回的旧请求。
+    private func refreshDuration(for item: AVPlayerItem, song: Song, loadID: UUID) async {
         do {
             let asset = item.asset
             let d = try await asset.load(.duration)
+            guard activeLoadID == loadID, let currentItem = player.currentItem, currentItem === item else { return }
             self.duration = CMTimeGetSeconds(d).isFinite ? CMTimeGetSeconds(d) : (currentSong?.duration ?? 0)
         } catch {
-            self.duration = currentSong?.duration ?? 0
+            guard activeLoadID == loadID else { return }
+            self.duration = song.duration
         }
         isBuffering = false
     }
@@ -980,7 +1011,9 @@ final class PlaybackEngine: ObservableObject {
             // queue: .main 保证在 main queue 上，但 Swift 6 严格并发要求显式 actor hop。
             Task { @MainActor in
                 guard let self else { return }
-                self.currentTime = CMTimeGetSeconds(time)
+                let seconds = CMTimeGetSeconds(time)
+                guard seconds.isFinite else { return }
+                self.currentTime = max(0, min(seconds, self.duration > 0 ? self.duration : seconds))
                 self.updateCurrentLyric()
                 self.updateNowPlayingPlaybackState()
             }

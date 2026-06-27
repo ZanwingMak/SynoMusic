@@ -675,7 +675,7 @@ extension FullPlayerView {
                         songID: playback.currentSong?.id,
                         seed: playback.currentSong?.id ?? "",
                         side: artSide,
-                        isPlaying: playback.isPlaying
+                        isPlaying: playback.isPlaying && !playback.isBuffering
                     )
                     .transition(.opacity)
                 }
@@ -1074,23 +1074,32 @@ private struct VinylHero: View {
     let seed: String
     let side: CGFloat
     let isPlaying: Bool
-    @State private var rotation: Double = 0
+    @State private var storedRotation: Double = 0
+    @State private var spinStartDate: Date?
+    private let degreesPerSecond: Double = 36
 
     var body: some View {
-        ZStack {
-            vinylDisc
-                .rotationEffect(.degrees(rotation))
-                .onAppear { updateRotation(isPlaying: isPlaying) }
-                .onChange(of: isPlaying) { _, playing in updateRotation(isPlaying: playing) }
-                .onChange(of: songID) { _, _ in rotation = 0; updateRotation(isPlaying: isPlaying) }
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !isPlaying)) { timeline in
+            ZStack {
+                vinylDisc
+                    .rotationEffect(.degrees(displayRotation(at: timeline.date)))
 
-            toneArm
-                .offset(x: side * 0.24, y: -side * 0.36)
-                .rotationEffect(.degrees(isPlaying ? 9 : -8), anchor: .topTrailing)
-                .animation(.spring(response: 0.5, dampingFraction: 0.78), value: isPlaying)
+                toneArm
+                    .offset(x: side * 0.24, y: -side * 0.36)
+                    .rotationEffect(.degrees(isPlaying ? 9 : -8), anchor: .topTrailing)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.78), value: isPlaying)
+            }
+            .frame(width: side, height: side)
+            .shadow(color: .black.opacity(0.42), radius: 34, y: 18)
         }
-        .frame(width: side, height: side)
-        .shadow(color: .black.opacity(0.42), radius: 34, y: 18)
+        .onAppear { syncSpinState(isPlaying: isPlaying, now: Date()) }
+        .onChange(of: isPlaying) { _, playing in
+            syncSpinState(isPlaying: playing, now: Date())
+        }
+        .onChange(of: songID) { _, _ in
+            storedRotation = 0
+            spinStartDate = isPlaying ? Date() : nil
+        }
     }
 
     /// 黑胶唱片主体。
@@ -1147,11 +1156,23 @@ private struct VinylHero: View {
         .frame(width: side * 0.5, height: side * 0.34)
     }
 
-    /// 根据播放状态启动或停止黑胶旋转动画。
-    private func updateRotation(isPlaying: Bool) {
-        guard isPlaying else { return }
-        withAnimation(.linear(duration: 8).repeatForever(autoreverses: false)) {
-            rotation += 360
+    /// 根据当前时间计算唱片角度，暂停时返回冻结角度。
+    private func displayRotation(at date: Date) -> Double {
+        guard isPlaying, let spinStartDate else { return storedRotation }
+        let elapsed = date.timeIntervalSince(spinStartDate)
+        return (storedRotation + elapsed * degreesPerSecond).truncatingRemainder(dividingBy: 360)
+    }
+
+    /// 同步播放/暂停状态，保证黑胶动画不会被旧的 repeat 动画拖着跑。
+    private func syncSpinState(isPlaying: Bool, now: Date) {
+        if isPlaying {
+            if spinStartDate == nil {
+                spinStartDate = now
+            }
+        } else if let start = spinStartDate {
+            storedRotation = (storedRotation + now.timeIntervalSince(start) * degreesPerSecond)
+                .truncatingRemainder(dividingBy: 360)
+            spinStartDate = nil
         }
     }
 }

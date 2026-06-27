@@ -2,6 +2,7 @@ import SwiftUI
 import StoreKit
 import UIKit
 import UniformTypeIdentifiers
+import WidgetKit
 
 /// 设置：服务器、音质、下载、关于。
 struct SettingsView: View {
@@ -932,9 +933,16 @@ struct WidgetManagerView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
+                Text("iOS 不允许 App 直接替换已添加的小组件；添加后请长按桌面小组件，选择「编辑小组件」切换显示内容。".t)
+                    .font(.nocCaption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 ForEach(widgets) { widget in
                     WidgetShowcaseCard(widget: widget) {
-                        playback.setStatus("长按主屏幕空白处，点左上角 +，搜索 SynoMusic 添加小组件。".t)
+                        WidgetCenter.shared.reloadAllTimelines()
+                        playback.setStatus("已刷新小组件；如需切换样式，请长按桌面小组件并选择编辑小组件。".t)
                         Haptics.success()
                     }
                 }
