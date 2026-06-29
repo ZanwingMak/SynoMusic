@@ -85,7 +85,7 @@ struct SettingsView: View {
             Button("取消".t, role: .cancel) { pendingDelete = nil }
         } message: {
             if let p = pendingDelete {
-                Text("将移除「\(p.name)」与该服务器保存的密码。该操作不可撤销。".t)
+                Text(String(format: "将移除「%@」与该服务器保存的密码。该操作不可撤销。".t, p.name))
             }
         }
     }
@@ -148,7 +148,7 @@ struct SettingsView: View {
                             pendingDelete = p
                         } label: { Label("删除".t, systemImage: "trash") }
                         Button { editingProfile = p } label: { Label("编辑".t, systemImage: "pencil") }
-                            .tint(.blue)
+                            .tint(theme.current.accent(in: colorScheme))
                     }
                 }
             }
@@ -867,9 +867,17 @@ private struct AppIconChoice: Identifiable {
 
 /// 设置页里的图标选择器单元。
 private struct AppIconChoiceView: View {
+    @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
+
     let choice: AppIconChoice
     let isSelected: Bool
     let isLocked: Bool
+
+    /// 当前设置页主题强调色。
+    private var accentColor: Color {
+        theme.current.accent(in: colorScheme)
+    }
 
     var body: some View {
         VStack(spacing: 6) {
@@ -878,13 +886,13 @@ private struct AppIconChoiceView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(isSelected ? Theme.accent : Color.clear, lineWidth: 3)
+                        .stroke(isSelected ? accentColor : Color.clear, lineWidth: 3)
                 }
                 .overlay(alignment: .bottomTrailing) {
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(.white, Theme.accent)
+                            .foregroundStyle(.white, accentColor)
                             .offset(x: 5, y: 5)
                     }
                     if isLocked {
@@ -898,7 +906,7 @@ private struct AppIconChoiceView: View {
                 }
             Text(choice.title.t)
                 .font(.nocLabel)
-                .foregroundStyle(isSelected ? Theme.accent : .secondary)
+                .foregroundStyle(isSelected ? accentColor : .secondary)
         }
         .frame(width: 76)
         .contentShape(Rectangle())
@@ -913,7 +921,7 @@ private struct AppIconChoiceView: View {
                     .scaledToFill()
             } else {
                 LinearGradient(
-                    colors: [Theme.accent.opacity(0.95), Color.pink.opacity(0.8)],
+                    colors: [accentColor.opacity(0.95), Color(hex: theme.current.gradientEnd).opacity(0.8)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -929,12 +937,20 @@ private struct AppIconChoiceView: View {
 
 /// 服务器行：仿"收货地址"风格 —— 行 tap = 设默认，✓ 表示默认，ⓘ = 编辑。
 private struct ServerRowItem: View {
+    @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
+
     let profile: ServerProfile
     let isDefault: Bool
     let isCurrentSession: Bool
     let isSwitching: Bool
     let onTap: () -> Void
     let onEdit: () -> Void
+
+    /// 当前设置页主题强调色。
+    private var accentColor: Color {
+        theme.current.accent(in: colorScheme)
+    }
 
     var body: some View {
         Button(action: {
@@ -944,7 +960,7 @@ private struct ServerRowItem: View {
             HStack(spacing: Metrics.s + 4) {
                 Image(systemName: isDefault ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22, weight: .regular))
-                    .foregroundStyle(isDefault ? Theme.accent : Color.secondary.opacity(0.6))
+                    .foregroundStyle(isDefault ? accentColor : Color.secondary.opacity(0.6))
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
@@ -958,7 +974,7 @@ private struct ServerRowItem: View {
                             tagPill("已登录".t, color: .green)
                         }
                         if isDefault {
-                            tagPill("默认".t, color: Theme.accent)
+                            tagPill("默认".t, color: accentColor)
                         }
                     }
                     Text(serverSubtitle)
@@ -1019,14 +1035,26 @@ struct WidgetManagerView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var reviewMode: AppReviewMode
+    @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
 
     /// 根据会话状态生成小组件展示文案，未登录或审核模式不展示下载卖点。
     private var widgets: [WidgetShowcase] {
         [
             WidgetShowcase(title: "黑胶唱片", subtitle: "在桌面快速进入播放体验", icon: "record.circle", colors: [.black, Color(red: 0.35, green: 0.22, blue: 0.12)]),
-            WidgetShowcase(title: "特色功能", subtitle: featureWidgetSubtitle, icon: "sparkles.rectangle.stack", colors: [Color(red: 0.95, green: 0.25, blue: 0.48), Color(red: 0.36, green: 0.27, blue: 0.92)]),
+            WidgetShowcase(title: "特色功能", subtitle: featureWidgetSubtitle, icon: "sparkles.rectangle.stack", colors: accentPreviewColors),
             WidgetShowcase(title: "最近播放", subtitle: "快速回到上次听到的音乐", icon: "clock.arrow.circlepath", colors: [Color(red: 0.07, green: 0.42, blue: 0.72), Color(red: 0.15, green: 0.68, blue: 0.78)])
         ]
+    }
+
+    /// 当前设置页主题强调色。
+    private var accentColor: Color {
+        theme.current.accent(in: colorScheme)
+    }
+
+    /// 小组件预览里用于主题反馈的渐变色。
+    private var accentPreviewColors: [Color] {
+        [accentColor, Color(hex: theme.current.gradientEnd)]
     }
 
     /// 返回特色小组件副标题，避免未登录或审核模式露出下载能力。
@@ -1161,8 +1189,15 @@ private struct WidgetShowcase: Identifiable {
 struct LocalImportView: View {
     @EnvironmentObject private var localImports: LocalImportStore
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
     @State private var remoteURL = ""
     @State private var showFileImporter = false
+
+    /// 当前设置页主题强调色。
+    private var accentColor: Color {
+        theme.current.accent(in: colorScheme)
+    }
 
     var body: some View {
         List {
@@ -1216,7 +1251,7 @@ struct LocalImportView: View {
                                 }
                                 Spacer()
                                 Image(systemName: "play.circle")
-                                    .foregroundStyle(Theme.accent)
+                                    .foregroundStyle(accentColor)
                             }
                         }
                         .swipeActions {
@@ -1274,8 +1309,15 @@ struct DownloadsListView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var downloads: DownloadManager
+    @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
     @State private var isDownloadingQueue = false
     @State private var queueProgress: (done: Int, total: Int) = (0, 0)
+
+    /// 当前设置页主题强调色。
+    private var accentColor: Color {
+        theme.current.accent(in: colorScheme)
+    }
 
     var body: some View {
         Group {
@@ -1419,7 +1461,7 @@ struct DownloadsListView: View {
         case .downloading, .pending:
             Text("下载中".t)
                 .font(.nocLabel)
-                .foregroundStyle(Theme.accent)
+                .foregroundStyle(accentColor)
         case .failed:
             Text("下载失败".t)
                 .font(.nocLabel)

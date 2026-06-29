@@ -6,11 +6,18 @@ struct PaywallView: View {
     @EnvironmentObject private var purchase: PurchaseStore
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var reviewMode: AppReviewMode
+    @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedProductID: String?
 
     let feature: PremiumFeature
+
+    /// 当前页面主题强调色。
+    private var accentColor: Color {
+        theme.current.accent(in: colorScheme)
+    }
 
     var body: some View {
         NavigationStack {
@@ -52,7 +59,7 @@ struct PaywallView: View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: purchase.hasFullAccess ? "crown.fill" : "sparkles")
                 .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(Theme.accent)
+                .foregroundStyle(accentColor)
             Text(feature.title.t)
                 .font(.largeTitle.bold())
                 .foregroundStyle(.primary)
@@ -62,7 +69,7 @@ struct PaywallView: View {
                 .foregroundStyle(.secondary)
             Text("订阅支持 3 天免费试用；终身解锁为一次性购买。".t)
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(Theme.accent)
+                .foregroundStyle(accentColor)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
@@ -72,15 +79,15 @@ struct PaywallView: View {
     @ViewBuilder
     private var planTabs: some View {
         if !availableProducts.isEmpty {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(availableProducts, id: \.id) { product in
-                        planTab(for: product)
-                    }
+            HStack(spacing: 4) {
+                ForEach(availableProducts, id: \.id) { product in
+                    planTab(for: product)
                 }
-                .padding(4)
             }
+            .padding(4)
+            .frame(maxWidth: .infinity)
             .background(Color(.secondarySystemGroupedBackground), in: Capsule())
+            .clipShape(Capsule())
         }
     }
 
@@ -124,13 +131,13 @@ struct PaywallView: View {
                         Spacer(minLength: 12)
                         Text(product.displayPrice)
                             .font(.title3.bold())
-                            .foregroundStyle(Theme.accent)
+                            .foregroundStyle(accentColor)
                     }
 
                     if let trial = trialText(for: product) {
                         Label(trial, systemImage: "clock.badge.checkmark")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(Theme.accent)
+                            .foregroundStyle(accentColor)
                     }
 
                     Text(subscriptionNote(for: product))
@@ -221,7 +228,7 @@ struct PaywallView: View {
                 Link("隐私政策".t, destination: legalPrivacyURL)
             }
             .font(.caption.weight(.semibold))
-            .foregroundStyle(Theme.accent)
+            .foregroundStyle(accentColor)
 
             Text("订阅由 App Store 管理，可随时在 Apple 账号中取消。".t)
                 .font(.caption2)
@@ -317,11 +324,11 @@ struct PaywallView: View {
                 .font(.subheadline.weight(.bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
-                .frame(minWidth: 68)
+                .frame(maxWidth: .infinity)
                 .frame(minHeight: 38)
-                .padding(.horizontal, 8)
-                .background(isSelected ? Theme.accent : Color.clear, in: Capsule())
+                .background(isSelected ? accentColor : Color.clear, in: Capsule())
                 .foregroundStyle(isSelected ? Color.white : Color.primary)
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
@@ -386,14 +393,22 @@ struct PaywallView: View {
 
 /// 付费墙内的紧凑功能说明行。
 private struct PaywallFeatureRow: View {
+    @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
+
     let icon: String
     let title: String
+
+    /// 当前页面主题强调色。
+    private var accentColor: Color {
+        theme.current.accent(in: colorScheme)
+    }
 
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Theme.accent)
+                .foregroundStyle(accentColor)
                 .frame(width: 18)
             Text(title.t)
                 .font(.caption.weight(.medium))

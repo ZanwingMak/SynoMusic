@@ -63,7 +63,7 @@ final class LanguageManager: ObservableObject {
         self.current = AppLanguage(rawValue: raw) ?? .system
     }
 
-    /// 翻译入口：key 是简体中文原文；不存在时回落原文。
+    /// 翻译入口：key 是简体中文原文；不存在时优先回落英文，再回落原文。
     func t(_ key: String) -> String {
         let code = current.lookupCode
         if code == AppLanguage.zhHans.rawValue { return key }
@@ -71,8 +71,12 @@ final class LanguageManager: ObservableObject {
             ?? L10n.commercialAdditions[code]?[key]
             ?? L10n.release144Additions[code]?[key]
             ?? L10n.commercialTable[code]?[key]
+            ?? L10n.auditAdditions[code]?[key]
+            ?? L10n.table[AppLanguage.en.rawValue]?[key]
             ?? L10n.release144Additions[AppLanguage.en.rawValue]?[key]
             ?? L10n.commercialAdditions[AppLanguage.en.rawValue]?[key]
+            ?? L10n.commercialTable[AppLanguage.en.rawValue]?[key]
+            ?? L10n.auditAdditions[AppLanguage.en.rawValue]?[key]
             ?? key
     }
 }
@@ -3179,6 +3183,76 @@ enum L10n {
             "正在使用审核模式数据": "Données de révision utilisées",
             "已进入审核模式": "Mode de révision activé",
             "退出审核模式": "Quitter le mode de révision"
+        ]
+    ]
+
+    /// 本地化审计补丁：覆盖跨表缺失和动态格式化文案。
+    static let auditAdditions: [String: [String: String]] = [
+        "zh-Hant": [
+            "AirPlay": "AirPlay",
+            "iCloud": "iCloud",
+            "中文": "中文",
+            "音乐": "音樂",
+            "删除文件": "刪除檔案",
+            "删除服务器": "刪除伺服器",
+            "将移除「%@」与该服务器保存的密码。该操作不可撤销。": "將移除「%@」與該伺服器儲存的密碼。此操作無法復原。",
+            "已删除": "已刪除",
+            "本地导入": "本機匯入"
+        ],
+        "en": [
+            "AirPlay": "AirPlay",
+            "iCloud": "iCloud",
+            "中文": "Chinese",
+            "音乐": "Music",
+            "删除文件": "Delete File",
+            "删除服务器": "Delete Server",
+            "将移除「%@」与该服务器保存的密码。该操作不可撤销。": "This will remove “%@” and the saved password for this server. This action cannot be undone.",
+            "已删除": "Deleted",
+            "本地导入": "Local Import"
+        ],
+        "ja": [
+            "AirPlay": "AirPlay",
+            "iCloud": "iCloud",
+            "中文": "中国語",
+            "音乐": "音楽",
+            "删除文件": "ファイルを削除",
+            "删除服务器": "サーバーを削除",
+            "将移除「%@」与该服务器保存的密码。该操作不可撤销。": "「%@」とこのサーバーに保存されたパスワードを削除します。この操作は取り消せません。",
+            "已删除": "削除しました",
+            "本地导入": "ローカル読み込み"
+        ],
+        "ko": [
+            "AirPlay": "AirPlay",
+            "iCloud": "iCloud",
+            "中文": "중국어",
+            "音乐": "음악",
+            "删除文件": "파일 삭제",
+            "删除服务器": "서버 삭제",
+            "将移除「%@」与该服务器保存的密码。该操作不可撤销。": "“%@” 및 이 서버에 저장된 암호가 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+            "已删除": "삭제됨",
+            "本地导入": "로컬 가져오기"
+        ],
+        "de": [
+            "AirPlay": "AirPlay",
+            "iCloud": "iCloud",
+            "中文": "Chinesisch",
+            "音乐": "Musik",
+            "删除文件": "Datei löschen",
+            "删除服务器": "Server löschen",
+            "将移除「%@」与该服务器保存的密码。该操作不可撤销。": "“%@” und das für diesen Server gespeicherte Passwort werden entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
+            "已删除": "Gelöscht",
+            "本地导入": "Lokaler Import"
+        ],
+        "fr": [
+            "AirPlay": "AirPlay",
+            "iCloud": "iCloud",
+            "中文": "Chinois",
+            "音乐": "Musique",
+            "删除文件": "Supprimer le fichier",
+            "删除服务器": "Supprimer le serveur",
+            "将移除「%@」与该服务器保存的密码。该操作不可撤销。": "“%@” et le mot de passe enregistré pour ce serveur seront supprimés. Cette action est irréversible.",
+            "已删除": "Supprimé",
+            "本地导入": "Import local"
         ]
     ]
 }

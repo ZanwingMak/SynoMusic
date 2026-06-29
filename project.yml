@@ -12,8 +12,8 @@ settings:
     SWIFT_VERSION: "6.0"
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
-    MARKETING_VERSION: "1.4.7"
-    CURRENT_PROJECT_VERSION: "18"
+    MARKETING_VERSION: "1.4.8"
+    CURRENT_PROJECT_VERSION: "19"
     DEVELOPMENT_TEAM: 2Q2LMV7BR6
     CODE_SIGN_STYLE: Automatic
 
@@ -28,6 +28,13 @@ targets:
           - "SynoMusicLive/**"
     resources:
       - SynoMusic/Resources/Assets.xcassets
+      - SynoMusic/Resources/zh-Hans.lproj
+      - SynoMusic/Resources/zh-Hant.lproj
+      - SynoMusic/Resources/en.lproj
+      - SynoMusic/Resources/ja.lproj
+      - SynoMusic/Resources/ko.lproj
+      - SynoMusic/Resources/de.lproj
+      - SynoMusic/Resources/fr.lproj
     dependencies:
       - target: SynoMusicLive
         embed: true
@@ -146,6 +153,14 @@ targets:
     sources:
       - SynoMusic/SynoMusicLive
       - SynoMusic/Audio/NowPlayingActivityAttributes.swift
+    resources:
+      - SynoMusic/SynoMusicLive/zh-Hans.lproj
+      - SynoMusic/SynoMusicLive/zh-Hant.lproj
+      - SynoMusic/SynoMusicLive/en.lproj
+      - SynoMusic/SynoMusicLive/ja.lproj
+      - SynoMusic/SynoMusicLive/ko.lproj
+      - SynoMusic/SynoMusicLive/de.lproj
+      - SynoMusic/SynoMusicLive/fr.lproj
     info:
       path: SynoMusic/SynoMusicLive/Info.plist
       properties:
