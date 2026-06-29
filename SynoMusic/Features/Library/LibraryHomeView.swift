@@ -15,7 +15,10 @@ struct LibraryHomeView: View {
             VStack(alignment: .leading, spacing: Metrics.l) {
                 Header()
                 QuickActions()
-                if session.client == nil && !reviewMode.isEnabled {
+                if session.isRestoringStartupSession && !reviewMode.isEnabled {
+                    LoadingState()
+                        .frame(minHeight: 300)
+                } else if session.client == nil && !reviewMode.isEnabled {
                     ServerRequiredEmptyState {
                         navigation.openAddServer()
                     }
@@ -145,10 +148,12 @@ private struct Header: View {
 private struct QuickActions: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var purchase: PurchaseStore
     @EnvironmentObject private var reviewMode: AppReviewMode
     @EnvironmentObject private var navigation: AppNavigationState
     @State private var isShuffling = false
     @State private var showServerPrompt = false
+    @State private var paywallFeature: PremiumFeature?
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -163,15 +168,13 @@ private struct QuickActions: View {
                 }
                 .buttonStyle(.plain)
 
-                NavigationLink(value: BrowseRoute.smartMixes) {
-                    ActionCard(
-                        title: "智能歌单".t,
-                        subtitle: "自动整理".t,
-                        icon: "wand.and.stars",
-                        gradient: [Color(red: 0.95, green: 0.68, blue: 0.22), Color(red: 0.88, green: 0.28, blue: 0.48)]
-                    )
-                }
-                .buttonStyle(.plain)
+                routeCard(
+                    route: .smartMixes,
+                    title: "智能歌单".t,
+                    subtitle: "自动整理".t,
+                    icon: "wand.and.stars",
+                    gradient: [Color(red: 0.95, green: 0.68, blue: 0.22), Color(red: 0.88, green: 0.28, blue: 0.48)]
+                )
 
                 NavigationLink(value: BrowseRoute.favorites) {
                     ActionCard(
@@ -183,7 +186,7 @@ private struct QuickActions: View {
                 }
                 .buttonStyle(.plain)
 
-                serverAwareRouteCard(
+                routeCard(
                     route: .allSongs,
                     title: "所有歌曲".t,
                     subtitle: "整库浏览".t,
@@ -192,28 +195,24 @@ private struct QuickActions: View {
                 )
 
                 if !reviewMode.isEnabled {
-                    NavigationLink(value: BrowseRoute.radio) {
-                        ActionCard(
-                            title: "电台".t,
-                            subtitle: "全球电台".t,
-                            icon: "antenna.radiowaves.left.and.right",
-                            gradient: [Color(red: 0.4, green: 0.85, blue: 0.7), Color(red: 0.1, green: 0.55, blue: 0.55)]
-                        )
-                    }
-                    .buttonStyle(.plain)
+                    routeCard(
+                        route: .radio,
+                        title: "电台".t,
+                        subtitle: "全球电台".t,
+                        icon: "antenna.radiowaves.left.and.right",
+                        gradient: [Color(red: 0.4, green: 0.85, blue: 0.7), Color(red: 0.1, green: 0.55, blue: 0.55)]
+                    )
 
-                    NavigationLink(value: BrowseRoute.podcasts) {
-                        ActionCard(
-                            title: "播客".t,
-                            subtitle: "网上搜索".t,
-                            icon: "mic.circle.fill",
-                            gradient: [Color(red: 0.95, green: 0.35, blue: 0.72), Color(red: 0.48, green: 0.28, blue: 0.88)]
-                        )
-                    }
-                    .buttonStyle(.plain)
+                    routeCard(
+                        route: .podcasts,
+                        title: "播客".t,
+                        subtitle: "网上搜索".t,
+                        icon: "mic.circle.fill",
+                        gradient: [Color(red: 0.95, green: 0.35, blue: 0.72), Color(red: 0.48, green: 0.28, blue: 0.88)]
+                    )
                 }
 
-                serverAwareRouteCard(
+                routeCard(
                     route: .allAlbums,
                     title: "全部专辑".t,
                     subtitle: "整库浏览".t,
@@ -225,6 +224,11 @@ private struct QuickActions: View {
         .scrollClipDisabled()
         .serverRequiredPrompt(isPresented: $showServerPrompt) {
             navigation.openAddServer()
+        }
+        .sheet(item: $paywallFeature) { feature in
+            PaywallView(feature: feature)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
     }
 
@@ -238,10 +242,17 @@ private struct QuickActions: View {
         Task { await randomShuffleAll() }
     }
 
-    /// 绘制需要服务器的快捷入口；未连接时改为确认弹窗。
+    /// 绘制快捷入口；付费功能优先弹付费墙，需要服务器的页面再弹添加服务器确认框。
     @ViewBuilder
-    private func serverAwareRouteCard(route: BrowseRoute, title: String, subtitle: String, icon: String, gradient: [Color]) -> some View {
-        if route.requiresServer && session.client == nil && !reviewMode.isEnabled {
+    private func routeCard(route: BrowseRoute, title: String, subtitle: String, icon: String, gradient: [Color]) -> some View {
+        if let feature = route.premiumFeature, !purchase.canUse(feature) {
+            Button {
+                showPaywall(for: feature)
+            } label: {
+                ActionCard(title: title, subtitle: subtitle, icon: icon, gradient: gradient)
+            }
+            .buttonStyle(.plain)
+        } else if route.requiresServer && session.client == nil && !reviewMode.isEnabled {
             Button {
                 Haptics.tap()
                 showServerPrompt = true
@@ -255,6 +266,12 @@ private struct QuickActions: View {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    /// 打开指定功能的付费墙，并提供轻触反馈。
+    private func showPaywall(for feature: PremiumFeature) {
+        Haptics.tap()
+        paywallFeature = feature
     }
 
     /// 从服务器随机抓取歌曲，审核模式或未连接由入口提前处理。

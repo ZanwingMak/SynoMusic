@@ -343,18 +343,34 @@ struct SettingsView: View {
                 }
             }
             if !reviewMode.isEnabled {
-                NavigationLink(value: SettingsRoute.localImports) {
-                    HStack {
-                        Label("本地音乐导入".t, systemImage: "square.and.arrow.down")
-                        Spacer()
-                        if !purchase.canUse(.localImport) {
-                            Image(systemName: "lock.fill")
-                                .foregroundStyle(.secondary)
-                        }
+                if purchase.canUse(.localImport) {
+                    NavigationLink(value: SettingsRoute.localImports) {
+                        localImportRow(isLocked: false)
                     }
+                } else {
+                    Button {
+                        showPaywall(for: .localImport)
+                    } label: {
+                        localImportRow(isLocked: true)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
+    }
+
+    /// 绘制本地音乐导入入口，锁定时保留设置行样式并改为弹付费墙。
+    private func localImportRow(isLocked: Bool) -> some View {
+        HStack {
+            Label("本地音乐导入".t, systemImage: "square.and.arrow.down")
+                .foregroundStyle(.primary)
+            Spacer()
+            if isLocked {
+                Image(systemName: "lock.fill")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .contentShape(Rectangle())
     }
 
     private var othersSection: some View {
@@ -441,21 +457,37 @@ struct SettingsView: View {
 
     private var widgetSection: some View {
         Section {
-            NavigationLink(value: SettingsRoute.widgets) {
-                HStack {
-                    Label("小组件管理".t, systemImage: "rectangle.3.group")
-                    Spacer()
-                    if !purchase.canUse(.systemIntegrations) {
-                        Image(systemName: "lock.fill")
-                            .foregroundStyle(.secondary)
-                    }
+            if purchase.canUse(.systemIntegrations) {
+                NavigationLink(value: SettingsRoute.widgets) {
+                    widgetManagerRow(isLocked: false)
                 }
+            } else {
+                Button {
+                    showPaywall(for: .systemIntegrations)
+                } label: {
+                    widgetManagerRow(isLocked: true)
+                }
+                .buttonStyle(.plain)
             }
         } header: {
             Text("Siri 与小组件".t)
         } footer: {
             Text("管理桌面小组件入口、快捷指令和深链动作。".t)
         }
+    }
+
+    /// 绘制小组件管理入口行；锁定时保持设置列表样式但不触发导航。
+    private func widgetManagerRow(isLocked: Bool) -> some View {
+        HStack {
+            Label("小组件管理".t, systemImage: "rectangle.3.group")
+                .foregroundStyle(.primary)
+            Spacer()
+            if isLocked {
+                Image(systemName: "lock.fill")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .contentShape(Rectangle())
     }
 
     private var cloudSyncSection: some View {

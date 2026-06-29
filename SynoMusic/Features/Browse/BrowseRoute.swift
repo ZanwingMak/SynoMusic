@@ -88,6 +88,22 @@ extension BrowseRoute {
             return false
         }
     }
+
+    /// 当前路由对应的付费功能；入口页用它提前拦截并展示付费墙。
+    var premiumFeature: PremiumFeature? {
+        switch self {
+        case .radio:
+            return .radio
+        case .podcasts, .podcastShow:
+            return .podcasts
+        case .smartMixes:
+            return .smartMixes
+        case .playbackHistory:
+            return .playbackHistory
+        default:
+            return nil
+        }
+    }
 }
 
 extension View {

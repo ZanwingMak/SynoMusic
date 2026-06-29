@@ -4,9 +4,11 @@ import SwiftUI
 struct BrowseRootView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var purchase: PurchaseStore
     @EnvironmentObject private var reviewMode: AppReviewMode
     @EnvironmentObject private var navigation: AppNavigationState
     @State private var showServerPrompt = false
+    @State private var paywallFeature: PremiumFeature?
 
     private var categories: [(label: String, icon: String, route: BrowseRoute, gradient: [Color])] {
         let all: [(label: String, icon: String, route: BrowseRoute, gradient: [Color])] = [
@@ -42,12 +44,24 @@ struct BrowseRootView: View {
         .serverRequiredPrompt(isPresented: $showServerPrompt) {
             navigation.openAddServer()
         }
+        .sheet(item: $paywallFeature) { feature in
+            PaywallView(feature: feature)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     /// 根据当前会话状态绘制浏览入口；需要服务器时先弹确认框。
     @ViewBuilder
     private func categoryEntry(_ cat: (label: String, icon: String, route: BrowseRoute, gradient: [Color])) -> some View {
-        if cat.route.requiresServer && session.client == nil && !reviewMode.isEnabled {
+        if let feature = cat.route.premiumFeature, !purchase.canUse(feature) {
+            Button {
+                showPaywall(for: feature)
+            } label: {
+                CategoryTile(label: cat.label, icon: cat.icon, gradient: cat.gradient)
+            }
+            .buttonStyle(.plain)
+        } else if cat.route.requiresServer && session.client == nil && !reviewMode.isEnabled {
             Button {
                 Haptics.tap()
                 showServerPrompt = true
@@ -61,6 +75,12 @@ struct BrowseRootView: View {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    /// 打开指定功能的付费墙，并提供轻触反馈。
+    private func showPaywall(for feature: PremiumFeature) {
+        Haptics.tap()
+        paywallFeature = feature
     }
 }
 

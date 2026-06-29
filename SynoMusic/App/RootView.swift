@@ -88,14 +88,22 @@ struct RootView: View {
 
     /// 启动时尝试用默认档案 + Keychain 密码静默登录。
     private func attemptAutoLogin() async {
-        guard !session.isLoggedIn, !isDemo, !reviewMode.isEnabled else { return }
+        guard !session.isLoggedIn, !isDemo, !reviewMode.isEnabled else {
+            session.setRestoringStartupSession(false)
+            return
+        }
         guard let p = serverStore.defaultProfile,
-              let pwd = serverStore.password(for: p), !pwd.isEmpty else { return }
+              let pwd = serverStore.password(for: p), !pwd.isEmpty else {
+            session.setRestoringStartupSession(false)
+            return
+        }
         isAutoLogging = true
+        session.setRestoringStartupSession(true)
         // 暴露给 LoginFlowView：让用户在多档案列表里看到「正在自动登录…」高亮哪一行
         session.autoLoginProfileID = p.id
         defer {
             isAutoLogging = false
+            session.setRestoringStartupSession(false)
             if session.client == nil { session.autoLoginProfileID = nil }
         }
         do {
