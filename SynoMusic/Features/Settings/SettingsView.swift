@@ -502,6 +502,18 @@ struct SettingsView: View {
             ShareLink(item: shareMessage) {
                 Label("分享好友".t, systemImage: "square.and.arrow.up")
             }
+            Link(destination: officialWebsiteURL) {
+                Label("官网".t, systemImage: "safari")
+            }
+            Link(destination: feedbackURL) {
+                Label("问题反馈".t, systemImage: "exclamationmark.bubble")
+            }
+            Link(destination: termsURL) {
+                Label("服务条款".t, systemImage: "doc.text")
+            }
+            Link(destination: privacyURL) {
+                Label("隐私政策".t, systemImage: "hand.raised")
+            }
             Text("SynoMusic 是一个非官方的 Audio Station 客户端。Synology 商标与 Audio Station 名称归群晖科技所有。".t)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -530,6 +542,26 @@ struct SettingsView: View {
 
     private var shareMessage: String {
         "我正在用 SynoMusic 连接自己的 Audio Station 音乐库。".t
+    }
+
+    /// 商业版官网地址。
+    private var officialWebsiteURL: URL {
+        URL(string: "https://zanwingmak.github.io/SynoMusic-OpenSource/")!
+    }
+
+    /// 公开问题反馈地址。
+    private var feedbackURL: URL {
+        URL(string: "https://github.com/ZanwingMak/SynoMusic-OpenSource/issues")!
+    }
+
+    /// 服务条款地址。
+    private var termsURL: URL {
+        URL(string: "https://zanwingmak.github.io/SynoMusic-OpenSource/terms.html")!
+    }
+
+    /// 隐私政策地址。
+    private var privacyURL: URL {
+        URL(string: "https://zanwingmak.github.io/SynoMusic-OpenSource/privacy.html")!
     }
 
     /// 形如 "字段 ······ 值" 的行。

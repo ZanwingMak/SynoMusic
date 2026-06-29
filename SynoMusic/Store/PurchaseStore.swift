@@ -15,16 +15,34 @@ enum SynoMusicProduct: String, CaseIterable, Identifiable {
     case yearly = "app.synomusic.SynoMusic.subscription.yearly"
     case lifetime = "app.synomusic.SynoMusic.lifetime"
 
+    static let allCases: [SynoMusicProduct] = [.weekly, .monthly, .yearly, .lifetime]
+    private static let entitlementCases: [SynoMusicProduct] = [.weekly, .monthly, .quarterly, .yearly, .lifetime]
+
     var id: String { rawValue }
+
+    static var entitlementIDs: Set<String> {
+        Set(entitlementCases.map(\.rawValue))
+    }
 
     /// 商品在付费墙中的固定排序。
     var sortIndex: Int {
         switch self {
         case .weekly: return 0
         case .monthly: return 1
-        case .quarterly: return 2
-        case .yearly: return 3
-        case .lifetime: return 4
+        case .yearly: return 2
+        case .lifetime: return 3
+        case .quarterly: return 99
+        }
+    }
+
+    /// 顶部档位切换的短标题。
+    var tabTitle: String {
+        switch self {
+        case .weekly: return "每周"
+        case .monthly: return "每月"
+        case .quarterly: return "每季"
+        case .yearly: return "每年"
+        case .lifetime: return "终身"
         }
     }
 
@@ -161,7 +179,7 @@ final class PurchaseStore: ObservableObject {
     private var hasStarted = false
 
     var hasFullAccess: Bool {
-        !purchasedProductIDs.isDisjoint(with: Set(SynoMusicProduct.allCases.map(\.rawValue)))
+        !purchasedProductIDs.isDisjoint(with: SynoMusicProduct.entitlementIDs)
     }
 
     deinit {
@@ -283,7 +301,7 @@ final class PurchaseStore: ObservableObject {
         var activeIDs: Set<String> = []
         for await result in Transaction.currentEntitlements {
             guard let transaction = try? verifiedTransaction(from: result) else { continue }
-            guard SynoMusicProduct.allCases.map(\.rawValue).contains(transaction.productID) else { continue }
+            guard SynoMusicProduct.entitlementIDs.contains(transaction.productID) else { continue }
             guard transaction.revocationDate == nil else { continue }
             activeIDs.insert(transaction.productID)
         }
