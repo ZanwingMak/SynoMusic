@@ -53,7 +53,7 @@ enum SynoMusicProduct: String, CaseIterable, Identifiable {
         case .monthly: return "月订阅"
         case .quarterly: return "季订阅"
         case .yearly: return "年订阅"
-        case .lifetime: return "终身版"
+        case .lifetime: return "终身解锁"
         }
     }
 
@@ -64,7 +64,7 @@ enum SynoMusicProduct: String, CaseIterable, Identifiable {
         case .monthly: return "按月解锁完整功能"
         case .quarterly: return "按季度解锁完整功能"
         case .yearly: return "长期使用更省心"
-        case .lifetime: return "一次购买，长期使用"
+        case .lifetime: return "一次购买，终身解锁"
         }
     }
 }

@@ -53,14 +53,16 @@ struct SmartMixesView: View {
                 ) {
                     await playRecentAdditions()
                 }
-                mixCard(
-                    id: "downloaded",
-                    title: "已下载歌曲",
-                    subtitle: "离线缓存也能直接播放。",
-                    icon: "arrow.down.circle.fill",
-                    gradient: [.indigo, .cyan]
-                ) {
-                    playDownloadedSongs()
+                if shouldShowDownloadedMix {
+                    mixCard(
+                        id: "downloaded",
+                        title: "已下载歌曲",
+                        subtitle: "离线缓存也能直接播放。",
+                        icon: "arrow.down.circle.fill",
+                        gradient: [.indigo, .cyan]
+                    ) {
+                        playDownloadedSongs()
+                    }
                 }
             }
             .padding(Metrics.l)
@@ -202,6 +204,11 @@ struct SmartMixesView: View {
     /// 播放已下载歌曲的本地快照。
     private func playDownloadedSongs() {
         playSongs(downloads.completedSongSnapshots, title: "已下载歌曲")
+    }
+
+    /// 判断是否显示下载缓存相关的智能歌单入口。
+    private var shouldShowDownloadedMix: Bool {
+        session.client != nil && !reviewMode.isEnabled
     }
 
     /// 使用统一上下文播放智能歌单。

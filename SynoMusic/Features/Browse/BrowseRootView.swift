@@ -25,7 +25,7 @@ struct BrowseRootView: View {
         ("流派".t, "guitars.fill", .allGenres, [Color(red: 0.3, green: 0.8, blue: 0.7), Color(red: 0.1, green: 0.5, blue: 0.5)]),
         ("文件夹".t, "folder.fill", .allFolders, [Color(red: 0.6, green: 0.6, blue: 0.6), Color(red: 0.35, green: 0.35, blue: 0.4)])
         ]
-        guard reviewMode.isEnabled else { return all }
+        guard shouldHideServerDependentEntries else { return all }
         return all.filter { $0.route != .radio && $0.route != .podcasts }
     }
 
@@ -81,6 +81,11 @@ struct BrowseRootView: View {
     private func showPaywall(for feature: PremiumFeature) {
         Haptics.tap()
         paywallFeature = feature
+    }
+
+    /// 判断是否隐藏依赖真实服务器或外部在线资源的入口。
+    private var shouldHideServerDependentEntries: Bool {
+        reviewMode.isEnabled || session.client == nil
     }
 }
 

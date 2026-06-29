@@ -388,7 +388,6 @@ struct ServerEditorView: View {
     private func enterReviewMode() {
         reviewMode.activate()
         playback.stop()
-        playback.setStatus("已进入审核模式".t)
         Haptics.success()
         dismiss()
     }

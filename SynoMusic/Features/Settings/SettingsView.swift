@@ -95,11 +95,11 @@ struct SettingsView: View {
     private var currentServerSection: some View {
         Section("当前会话".t) {
             if reviewMode.isEnabled {
-                infoRow("名称".t, "审核模式".t)
+                infoRow("名称".t, "测试账号".t)
                 infoRow("用户".t, AppReviewMode.reviewUsername)
                 Button(role: .destructive) {
                     Task { await signOut() }
-                } label: { Text("退出审核模式".t) }
+                } label: { Text("退出登录".t) }
             } else if let active = session.client?.profile {
                 infoRow("名称".t, active.name)
                 if active.isQuickConnect {
@@ -320,29 +320,30 @@ struct SettingsView: View {
         }
     }
 
+    @ViewBuilder
     private var cacheSection: some View {
-        Section("下载与缓存".t) {
-            if purchase.canUse(.songDownloads) {
-                NavigationLink(value: SettingsRoute.downloads) {
-                    HStack {
-                        Label("已下载歌曲".t, systemImage: "arrow.down.circle")
-                        Spacer()
-                        Text("管理".t).foregroundStyle(.secondary)
+        if shouldShowServerDependentEntries {
+            Section("下载与缓存".t) {
+                if purchase.canUse(.songDownloads) {
+                    NavigationLink(value: SettingsRoute.downloads) {
+                        HStack {
+                            Label("已下载歌曲".t, systemImage: "arrow.down.circle")
+                            Spacer()
+                            Text("管理".t).foregroundStyle(.secondary)
+                        }
+                    }
+                } else {
+                    Button {
+                        showPaywall(for: .songDownloads)
+                    } label: {
+                        HStack {
+                            Label("已下载歌曲".t, systemImage: "arrow.down.circle")
+                            Spacer()
+                            Image(systemName: "lock.fill")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
-            } else {
-                Button {
-                    showPaywall(for: .songDownloads)
-                } label: {
-                    HStack {
-                        Label("已下载歌曲".t, systemImage: "arrow.down.circle")
-                        Spacer()
-                        Image(systemName: "lock.fill")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            if !reviewMode.isEnabled {
                 if purchase.canUse(.localImport) {
                     NavigationLink(value: SettingsRoute.localImports) {
                         localImportRow(isLocked: false)
@@ -357,6 +358,11 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    /// 判断是否显示依赖真实服务器会话的下载与导入入口。
+    private var shouldShowServerDependentEntries: Bool {
+        session.client != nil && !reviewMode.isEnabled
     }
 
     /// 绘制本地音乐导入入口，锁定时保留设置行样式并改为弹付费墙。
@@ -451,7 +457,7 @@ struct SettingsView: View {
         } header: {
             Text("完整功能".t)
         } footer: {
-            Text("订阅与终身版由 App Store 处理；订阅试用需在 App Store Connect 中配置。".t)
+            Text("订阅与终身解锁由 App Store 处理；订阅试用需在 App Store Connect 中配置。".t)
         }
     }
 
@@ -1010,13 +1016,25 @@ private struct ServerRowItem: View {
 
 /// 桌面小组件管理。
 struct WidgetManagerView: View {
+    @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var reviewMode: AppReviewMode
 
-    private let widgets: [WidgetShowcase] = [
-        WidgetShowcase(title: "黑胶唱片", subtitle: "在桌面快速进入播放体验", icon: "record.circle", colors: [.black, Color(red: 0.35, green: 0.22, blue: 0.12)]),
-        WidgetShowcase(title: "特色功能", subtitle: "智能歌单、下载和小组件管理", icon: "sparkles.rectangle.stack", colors: [Color(red: 0.95, green: 0.25, blue: 0.48), Color(red: 0.36, green: 0.27, blue: 0.92)]),
-        WidgetShowcase(title: "最近播放", subtitle: "快速回到上次听到的音乐", icon: "clock.arrow.circlepath", colors: [Color(red: 0.07, green: 0.42, blue: 0.72), Color(red: 0.15, green: 0.68, blue: 0.78)])
-    ]
+    /// 根据会话状态生成小组件展示文案，未登录或审核模式不展示下载卖点。
+    private var widgets: [WidgetShowcase] {
+        [
+            WidgetShowcase(title: "黑胶唱片", subtitle: "在桌面快速进入播放体验", icon: "record.circle", colors: [.black, Color(red: 0.35, green: 0.22, blue: 0.12)]),
+            WidgetShowcase(title: "特色功能", subtitle: featureWidgetSubtitle, icon: "sparkles.rectangle.stack", colors: [Color(red: 0.95, green: 0.25, blue: 0.48), Color(red: 0.36, green: 0.27, blue: 0.92)]),
+            WidgetShowcase(title: "最近播放", subtitle: "快速回到上次听到的音乐", icon: "clock.arrow.circlepath", colors: [Color(red: 0.07, green: 0.42, blue: 0.72), Color(red: 0.15, green: 0.68, blue: 0.78)])
+        ]
+    }
+
+    /// 返回特色小组件副标题，避免未登录或审核模式露出下载能力。
+    private var featureWidgetSubtitle: String {
+        session.client == nil || reviewMode.isEnabled
+            ? "智能歌单和小组件管理"
+            : "智能歌单、下载和小组件管理"
+    }
 
     var body: some View {
         ScrollView {

@@ -50,16 +50,22 @@ extension BrowseRoute {
         case .folder(let folder):
             ServerRequiredGate { FolderBrowseView(folder: folder) }
         case .radio:
-            PremiumFeatureGate(feature: .radio) {
-                RadioBrowseView()
+            ServerDependentOnlineGate {
+                PremiumFeatureGate(feature: .radio) {
+                    RadioBrowseView()
+                }
             }
         case .podcasts:
-            PremiumFeatureGate(feature: .podcasts) {
-                PodcastBrowseView()
+            ServerDependentOnlineGate {
+                PremiumFeatureGate(feature: .podcasts) {
+                    PodcastBrowseView()
+                }
             }
         case .podcastShow(let show):
-            PremiumFeatureGate(feature: .podcasts) {
-                PodcastShowDetailView(show: show)
+            ServerDependentOnlineGate {
+                PremiumFeatureGate(feature: .podcasts) {
+                    PodcastShowDetailView(show: show)
+                }
             }
         case .favorites: LocalPlaylistDetailView(playlistID: PlaylistStore.favoritesID)
         case .allSongs:
@@ -126,6 +132,24 @@ private struct ServerRequiredGate<Content: View>: View {
 
     var body: some View {
         if session.client == nil && !reviewMode.isEnabled {
+            ServerRequiredEmptyState {
+                navigation.openAddServer()
+            }
+        } else {
+            content()
+        }
+    }
+}
+
+/// 对需要真实服务器会话且不能在审核模式展示的在线页面做统一保护。
+private struct ServerDependentOnlineGate<Content: View>: View {
+    @EnvironmentObject private var session: AppSession
+    @EnvironmentObject private var navigation: AppNavigationState
+    @EnvironmentObject private var reviewMode: AppReviewMode
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        if session.client == nil || reviewMode.isEnabled {
             ServerRequiredEmptyState {
                 navigation.openAddServer()
             }

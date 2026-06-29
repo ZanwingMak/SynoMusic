@@ -4,6 +4,7 @@ import SwiftUI
 /// 付费墙：展示完整功能说明、StoreKit 商品、恢复购买、兑换入口和法律链接。
 struct PaywallView: View {
     @EnvironmentObject private var purchase: PurchaseStore
+    @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var reviewMode: AppReviewMode
     @Environment(\.dismiss) private var dismiss
 
@@ -59,7 +60,7 @@ struct PaywallView: View {
             Text(feature.lockedMessage.t)
                 .font(.callout)
                 .foregroundStyle(.secondary)
-            Text("订阅支持 3 天免费试用；终身版为一次性购买。".t)
+            Text("订阅支持 3 天免费试用；终身解锁为一次性购买。".t)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(Theme.accent)
         }
@@ -260,10 +261,16 @@ struct PaywallView: View {
             ("icloud", "iCloud 云同步"),
             ("sparkles.rectangle.stack", "Siri 与小组件")
         ]
-        guard reviewMode.isEnabled else { return items }
-        return items.filter { item in
-            item.title != "电台" && item.title != "播客" && item.title != "本地音乐导入"
-        }
+        guard shouldHideServerDependentPremiumFeatures else { return items }
+        return items.filter { item in !serverDependentPremiumFeatureTitles.contains(item.title) }
+    }
+
+    private var shouldHideServerDependentPremiumFeatures: Bool {
+        reviewMode.isEnabled || session.client == nil
+    }
+
+    private var serverDependentPremiumFeatureTitles: Set<String> {
+        ["电台", "播客", "歌曲下载", "下载队列", "本地音乐导入"]
     }
 
     private var availableProducts: [Product] {
@@ -352,7 +359,7 @@ struct PaywallView: View {
     /// 返回所选商品的订阅或一次性购买说明。
     private func subscriptionNote(for product: Product) -> String {
         SynoMusicProduct(rawValue: product.id) == .lifetime
-            ? "终身版为一次性购买。".t
+            ? "终身解锁为一次性购买。".t
             : "订阅由 App Store 管理，可随时在 Apple 账号中取消。".t
     }
 

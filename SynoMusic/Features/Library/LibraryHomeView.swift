@@ -194,7 +194,7 @@ private struct QuickActions: View {
                     gradient: [Color(red: 0.55, green: 0.4, blue: 0.95), Color(red: 0.25, green: 0.25, blue: 0.65)]
                 )
 
-                if !reviewMode.isEnabled {
+                if shouldShowServerDependentEntries {
                     routeCard(
                         route: .radio,
                         title: "电台".t,
@@ -272,6 +272,11 @@ private struct QuickActions: View {
     private func showPaywall(for feature: PremiumFeature) {
         Haptics.tap()
         paywallFeature = feature
+    }
+
+    /// 判断是否显示依赖真实服务器或外部在线资源的快捷入口。
+    private var shouldShowServerDependentEntries: Bool {
+        session.client != nil && !reviewMode.isEnabled
     }
 
     /// 从服务器随机抓取歌曲，审核模式或未连接由入口提前处理。

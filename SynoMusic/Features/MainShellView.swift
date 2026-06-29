@@ -38,8 +38,10 @@ struct MainShellView: View {
                         .navigationDestination(for: SettingsRoute.self) { route in
                             switch route {
                             case .downloads:
-                                PremiumFeatureGate(feature: .songDownloads) {
-                                    DownloadsListView()
+                                serverDependentDestination {
+                                    PremiumFeatureGate(feature: .songDownloads) {
+                                        DownloadsListView()
+                                    }
                                 }
                             case .login(let profile):
                                 LoginView(profile: profile)
@@ -48,9 +50,7 @@ struct MainShellView: View {
                                     WidgetManagerView()
                                 }
                             case .localImports:
-                                if reviewMode.isEnabled {
-                                    EmptyStateView(systemImage: "lock.shield", title: "审核模式".t, message: "正在使用审核模式数据".t)
-                                } else {
+                                serverDependentDestination {
                                     PremiumFeatureGate(feature: .localImport) {
                                         LocalImportView()
                                     }
@@ -87,6 +87,18 @@ struct MainShellView: View {
         .animation(.easeInOut(duration: 0.18), value: theme.currentID)
         .sheet(isPresented: $showQueueSheet) {
             QueueSheet().presentationDetents([.medium, .large])
+        }
+    }
+
+    /// 真实服务器会话可用时展示内容，否则给出通用连接提示。
+    @ViewBuilder
+    private func serverDependentDestination<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        if session.client == nil || reviewMode.isEnabled {
+            ServerRequiredEmptyState {
+                navigation.openAddServer()
+            }
+        } else {
+            content()
         }
     }
 }

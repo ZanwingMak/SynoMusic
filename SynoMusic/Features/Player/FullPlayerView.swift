@@ -12,6 +12,7 @@ struct FullPlayerView: View {
     @EnvironmentObject private var navigation: AppNavigationState
     @EnvironmentObject private var purchase: PurchaseStore
     @EnvironmentObject private var playbackSettings: PlaybackSettings
+    @EnvironmentObject private var reviewMode: AppReviewMode
     @Binding var isPresented: Bool
     @State private var showLyrics = false
     @State private var showQueue = false
@@ -87,6 +88,7 @@ struct FullPlayerView: View {
                         onRate: { stars in Task { await applyRating(stars) } },
                         onDelete: { showDeleteConfirm = true }
                     )
+                    .environment(\.showsDownloadActions, shouldShowDownloadActions)
                     .transition(.scale(scale: 0.86, anchor: .topTrailing).combined(with: .opacity))
                     .zIndex(300)
                 }
@@ -247,6 +249,7 @@ struct FullPlayerView: View {
 
     /// 下载当前歌曲到本地缓存，并同步设置页下载管理。
     private func downloadCurrent() async {
+        guard shouldShowDownloadActions else { return }
         guard purchase.canUse(.songDownloads) else {
             paywallFeature = .songDownloads
             return
@@ -290,6 +293,7 @@ struct FullPlayerView: View {
 
     /// 关闭播放器并跳转到设置里的下载管理。
     private func openDownloadManager() {
+        guard shouldShowDownloadActions else { return }
         guard purchase.canUse(.songDownloads) else {
             paywallFeature = .songDownloads
             return
@@ -385,7 +389,19 @@ private struct TopBarMenu: View {
 }
 
 /// 播放页顶部菜单面板：全屏透明层负责点击外部关闭，右上角玻璃面板展示操作。
+private struct ShowsDownloadActionsKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+private extension EnvironmentValues {
+    var showsDownloadActions: Bool {
+        get { self[ShowsDownloadActionsKey.self] }
+        set { self[ShowsDownloadActionsKey.self] = newValue }
+    }
+}
+
 private struct PlayerTopMenuOverlay: View {
+    @Environment(\.showsDownloadActions) private var showsDownloadActions
     @Binding var isPresented: Bool
     let song: Song?
     let downloadStatus: DownloadStatus?
@@ -455,7 +471,9 @@ private struct PlayerTopMenuOverlay: View {
             PlayerMenuRow(icon: "music.note.list", title: "歌词编辑".t) {
                 perform(onOpenLyricEditor)
             }
-            downloadRow
+            if showsDownloadActions {
+                downloadRow
+            }
             PlayerMenuRow(icon: "info.circle", title: "歌曲信息".t) {
                 perform(onShowInfo)
             }
@@ -465,8 +483,10 @@ private struct PlayerTopMenuOverlay: View {
             PlayerMenuRow(icon: "globe", title: "网上搜索".t) {
                 perform(onResearch)
             }
-            PlayerMenuRow(icon: "tray.and.arrow.down", title: "下载管理".t) {
-                perform(onOpenDownloadManager)
+            if showsDownloadActions {
+                PlayerMenuRow(icon: "tray.and.arrow.down", title: "下载管理".t) {
+                    perform(onOpenDownloadManager)
+                }
             }
             PlayerMenuRow(icon: "star", title: "评分".t, showsChevron: true) {
                 Haptics.tap()
@@ -833,10 +853,12 @@ extension FullPlayerView {
                     .foregroundStyle(.white.opacity(0.85))
                     .frame(width: 28, height: 28)
             }
-            bottomToolButton {
-                handleBottomDownloadTap()
-            } label: {
-                downloadToolIcon
+            if shouldShowDownloadActions {
+                bottomToolButton {
+                    handleBottomDownloadTap()
+                } label: {
+                    downloadToolIcon
+                }
             }
             AirPlayButton()
                 .frame(width: 36, height: 36)
@@ -892,6 +914,11 @@ extension FullPlayerView {
         case .failed, .none:
             Task { await downloadCurrent() }
         }
+    }
+
+    /// 判断当前界面是否可以展示下载相关操作。
+    private var shouldShowDownloadActions: Bool {
+        session.client != nil && !reviewMode.isEnabled
     }
 
     /// 底部工具栏的等宽按钮容器，保证图标切换时其它按钮不横向跳动。
