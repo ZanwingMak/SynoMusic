@@ -296,12 +296,13 @@ enum PlexAccountService {
                 "\(escape(key))=\(escape(value))"
             }
             .joined(separator: "&")
-        return URL(string: "https://app.plex.tv/auth#?\(fragment)")
+        return URL(string: "https://app.plex.tv/auth/#?\(fragment)")
     }
 
     /// 百分号转义 Plex 授权 URL 参数。
     private static func escape(_ value: String) -> String {
-        value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~")
+        return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
     }
 
     /// 把 Plex 资源中的连接节点转成可保存的连接地址。

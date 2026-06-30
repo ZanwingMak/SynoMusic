@@ -999,22 +999,17 @@ private struct ServerRowItem: View {
         .disabled(isSwitching)
     }
 
-    /// 服务器状态标签；允许换行，避免长语言撑爆一行。
+    /// 服务器状态标签；使用短标签避免长音乐源名称挤压布局。
     private var tagRow: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 6) {
-                tagItems
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                tagItems
-            }
+        HStack(spacing: 5) {
+            tagItems
         }
     }
 
     /// 根据服务器状态生成标签集合。
     @ViewBuilder
     private var tagItems: some View {
-        tagPill(profile.providerType.titleKey.t, color: accentColor)
+        tagPill(providerBadgeTitle, color: accentColor)
         if profile.isQuickConnect {
             tagPill("QC", color: .blue)
         }
@@ -1041,15 +1036,28 @@ private struct ServerRowItem: View {
         return "\(profile.username) @ \(profile.displayURL)"
     }
 
+    /// 服务器音乐源的短显示名。
+    private var providerBadgeTitle: String {
+        switch profile.providerType {
+        case .synologyAudioStation:
+            return "Audio Station"
+        case .plex:
+            return "Plex"
+        case .jellyfin:
+            return "Jellyfin"
+        case .emby:
+            return "Emby"
+        }
+    }
+
     /// 绘制单个服务器状态标签。
     private func tagPill(_ text: String, color: Color) -> some View {
         Text(text)
             .font(.caption2.weight(.semibold))
-            .lineLimit(2)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: 92, alignment: .leading)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .padding(.vertical, 3)
             .background(color.opacity(0.15), in: Capsule())
             .foregroundStyle(color)
     }

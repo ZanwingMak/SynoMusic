@@ -212,7 +212,7 @@ struct ServerEditorView: View {
             .pickerStyle(.segmented)
         } footer: {
             Text(plexLoginMode == .account
-                ? "使用 Plex 账号登录后，可选择本地、远程或中继访问地址。".t
+                ? "Plex 授权会自动发现可访问服务器；如需手动填写地址和 Token，请切换到 Token 模式。".t
                 : "已有 X-Plex-Token 时，可以手动填写服务器地址直连。".t)
         }
     }
@@ -273,25 +273,27 @@ struct ServerEditorView: View {
 
     private var accountSection: some View {
         Section {
-            if profile.providerType == .plex, plexLoginMode == .token {
-                ClearableSecureField(title: "X-Plex-Token".t, text: $password)
+            if profile.providerType == .plex {
+                if plexLoginMode == .account {
+                    Label("通过 Plex 官方网页授权，无需在 App 输入账号密码。".t, systemImage: "checkmark.shield")
+                        .font(.nocBody)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ClearableSecureField(title: "X-Plex-Token".t, text: $password)
+                }
             } else {
                 ClearableTextField(title: "用户名".t, text: $profile.username)
                 ClearableSecureField(title: "密码".t, text: $password)
-                if profile.providerType == .plex {
-                    Button {
-                        Task { await beginPlexPinAuthorization() }
-                    } label: {
-                        Label("使用浏览器授权 Plex".t, systemImage: "safari")
-                    }
-                    .disabled(isConnecting)
-                }
             }
         } header: {
-            Text(profile.providerType == .plex && plexLoginMode == .token ? "访问令牌".t : "账号".t)
+            if profile.providerType == .plex {
+                Text(plexLoginMode == .token ? "访问令牌".t : "Plex 授权".t)
+            } else {
+                Text("账号".t)
+            }
         } footer: {
             if profile.providerType == .plex, plexLoginMode == .account {
-                Text("Plex 账号只用于获取可访问服务器列表，App 会保存所选服务器的访问令牌到 Keychain。".t)
+                Text("授权成功后，App 只保存所选服务器的访问令牌；账号密码不会保存在本机。".t)
             } else if profile.providerType == .plex {
                 Text("Plex 需要填入 X-Plex-Token；可在 Plex Web 中查看服务器请求或账号设置获取。".t)
             }
@@ -329,11 +331,13 @@ struct ServerEditorView: View {
                 if profile.providerType == .synologyAudioStation {
                     ClearableTextField(title: "二步验证码（OTP）".t, text: $otp, keyboard: .numberPad)
                 }
-                Toggle("记住密码".t, isOn: $rememberPassword)
-                if profile.scheme == .https {
+                if shouldShowCredentialOptions {
+                    Toggle("记住密码".t, isOn: $rememberPassword)
+                }
+                if shouldShowCredentialOptions, profile.scheme == .https {
                     Toggle("信任自签名证书".t, isOn: $profile.ignoreInvalidCertificate)
                 }
-                if isEditingExisting {
+                if isEditingExisting, shouldShowCredentialOptions {
                     Button("仅保存配置，不立即登录".t) { saveOnly() }
                 }
             } label: {
@@ -354,10 +358,10 @@ struct ServerEditorView: View {
             return true
         }
         guard isProviderConnectable else { return false }
-        guard !password.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
         if profile.providerType == .plex, plexLoginMode == .account {
-            return !profile.username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            return true
         }
+        guard !password.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
         if profile.providerType != .plex,
            profile.username.trimmingCharacters(in: .whitespaces).isEmpty {
             return false
@@ -378,7 +382,15 @@ struct ServerEditorView: View {
         if loadingShown {
             return progressMessage ?? "正在连接...".t
         }
+        if profile.providerType == .plex, plexLoginMode == .account {
+            return "授权并发现服务器".t
+        }
         return "连接并保存".t
+    }
+
+    /// Plex 账号授权模式不展示可编辑凭据选项，避免用户误改造成连接失败。
+    private var shouldShowCredentialOptions: Bool {
+        !(profile.providerType == .plex && plexLoginMode == .account)
     }
 
     /// 当前音乐源是否已有可用登录实现。
@@ -396,7 +408,7 @@ struct ServerEditorView: View {
         // 编辑现有档案：用 isQuickConnect 字段决定初始模式
         if isEditingExisting {
             mode = profile.isQuickConnect ? .quickConnect : .direct
-            plexLoginMode = profile.providerType == .plex ? .token : .account
+            plexLoginMode = .account
             password = serverStore.password(for: profile) ?? ""
         } else {
             // 添加新档案：强制清空密码，避免 SwiftUI 复用 / 系统自动填残留
@@ -523,7 +535,7 @@ struct ServerEditorView: View {
         }
         guard canSaveProfileUnderLimit() else { return }
         if profile.providerType == .plex, plexLoginMode == .account {
-            await connectPlexAccountAndChooseServer()
+            await beginPlexPinAuthorization()
             return
         }
         isConnecting = true
@@ -566,25 +578,6 @@ struct ServerEditorView: View {
             Haptics.warning()
         } catch {
             self.error = error.localizedDescription + "\n\n" + "配置已保存到「服务器」列表。".t
-            Haptics.warning()
-        }
-    }
-
-    /// 使用 Plex 账号登录并弹出可访问服务器选择。
-    private func connectPlexAccountAndChooseServer() async {
-        isConnecting = true
-        progressMessage = "正在登录 Plex...".t
-        error = nil
-        defer {
-            isConnecting = false
-            progressMessage = nil
-        }
-
-        do {
-            let account = try await PlexAccountService.signIn(username: profile.username, password: password)
-            try await continuePlexServerDiscovery(account: account)
-        } catch {
-            self.error = error.localizedDescription.t
             Haptics.warning()
         }
     }
