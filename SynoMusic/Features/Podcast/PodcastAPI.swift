@@ -87,7 +87,7 @@ final class PodcastAPI: @unchecked Sendable {
         components.queryItems = queryItems
         guard let url = components.url else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
-        request.setValue("SynoMusic/1.4.8 (iOS)", forHTTPHeaderField: "User-Agent")
+        request.setValue("SynoMusic/1.5.1 (iOS)", forHTTPHeaderField: "User-Agent")
         let (data, _) = try await session.data(for: request)
         let response = try decoder.decode(ITunesPodcastResponse.self, from: data)
         return response.results.compactMap { $0.show }
@@ -106,7 +106,7 @@ final class PodcastAPI: @unchecked Sendable {
         }
         guard let url = components.url else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
-        request.setValue("SynoMusic/1.4.8 (iOS)", forHTTPHeaderField: "User-Agent")
+        request.setValue("SynoMusic/1.5.1 (iOS)", forHTTPHeaderField: "User-Agent")
         let (data, _) = try await session.data(for: request)
         let feed = try decoder.decode(ITunesTopPodcastResponse.self, from: data)
         let ids = feed.feed.entry?.compactMap(\.collectionID) ?? []
@@ -116,7 +116,7 @@ final class PodcastAPI: @unchecked Sendable {
     /// 读取播客 RSS feed 并解析可播放单集。
     func episodes(for show: PodcastShow) async throws -> [PodcastEpisode] {
         var request = URLRequest(url: show.feedURL)
-        request.setValue("SynoMusic/1.4.8 (iOS)", forHTTPHeaderField: "User-Agent")
+        request.setValue("SynoMusic/1.5.1 (iOS)", forHTTPHeaderField: "User-Agent")
         let (data, _) = try await session.data(for: request)
         let parser = PodcastRSSParser(defaultArtworkURL: show.artworkURL)
         return try parser.parse(data)
@@ -136,7 +136,7 @@ final class PodcastAPI: @unchecked Sendable {
         ]
         guard let url = components.url else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
-        request.setValue("SynoMusic/1.4.8 (iOS)", forHTTPHeaderField: "User-Agent")
+        request.setValue("SynoMusic/1.5.1 (iOS)", forHTTPHeaderField: "User-Agent")
         let (data, _) = try await session.data(for: request)
         let response = try decoder.decode(ITunesPodcastResponse.self, from: data)
         let showsByID = Dictionary(uniqueKeysWithValues: response.results.compactMap { result -> (String, PodcastShow)? in

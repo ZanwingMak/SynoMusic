@@ -48,8 +48,15 @@ struct RootView: View {
                 .presentationDragIndicator(.visible)
         }
         .onChange(of: playback.currentSong?.id) { oldID, newID in
+            if newID == nil {
+                showFullPlayer = false
+                return
+            }
             guard oldID == nil, newID != nil else { return }
             showFullPlayer = true
+        }
+        .onChange(of: shellIdentity) { oldIdentity, newIdentity in
+            handleSessionIdentityChange(from: oldIdentity, to: newIdentity)
         }
         .task { await attemptAutoLogin() }
         .onAppear { handlePendingShortcutAction() }
@@ -90,6 +97,20 @@ struct RootView: View {
         if reviewMode.isEnabled { return AppReviewMode.shellIdentity }
         if !serverStore.profiles.isEmpty { return "no-active-session-with-profiles" }
         return "demo-mode"
+    }
+
+    /// 会话身份变化时停止旧服务器的播放，并同步收起播放器界面。
+    private func handleSessionIdentityChange(from oldIdentity: String, to newIdentity: String) {
+        guard oldIdentity != newIdentity else { return }
+        showFullPlayer = false
+        guard isRealSessionIdentity(oldIdentity) || isRealSessionIdentity(newIdentity) else { return }
+        guard playback.currentSong != nil else { return }
+        playback.stop()
+    }
+
+    /// 判断身份字符串是否来自真实服务器会话，而非 Demo / 未登录占位。
+    private func isRealSessionIdentity(_ identity: String) -> Bool {
+        identity.contains(":")
     }
 
     /// 启动时尝试用默认档案 + Keychain 密码静默登录。
