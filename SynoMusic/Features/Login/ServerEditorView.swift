@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// 服务器档案编辑：新增或编辑 NAS 连接信息；同时承担"测试并登录"功能。
 struct ServerEditorView: View {
@@ -29,6 +30,7 @@ struct ServerEditorView: View {
     @State private var showPlexServerPicker: Bool = false
     @State private var showPlexLibraryPicker: Bool = false
     @State private var showPlexPinSheet: Bool = false
+    @State private var showSMBFolderImporter: Bool = false
 
     /// 编辑模式（QC / 直连）。
     enum Mode: String, CaseIterable, Identifiable {
@@ -86,10 +88,17 @@ struct ServerEditorView: View {
                     if plexLoginMode == .token {
                         directSection
                     }
+                } else if profile.providerType == .webDAV {
+                    directSection
+                    webDAVPathSection
+                } else if profile.providerType == .smb {
+                    smbFolderSection
                 } else {
                     directSection
                 }
-                accountSection
+                if profile.providerType != .smb {
+                    accountSection
+                }
                 actionSection
                 advancedSection
             }
@@ -151,6 +160,9 @@ struct ServerEditorView: View {
                 guard showPlexPinSheet, plexPin != nil else { return }
                 Task { await continuePlexPinAuthorization(showPendingError: false) }
             }
+            .fileImporter(isPresented: $showSMBFolderImporter, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in
+                handleSMBFolderImport(result)
+            }
         }
     }
 
@@ -174,7 +186,7 @@ struct ServerEditorView: View {
         } header: {
             Text("音乐源".t)
         } footer: {
-            Text("Jellyfin、Emby 和 Plex 仅接入音乐库，不会加入视频、电视或照片功能。".t)
+            Text("Jellyfin、Emby、Plex、WebDAV 和 SMB 仅接入音乐库，不会加入视频、电视或照片功能。".t)
         }
     }
 
@@ -247,9 +259,13 @@ struct ServerEditorView: View {
             }
             .pickerStyle(.segmented)
             .onChange(of: profile.scheme) { _, newValue in
-                let defaultsToFollow: Set<Int> = [5000, 5001]
+                let defaultsToFollow: Set<Int> = profile.providerType == .webDAV ? [5005, 5006] : [5000, 5001]
                 if defaultsToFollow.contains(profile.port) {
-                    profile.port = (newValue == .https) ? 5001 : 5000
+                    if profile.providerType == .webDAV {
+                        profile.port = (newValue == .https) ? 5006 : 5005
+                    } else {
+                        profile.port = (newValue == .https) ? 5001 : 5000
+                    }
                     portText = String(profile.port)
                 }
             }
@@ -268,6 +284,42 @@ struct ServerEditorView: View {
             }
         } header: {
             Text("连接".t)
+        }
+    }
+
+    /// WebDAV 根目录设置；留空时扫描服务器根目录。
+    private var webDAVPathSection: some View {
+        Section {
+            ClearableTextField(title: "目录路径（例如 /music）".t, text: optionalText(\.musicLibraryID), keyboard: .URL)
+        } header: {
+            Text("WebDAV 目录".t)
+        } footer: {
+            Text("Synology WebDAV 常用 HTTPS 端口是 5006；目录路径应填写音乐所在目录，例如 /music。".t)
+        }
+    }
+
+    /// SMB 文件夹选择；通过系统文件 App 授权共享目录。
+    private var smbFolderSection: some View {
+        Section {
+            Button {
+                showSMBFolderImporter = true
+            } label: {
+                Label(smbFolderButtonTitle, systemImage: "folder.badge.plus")
+            }
+            if let name = profile.musicLibraryName, !name.isEmpty {
+                HStack {
+                    Text("已选择".t)
+                    Spacer()
+                    Text(name)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.trailing)
+                }
+            }
+        } header: {
+            Text("SMB 文件夹".t)
+        } footer: {
+            Text("请先在系统「文件」App 中连接 SMB 共享，然后在这里选择音乐文件夹。SynoMusic 会保存文件夹授权，不保存 SMB 账号密码。".t)
         }
     }
 
@@ -345,9 +397,7 @@ struct ServerEditorView: View {
                     .foregroundStyle(.secondary)
             }
         } footer: {
-            Text(profile.providerType == .synologyAudioStation
-                ? "启用了二步验证的账号需在「高级」填入 OTP。密码加密保存于 Keychain。".t
-                : "密码或访问令牌会加密保存于 Keychain。".t)
+            Text(advancedFooterText)
         }
     }
 
@@ -358,6 +408,9 @@ struct ServerEditorView: View {
             return true
         }
         guard isProviderConnectable else { return false }
+        if profile.providerType == .smb {
+            return !password.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
         if profile.providerType == .plex, plexLoginMode == .account {
             return true
         }
@@ -385,12 +438,34 @@ struct ServerEditorView: View {
         if profile.providerType == .plex, plexLoginMode == .account {
             return "授权并发现服务器".t
         }
+        if profile.providerType == .smb {
+            return "连接文件夹".t
+        }
         return "连接并保存".t
     }
 
     /// Plex 账号授权模式不展示可编辑凭据选项，避免用户误改造成连接失败。
     private var shouldShowCredentialOptions: Bool {
-        !(profile.providerType == .plex && plexLoginMode == .account)
+        !(profile.providerType == .plex && plexLoginMode == .account) && profile.providerType != .smb
+    }
+
+    /// SMB 文件夹按钮标题。
+    private var smbFolderButtonTitle: String {
+        if profile.musicLibraryName?.isEmpty == false {
+            return "重新选择 SMB 文件夹".t
+        }
+        return "选择 SMB 文件夹".t
+    }
+
+    /// 高级区说明文案。
+    private var advancedFooterText: String {
+        if profile.providerType == .synologyAudioStation {
+            return "启用了二步验证的账号需在「高级」填入 OTP。密码加密保存于 Keychain。".t
+        }
+        if profile.providerType == .smb {
+            return "SMB 文件夹授权会加密保存于 Keychain。".t
+        }
+        return "密码或访问令牌会加密保存于 Keychain。".t
     }
 
     /// 当前音乐源是否已有可用登录实现。
@@ -475,7 +550,7 @@ struct ServerEditorView: View {
         switch providerType {
         case .synologyAudioStation:
             mode = .direct
-            if profile.port == 8096 || profile.port == 32400 {
+            if profile.port == 8096 || profile.port == 32400 || profile.port == 5006 || profile.port == 445 {
                 profile.port = profile.scheme == .https ? 5001 : 5000
                 portText = String(profile.port)
             }
@@ -483,7 +558,7 @@ struct ServerEditorView: View {
             mode = .direct
             profile.isQuickConnect = false
             profile.quickConnectID = ""
-            if profile.port == 5000 || profile.port == 5001 || profile.port == 32400 {
+            if profile.port == 5000 || profile.port == 5001 || profile.port == 32400 || profile.port == 5006 || profile.port == 445 {
                 profile.port = 8096
                 portText = "8096"
             }
@@ -492,9 +567,27 @@ struct ServerEditorView: View {
             plexLoginMode = .account
             profile.isQuickConnect = false
             profile.quickConnectID = ""
-            if profile.port == 5000 || profile.port == 5001 || profile.port == 8096 {
+            if profile.port == 5000 || profile.port == 5001 || profile.port == 8096 || profile.port == 5006 || profile.port == 445 {
                 profile.port = 32400
                 portText = "32400"
+            }
+        case .webDAV:
+            mode = .direct
+            profile.isQuickConnect = false
+            profile.quickConnectID = ""
+            profile.scheme = .https
+            if profile.port == 5000 || profile.port == 5001 || profile.port == 8096 || profile.port == 32400 || profile.port == 445 {
+                profile.port = 5006
+                portText = "5006"
+            }
+        case .smb:
+            mode = .direct
+            profile.isQuickConnect = false
+            profile.quickConnectID = ""
+            profile.username = ""
+            if profile.port == 5000 || profile.port == 5001 || profile.port == 8096 || profile.port == 32400 || profile.port == 5006 {
+                profile.port = 445
+                portText = "445"
             }
         }
     }
@@ -781,6 +874,42 @@ struct ServerEditorView: View {
         error = PremiumFeature.serverProfiles.lockedMessage.t
         Haptics.warning()
         return false
+    }
+
+    /// 处理用户从系统文件 App 选择的 SMB 文件夹授权。
+    private func handleSMBFolderImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer {
+                if scoped { url.stopAccessingSecurityScopedResource() }
+            }
+            do {
+                password = try FolderMusicLibraryClient.makeBookmark(for: url)
+                profile.host = url.lastPathComponent
+                profile.musicLibraryID = url.absoluteString
+                profile.musicLibraryName = url.lastPathComponent
+                if profile.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    profile.name = url.lastPathComponent
+                }
+                Haptics.success()
+            } catch {
+                self.error = error.localizedDescription
+                Haptics.warning()
+            }
+        case .failure(let error):
+            self.error = error.localizedDescription
+            Haptics.warning()
+        }
+    }
+
+    /// 为可选字符串字段创建非可选 Binding，便于表单编辑。
+    private func optionalText(_ keyPath: WritableKeyPath<ServerProfile, String?>) -> Binding<String> {
+        Binding(
+            get: { profile[keyPath: keyPath] ?? "" },
+            set: { profile[keyPath: keyPath] = $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
+        )
     }
 }
 

@@ -508,7 +508,7 @@ final class MediaBrowserMusicLibraryClient: MusicLibraryClient, @unchecked Senda
             "MediaBrowser Client=\"SynoMusic\"",
             "Device=\"iOS\"",
             "DeviceId=\"\(deviceID)\"",
-            "Version=\"1.5.1\""
+            "Version=\"1.5.2\""
         ]
         if includeToken, let token {
             segments.append("Token=\"\(token)\"")

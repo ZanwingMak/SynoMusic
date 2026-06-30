@@ -1001,8 +1001,26 @@ private struct ServerRowItem: View {
 
     /// 服务器状态标签；使用短标签避免长音乐源名称挤压布局。
     private var tagRow: some View {
-        HStack(spacing: 5) {
-            tagItems
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 5) {
+                tagItems
+            }
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 5) {
+                    tagPill(providerBadgeTitle, color: accentColor)
+                    if profile.isQuickConnect {
+                        tagPill("QC", color: .blue)
+                    }
+                }
+                HStack(spacing: 5) {
+                    if isCurrentSession {
+                        tagPill("已登录".t, color: .green)
+                    }
+                    if isDefault {
+                        tagPill("默认".t, color: accentColor)
+                    }
+                }
+            }
         }
     }
 
@@ -1033,6 +1051,12 @@ private struct ServerRowItem: View {
             let resolved = profile.resolvedDisplayURL == "未获取" ? "未获取".t : profile.resolvedDisplayURL
             return "\(profile.username) @ QC: \(profile.quickConnectID) · \(resolved)"
         }
+        if profile.providerType == .smb {
+            return profile.musicLibraryName ?? "SMB 文件夹".t
+        }
+        if profile.providerType == .webDAV, let path = profile.musicLibraryID, !path.isEmpty {
+            return "\(profile.username) @ \(profile.displayURL)\(path)"
+        }
         return "\(profile.username) @ \(profile.displayURL)"
     }
 
@@ -1047,6 +1071,10 @@ private struct ServerRowItem: View {
             return "Jellyfin"
         case .emby:
             return "Emby"
+        case .webDAV:
+            return "WebDAV"
+        case .smb:
+            return "SMB"
         }
     }
 
@@ -1055,7 +1083,7 @@ private struct ServerRowItem: View {
         Text(text)
             .font(.caption2.weight(.semibold))
             .lineLimit(1)
-            .fixedSize(horizontal: true, vertical: false)
+            .minimumScaleFactor(0.82)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(color.opacity(0.15), in: Capsule())

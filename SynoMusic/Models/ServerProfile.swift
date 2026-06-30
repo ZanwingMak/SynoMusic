@@ -6,6 +6,8 @@ enum MusicProviderType: String, Codable, CaseIterable, Identifiable, Sendable {
     case jellyfin
     case emby
     case plex
+    case webDAV
+    case smb
 
     var id: String { rawValue }
 
@@ -15,6 +17,8 @@ enum MusicProviderType: String, Codable, CaseIterable, Identifiable, Sendable {
         case .jellyfin: return "Jellyfin"
         case .emby: return "Emby"
         case .plex: return "Plex"
+        case .webDAV: return "WebDAV"
+        case .smb: return "SMB"
         }
     }
 }

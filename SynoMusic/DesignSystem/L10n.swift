@@ -68,11 +68,13 @@ final class LanguageManager: ObservableObject {
         let code = current.lookupCode
         if code == AppLanguage.zhHans.rawValue { return key }
         return L10n.table[code]?[key]
+            ?? L10n.release152Additions[code]?[key]
             ?? L10n.commercialAdditions[code]?[key]
             ?? L10n.release144Additions[code]?[key]
             ?? L10n.commercialTable[code]?[key]
             ?? L10n.auditAdditions[code]?[key]
             ?? L10n.table[AppLanguage.en.rawValue]?[key]
+            ?? L10n.release152Additions[AppLanguage.en.rawValue]?[key]
             ?? L10n.release144Additions[AppLanguage.en.rawValue]?[key]
             ?? L10n.commercialAdditions[AppLanguage.en.rawValue]?[key]
             ?? L10n.commercialTable[AppLanguage.en.rawValue]?[key]
@@ -3187,6 +3189,117 @@ enum L10n {
     ]
 
     /// 本地化审计补丁：覆盖跨表缺失和动态格式化文案。
+    static let release152Additions: [String: [String: String]] = [
+        "zh-Hant": [
+            "Jellyfin、Emby、Plex、WebDAV 和 SMB 仅接入音乐库，不会加入视频、电视或照片功能。": "Jellyfin、Emby、Plex、WebDAV 和 SMB 只會接入音樂庫，不會加入影片、電視或照片功能。",
+            "目录路径（例如 /music）": "目錄路徑（例如 /music）",
+            "WebDAV 目录": "WebDAV 目錄",
+            "Synology WebDAV 常用 HTTPS 端口是 5006；目录路径应填写音乐所在目录，例如 /music。": "Synology WebDAV 常用 HTTPS 連接埠是 5006；目錄路徑應填寫音樂所在目錄，例如 /music。",
+            "SMB 文件夹": "SMB 資料夾",
+            "已选择": "已選擇",
+            "请先在系统「文件」App 中连接 SMB 共享，然后在这里选择音乐文件夹。SynoMusic 会保存文件夹授权，不保存 SMB 账号密码。": "請先在系統「檔案」App 中連接 SMB 共享，然後在這裡選擇音樂資料夾。SynoMusic 會儲存資料夾授權，不儲存 SMB 帳號密碼。",
+            "连接文件夹": "連接資料夾",
+            "重新选择 SMB 文件夹": "重新選擇 SMB 資料夾",
+            "选择 SMB 文件夹": "選擇 SMB 資料夾",
+            "SMB 文件夹授权会加密保存于 Keychain。": "SMB 資料夾授權會加密儲存於 Keychain。",
+            "正在读取文件夹...": "正在讀取資料夾...",
+            "WebDAV 密码不能为空。": "WebDAV 密碼不能為空。",
+            "请先选择 SMB 共享文件夹。": "請先選擇 SMB 共享資料夾。",
+            "文件夹授权已失效，请重新选择 SMB 共享文件夹。": "資料夾授權已失效，請重新選擇 SMB 共享資料夾。",
+            "无法读取该文件夹。": "無法讀取該資料夾。"
+        ],
+        "en": [
+            "Jellyfin、Emby、Plex、WebDAV 和 SMB 仅接入音乐库，不会加入视频、电视或照片功能。": "Jellyfin, Emby, Plex, WebDAV, and SMB connect music libraries only. Video, TV, and photos are not added.",
+            "目录路径（例如 /music）": "Directory path, for example /music",
+            "WebDAV 目录": "WebDAV Directory",
+            "Synology WebDAV 常用 HTTPS 端口是 5006；目录路径应填写音乐所在目录，例如 /music。": "Synology WebDAV commonly uses HTTPS port 5006. Enter the folder that contains your music, such as /music.",
+            "SMB 文件夹": "SMB Folder",
+            "已选择": "Selected",
+            "请先在系统「文件」App 中连接 SMB 共享，然后在这里选择音乐文件夹。SynoMusic 会保存文件夹授权，不保存 SMB 账号密码。": "Connect the SMB share in the system Files app first, then choose the music folder here. SynoMusic saves folder access, not SMB account credentials.",
+            "连接文件夹": "Connect Folder",
+            "重新选择 SMB 文件夹": "Choose SMB Folder Again",
+            "选择 SMB 文件夹": "Choose SMB Folder",
+            "SMB 文件夹授权会加密保存于 Keychain。": "SMB folder authorization is encrypted and saved in Keychain.",
+            "正在读取文件夹...": "Reading folder...",
+            "WebDAV 密码不能为空。": "WebDAV password cannot be empty.",
+            "请先选择 SMB 共享文件夹。": "Choose an SMB shared folder first.",
+            "文件夹授权已失效，请重新选择 SMB 共享文件夹。": "Folder authorization expired. Choose the SMB shared folder again.",
+            "无法读取该文件夹。": "This folder cannot be read."
+        ],
+        "ja": [
+            "Jellyfin、Emby、Plex、WebDAV 和 SMB 仅接入音乐库，不会加入视频、电视或照片功能。": "Jellyfin、Emby、Plex、WebDAV、SMB は音楽ライブラリのみ接続します。動画、テレビ、写真機能は追加しません。",
+            "目录路径（例如 /music）": "ディレクトリパス（例: /music）",
+            "WebDAV 目录": "WebDAV ディレクトリ",
+            "Synology WebDAV 常用 HTTPS 端口是 5006；目录路径应填写音乐所在目录，例如 /music。": "Synology WebDAV の一般的な HTTPS ポートは 5006 です。音楽があるディレクトリ（例: /music）を入力してください。",
+            "SMB 文件夹": "SMB フォルダ",
+            "已选择": "選択済み",
+            "请先在系统「文件」App 中连接 SMB 共享，然后在这里选择音乐文件夹。SynoMusic 会保存文件夹授权，不保存 SMB 账号密码。": "まずシステムの「ファイル」アプリで SMB 共有に接続し、ここで音楽フォルダを選択してください。SynoMusic はフォルダ権限のみ保存し、SMB アカウントやパスワードは保存しません。",
+            "连接文件夹": "フォルダに接続",
+            "重新选择 SMB 文件夹": "SMB フォルダを再選択",
+            "选择 SMB 文件夹": "SMB フォルダを選択",
+            "SMB 文件夹授权会加密保存于 Keychain。": "SMB フォルダ権限は暗号化されて Keychain に保存されます。",
+            "正在读取文件夹...": "フォルダを読み込み中...",
+            "WebDAV 密码不能为空。": "WebDAV パスワードは空にできません。",
+            "请先选择 SMB 共享文件夹。": "先に SMB 共有フォルダを選択してください。",
+            "文件夹授权已失效，请重新选择 SMB 共享文件夹。": "フォルダ権限の有効期限が切れました。SMB 共有フォルダを再選択してください。",
+            "无法读取该文件夹。": "このフォルダを読み取れません。"
+        ],
+        "ko": [
+            "Jellyfin、Emby、Plex、WebDAV 和 SMB 仅接入音乐库，不会加入视频、电视或照片功能。": "Jellyfin, Emby, Plex, WebDAV, SMB는 음악 라이브러리만 연결하며 비디오, TV 또는 사진 기능은 추가하지 않습니다.",
+            "目录路径（例如 /music）": "디렉터리 경로(예: /music)",
+            "WebDAV 目录": "WebDAV 디렉터리",
+            "Synology WebDAV 常用 HTTPS 端口是 5006；目录路径应填写音乐所在目录，例如 /music。": "Synology WebDAV는 보통 HTTPS 포트 5006을 사용합니다. 음악이 있는 디렉터리(예: /music)를 입력하세요.",
+            "SMB 文件夹": "SMB 폴더",
+            "已选择": "선택됨",
+            "请先在系统「文件」App 中连接 SMB 共享，然后在这里选择音乐文件夹。SynoMusic 会保存文件夹授权，不保存 SMB 账号密码。": "먼저 시스템 파일 앱에서 SMB 공유에 연결한 다음 여기에서 음악 폴더를 선택하세요. SynoMusic은 폴더 권한만 저장하며 SMB 계정과 암호는 저장하지 않습니다.",
+            "连接文件夹": "폴더 연결",
+            "重新选择 SMB 文件夹": "SMB 폴더 다시 선택",
+            "选择 SMB 文件夹": "SMB 폴더 선택",
+            "SMB 文件夹授权会加密保存于 Keychain。": "SMB 폴더 권한은 암호화되어 Keychain에 저장됩니다.",
+            "正在读取文件夹...": "폴더 읽는 중...",
+            "WebDAV 密码不能为空。": "WebDAV 암호는 비워 둘 수 없습니다.",
+            "请先选择 SMB 共享文件夹。": "먼저 SMB 공유 폴더를 선택하세요.",
+            "文件夹授权已失效，请重新选择 SMB 共享文件夹。": "폴더 권한이 만료되었습니다. SMB 공유 폴더를 다시 선택하세요.",
+            "无法读取该文件夹。": "이 폴더를 읽을 수 없습니다."
+        ],
+        "de": [
+            "Jellyfin、Emby、Plex、WebDAV 和 SMB 仅接入音乐库，不会加入视频、电视或照片功能。": "Jellyfin, Emby, Plex, WebDAV und SMB verbinden nur Musikbibliotheken. Video-, TV- und Fotofunktionen werden nicht hinzugefügt.",
+            "目录路径（例如 /music）": "Verzeichnispfad, z. B. /music",
+            "WebDAV 目录": "WebDAV-Verzeichnis",
+            "Synology WebDAV 常用 HTTPS 端口是 5006；目录路径应填写音乐所在目录，例如 /music。": "Synology WebDAV verwendet häufig HTTPS-Port 5006. Gib den Musikordner ein, z. B. /music.",
+            "SMB 文件夹": "SMB-Ordner",
+            "已选择": "Ausgewählt",
+            "请先在系统「文件」App 中连接 SMB 共享，然后在这里选择音乐文件夹。SynoMusic 会保存文件夹授权，不保存 SMB 账号密码。": "Verbinde die SMB-Freigabe zuerst in der Dateien-App und wähle hier den Musikordner aus. SynoMusic speichert die Ordnerberechtigung, nicht die SMB-Anmeldedaten.",
+            "连接文件夹": "Ordner verbinden",
+            "重新选择 SMB 文件夹": "SMB-Ordner erneut wählen",
+            "选择 SMB 文件夹": "SMB-Ordner wählen",
+            "SMB 文件夹授权会加密保存于 Keychain。": "Die SMB-Ordnerberechtigung wird verschlüsselt im Keychain gespeichert.",
+            "正在读取文件夹...": "Ordner wird gelesen...",
+            "WebDAV 密码不能为空。": "Das WebDAV-Passwort darf nicht leer sein.",
+            "请先选择 SMB 共享文件夹。": "Wähle zuerst einen SMB-Freigabeordner.",
+            "文件夹授权已失效，请重新选择 SMB 共享文件夹。": "Die Ordnerberechtigung ist abgelaufen. Wähle den SMB-Freigabeordner erneut.",
+            "无法读取该文件夹。": "Dieser Ordner kann nicht gelesen werden."
+        ],
+        "fr": [
+            "Jellyfin、Emby、Plex、WebDAV 和 SMB 仅接入音乐库，不会加入视频、电视或照片功能。": "Jellyfin, Emby, Plex, WebDAV et SMB connectent uniquement les bibliothèques musicales. Les vidéos, la TV et les photos ne sont pas ajoutées.",
+            "目录路径（例如 /music）": "Chemin du dossier, par exemple /music",
+            "WebDAV 目录": "Dossier WebDAV",
+            "Synology WebDAV 常用 HTTPS 端口是 5006；目录路径应填写音乐所在目录，例如 /music。": "Synology WebDAV utilise souvent le port HTTPS 5006. Indiquez le dossier contenant la musique, par exemple /music.",
+            "SMB 文件夹": "Dossier SMB",
+            "已选择": "Sélectionné",
+            "请先在系统「文件」App 中连接 SMB 共享，然后在这里选择音乐文件夹。SynoMusic 会保存文件夹授权，不保存 SMB 账号密码。": "Connectez d’abord le partage SMB dans l’app Fichiers du système, puis choisissez ici le dossier musical. SynoMusic enregistre l’autorisation du dossier, pas les identifiants SMB.",
+            "连接文件夹": "Connecter le dossier",
+            "重新选择 SMB 文件夹": "Choisir à nouveau le dossier SMB",
+            "选择 SMB 文件夹": "Choisir un dossier SMB",
+            "SMB 文件夹授权会加密保存于 Keychain。": "L’autorisation du dossier SMB est chiffrée et enregistrée dans le trousseau.",
+            "正在读取文件夹...": "Lecture du dossier...",
+            "WebDAV 密码不能为空。": "Le mot de passe WebDAV ne peut pas être vide.",
+            "请先选择 SMB 共享文件夹。": "Choisissez d’abord un dossier partagé SMB.",
+            "文件夹授权已失效，请重新选择 SMB 共享文件夹。": "L’autorisation du dossier a expiré. Choisissez à nouveau le dossier partagé SMB.",
+            "无法读取该文件夹。": "Impossible de lire ce dossier."
+        ]
+    ]
+
     static let auditAdditions: [String: [String: String]] = [
         "zh-Hant": [
             "AirPlay": "AirPlay",
