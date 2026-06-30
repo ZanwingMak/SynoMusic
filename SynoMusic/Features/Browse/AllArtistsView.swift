@@ -33,10 +33,11 @@ struct AllArtistsView: View {
         .task { await load() }
     }
 
+    /// 加载艺术家列表。
     private func load() async {
-        guard let api = session.client?.audioStation else { return }
+        guard let musicClient = session.musicClient else { return }
         isLoading = true; defer { isLoading = false }
-        do { self.artists = try await api.listArtists(limit: 1000) }
+        do { self.artists = try await musicClient.listArtists(limit: 1000, offset: 0) }
         catch { self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription }
     }
 }

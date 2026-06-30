@@ -228,7 +228,7 @@ struct FavoriteRow: View {
                         .foregroundStyle(isSelected ? Theme.accent : .secondary)
                 }
                 CoverArt(
-                    url: session.client?.audioStation.songCoverURL(songID: song.id),
+                    url: session.musicClient?.songCoverURL(song: song),
                     cornerRadius: 6,
                     fallbackSeed: song.id,
                     lookup: CoverLookupQuery(song: song)

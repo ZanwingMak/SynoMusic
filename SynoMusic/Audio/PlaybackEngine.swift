@@ -107,6 +107,8 @@ final class PlaybackEngine: ObservableObject {
 
     /// 当前 API 客户端，由外部注入。
     weak var apiClient: SynologyClient?
+    /// 当前统一音乐库客户端；新后端播放会优先走这里。
+    weak var musicClient: (any MusicLibraryClient)?
     /// 本地歌单仓库；用于锁屏 like 命令触发喜欢/取消。
     weak var playlistStore: PlaylistStore?
     /// 下载管理器；播放时优先使用已缓存的本地文件。
@@ -474,10 +476,10 @@ final class PlaybackEngine: ObservableObject {
             url = URL(fileURLWithPath: path)
         } else if song.isDirectRemoteStream, let path = song.path {
             url = URL(string: path)
-        } else if let api = apiClient?.audioStation {
+        } else if musicClient != nil || apiClient != nil {
             let effective = transcodeOverride ?? quality
             effectiveQuality = effective
-            url = api.streamURL(songID: song.id, format: effective.streamFormat)
+            url = streamURL(for: song, quality: effective)
         } else {
             startDemoPlayback(for: song, autoPlay: autoPlay)
             return
@@ -531,6 +533,31 @@ final class PlaybackEngine: ObservableObject {
         setStatus("演示模式：尚未连接服务器，未真实播放。", persistent: true)
         updateNowPlayingMetadata()
         if autoPlay { startDemoTicker() }
+    }
+
+    /// 统一生成远程音乐播放地址，兼容新 provider 和旧 Synology 路径。
+    private func streamURL(for song: Song, quality: AudioQuality) -> URL? {
+        if let url = musicClient?.streamURL(song: song, quality: quality) {
+            return url
+        }
+        return apiClient?.audioStation.streamURL(songID: song.id, format: quality.streamFormat)
+    }
+
+    /// 统一读取服务器歌词，兼容新 provider 和旧 Synology 路径。
+    private func musicLyrics(for song: Song) async throws -> [LyricLine] {
+        if let musicClient {
+            return try await musicClient.lyrics(for: song)
+        }
+        guard let api = apiClient?.audioStation else { return [] }
+        return try await api.getLyrics(songID: song.id)
+    }
+
+    /// 统一生成歌曲封面地址，兼容新 provider 和旧 Synology 路径。
+    private func songCoverURL(for song: Song) -> URL? {
+        if let url = musicClient?.songCoverURL(song: song) {
+            return url
+        }
+        return apiClient?.audioStation.songCoverURL(songID: song.id)
     }
 
     private func startDemoTicker() {
@@ -714,8 +741,7 @@ final class PlaybackEngine: ObservableObject {
         isFetchingLyrics = true
         defer { isFetchingLyrics = false }
 
-        if let api = apiClient?.audioStation,
-           let nasLines = try? await api.getLyrics(songID: song.id),
+        if let nasLines = try? await musicLyrics(for: song),
            !nasLines.isEmpty {
             assignLyrics(nasLines, for: song)
             return
@@ -1136,7 +1162,7 @@ final class PlaybackEngine: ObservableObject {
         // 异步抓封面：下载在 @MainActor，但 MPMediaItemArtwork 的 handler 闭包
         // 必须在 nonisolated 上下文里创建——MediaPlayer 会在它自己的 accessQueue
         // 上调用这个闭包，闭包若被绑定到 @MainActor，runtime 会主动 SIGTRAP。
-        let coverURL = apiClient?.audioStation.songCoverURL(songID: song.id)
+        let coverURL = songCoverURL(for: song)
         let lookup = CoverLookupQuery(song: song)
         if let url = coverURL {
             Task { @MainActor [weak self] in
@@ -1216,7 +1242,7 @@ final class PlaybackEngine: ObservableObject {
     @available(iOS 16.2, *)
     private func buildLiveActivityState() -> NowPlayingActivityAttributes.ContentState? {
         guard let song = currentSong else { return nil }
-        let cover = apiClient?.audioStation.songCoverURL(songID: song.id)?.absoluteString
+        let cover = songCoverURL(for: song)?.absoluteString
         return NowPlayingActivityAttributes.ContentState(
             title: song.title,
             artist: song.artist ?? "",

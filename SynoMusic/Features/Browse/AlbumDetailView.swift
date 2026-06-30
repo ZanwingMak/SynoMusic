@@ -39,7 +39,7 @@ struct AlbumDetailView: View {
     private var header: some View {
         VStack(spacing: Metrics.m) {
             CoverArt(
-                url: session.client?.audioStation.albumCoverURL(album: album.name, albumArtist: album.artist),
+                url: session.musicClient?.albumCoverURL(album: album),
                 cornerRadius: Theme.cornerHero,
                 fallbackSeed: album.id,
                 lookup: CoverLookupQuery(title: album.name, artist: album.artist, album: album.name)
@@ -98,12 +98,12 @@ struct AlbumDetailView: View {
             songs = matched.isEmpty ? DemoMode.songs : matched
             return
         }
-        guard let api = session.client?.audioStation else { return }
+        guard let musicClient = session.musicClient else { return }
         isLoading = true
         defer { isLoading = false }
         error = nil
         do {
-            self.songs = try await api.listSongs(album: album.name, albumArtist: album.artist, sortBy: "track")
+            self.songs = try await musicClient.albumSongs(album: album)
         } catch {
             self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }

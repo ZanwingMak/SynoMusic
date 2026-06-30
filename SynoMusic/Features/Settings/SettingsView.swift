@@ -73,7 +73,7 @@ struct SettingsView: View {
         ) {
             Button("删除".t, role: .destructive) {
                 if let p = pendingDelete {
-                    if session.client?.profile.id == p.id {
+                    if session.musicClient?.profile.id == p.id {
                         Task { await signOut() }
                     }
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
@@ -100,16 +100,17 @@ struct SettingsView: View {
                 Button(role: .destructive) {
                     Task { await signOut() }
                 } label: { Text("退出登录".t) }
-            } else if let active = session.client?.profile {
+            } else if let active = session.musicClient?.profile {
+                infoRow("音乐源".t, active.providerType.titleKey.t)
                 infoRow("名称".t, active.name)
-                if active.isQuickConnect {
+                if active.providerType == .synologyAudioStation, active.isQuickConnect {
                     infoRow("QuickConnect", active.quickConnectID)
                     quickConnectAddressRow(for: active)
                 } else {
                     infoRow("地址".t, active.displayURL)
                 }
                 infoRow("用户".t, active.username)
-                if let v = serverInfo["version_string"] {
+                if active.providerType == .synologyAudioStation, let v = serverInfo["version_string"] {
                     infoRow("Audio Station", v)
                 }
                 Button(role: .destructive) {
@@ -134,7 +135,7 @@ struct SettingsView: View {
                     ServerRowItem(
                         profile: p,
                         isDefault: p.id == serverStore.activeProfileID,
-                        isCurrentSession: p.id == session.client?.profile.id,
+                        isCurrentSession: p.id == session.musicClient?.profile.id,
                         isSwitching: p.id == switchingProfileID,
                         onTap: { Task { await switchSession(to: p) } },
                         onEdit: { editingProfile = p }
@@ -810,7 +811,7 @@ struct SettingsView: View {
         Haptics.tap()
         serverStore.setActive(p)
         // 已经是当前会话则只更新默认标记
-        if p.id == session.client?.profile.id { return }
+        if p.id == session.musicClient?.profile.id { return }
         guard let pwd = serverStore.password(for: p), !pwd.isEmpty else {
             playback.setStatus("「\(p.name)」" + "未保存密码，请在登录页输入".t)
             navigation.openLogin(for: p)
@@ -819,7 +820,7 @@ struct SettingsView: View {
         switchingProfileID = p.id
         defer { switchingProfileID = nil }
         do {
-            let result = try await SynologyLoginHelper.login(
+            let result = try await MusicProviderLoginHelper.login(
                 profile: p,
                 password: pwd,
                 report: { [weak playback] key in playback?.setStatus(key.t) }
@@ -828,9 +829,9 @@ struct SettingsView: View {
             updated.lastConnectedAt = Date()
             serverStore.upsert(updated)
             serverStore.setActive(updated)
-            let oldClient = session.client
+            let oldClient = session.musicClient
             playback.stop()
-            session.sign(in: result.client)
+            session.sign(in: result.musicClient)
             await oldClient?.logout()
             playback.setStatus("已切换到".t + "「\(p.name)」")
             Haptics.success()
@@ -967,6 +968,7 @@ private struct ServerRowItem: View {
                         Text(displayName)
                             .font(.nocBody.weight(.semibold))
                             .foregroundStyle(.primary)
+                        tagPill(profile.providerType.titleKey.t, color: accentColor)
                         if profile.isQuickConnect {
                             tagPill("QC", color: .blue)
                         }

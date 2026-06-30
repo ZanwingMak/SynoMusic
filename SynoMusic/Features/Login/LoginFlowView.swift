@@ -132,7 +132,7 @@ struct LoginFlowView: View {
         quickConnectError = nil
         Task {
             do {
-                let result = try await SynologyLoginHelper.login(
+                let result = try await MusicProviderLoginHelper.login(
                     profile: profile,
                     password: saved
                 )
@@ -140,7 +140,7 @@ struct LoginFlowView: View {
                 p.lastConnectedAt = Date()
                 serverStore.upsert(p)
                 serverStore.setActive(p)
-                session.sign(in: result.client)
+                session.sign(in: result.musicClient)
                 Haptics.success()
             } catch {
                 // 已存密码失败：清掉 connecting 状态，转入手动登录页
@@ -236,6 +236,7 @@ private struct ServerRow: View {
                         .minimumScaleFactor(0.85)
 
                     HStack(spacing: 6) {
+                        tagPill(profile.providerType.titleKey.t, color: Theme.accent)
                         if profile.isQuickConnect {
                             tagPill("QC", color: .cyan)
                         }

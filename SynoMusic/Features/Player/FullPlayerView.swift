@@ -188,7 +188,7 @@ struct FullPlayerView: View {
         }
         .sheet(isPresented: $showResearchSheet) {
             if let song = playback.currentSong {
-                SongResearchSheet(song: song, coverURL: session.client?.audioStation.songCoverURL(songID: song.id))
+                SongResearchSheet(song: song, coverURL: session.musicClient?.songCoverURL(song: song))
                     .presentationDetents([.medium, .large])
             }
         }
@@ -1087,7 +1087,7 @@ private struct CoverHero: View {
 
     var body: some View {
         CoverArt(
-            url: song.flatMap { session.client?.audioStation.songCoverURL(songID: $0.id) },
+            url: song.flatMap { session.musicClient?.songCoverURL(song: $0) },
             cornerRadius: Theme.cornerHero,
             fallbackSeed: song?.id ?? "",
             lookup: song.map(CoverLookupQuery.init(song:))
@@ -1207,7 +1207,7 @@ private struct VinylHero: View {
                 )
                 .blendMode(.screen)
             CoverArt(
-                url: song.flatMap { session.client?.audioStation.songCoverURL(songID: $0.id) },
+                url: song.flatMap { session.musicClient?.songCoverURL(song: $0) },
                 cornerRadius: side * 0.27,
                 fallbackSeed: song?.id ?? "",
                 lookup: song.map(CoverLookupQuery.init(song:))

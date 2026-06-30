@@ -78,10 +78,19 @@ struct MainShellView: View {
         }
         .onAppear {
             playback.apiClient = session.client
+            playback.musicClient = session.musicClient
             playback.playlistStore = playlists
         }
         .onChange(of: session.client) { _, newClient in
             playback.apiClient = newClient
+            playback.musicClient = session.musicClient
+        }
+        .onReceive(session.$musicClient) { newClient in
+            playback.apiClient = newClient?.legacySynologyClient
+            playback.musicClient = newClient
+        }
+        .onChange(of: session.isLoggedIn) { _, _ in
+            playback.musicClient = session.musicClient
         }
         .animation(.spring(response: 0.45, dampingFraction: 0.85), value: playback.currentSong)
         .animation(.easeInOut(duration: 0.18), value: theme.currentID)
@@ -93,7 +102,7 @@ struct MainShellView: View {
     /// 真实服务器会话可用时展示内容，否则给出通用连接提示。
     @ViewBuilder
     private func serverDependentDestination<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        if session.client == nil || reviewMode.isEnabled {
+        if session.musicClient == nil || reviewMode.isEnabled {
             ServerRequiredEmptyState {
                 navigation.openAddServer()
             }

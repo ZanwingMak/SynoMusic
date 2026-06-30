@@ -1,8 +1,28 @@
 import Foundation
 
-/// 服务器档案：保存 NAS 连接配置；密码单独存 Keychain。
-struct ServerProfile: Identifiable, Hashable, Codable {
+/// 音乐服务器类型；后续多后端能力统一从这里分流。
+enum MusicProviderType: String, Codable, CaseIterable, Identifiable, Sendable {
+    case synologyAudioStation
+    case jellyfin
+    case emby
+    case plex
+
+    var id: String { rawValue }
+
+    var titleKey: String {
+        switch self {
+        case .synologyAudioStation: return "Synology Audio Station"
+        case .jellyfin: return "Jellyfin"
+        case .emby: return "Emby"
+        case .plex: return "Plex"
+        }
+    }
+}
+
+/// 服务器档案：保存 NAS / 自建音乐服务连接配置；密码单独存 Keychain。
+struct ServerProfile: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
+    var providerType: MusicProviderType
     var name: String          // 用户备注名，如 "家里的 DS"
     var scheme: Scheme        // http / https
     var host: String          // IP / DDNS / QuickConnect ID
@@ -14,8 +34,12 @@ struct ServerProfile: Identifiable, Hashable, Codable {
     var isQuickConnect: Bool
     /// 用户填写的 QuickConnect ID（保留显示）。
     var quickConnectID: String
+    /// 远端服务中选定的音乐库 ID；为空时使用服务端第一个音乐库。
+    var musicLibraryID: String?
+    /// 远端服务中选定的音乐库名称；用于 UI 显示和排查配置。
+    var musicLibraryName: String?
 
-    enum Scheme: String, Codable, CaseIterable, Identifiable {
+    enum Scheme: String, Codable, CaseIterable, Identifiable, Sendable {
         case http, https
         var id: String { rawValue }
     }
@@ -46,6 +70,7 @@ struct ServerProfile: Identifiable, Hashable, Codable {
 
     init(
         id: UUID = UUID(),
+        providerType: MusicProviderType = .synologyAudioStation,
         name: String = "",
         scheme: Scheme = .http,
         host: String,
@@ -54,9 +79,12 @@ struct ServerProfile: Identifiable, Hashable, Codable {
         ignoreInvalidCertificate: Bool = false,
         lastConnectedAt: Date? = nil,
         isQuickConnect: Bool = false,
-        quickConnectID: String = ""
+        quickConnectID: String = "",
+        musicLibraryID: String? = nil,
+        musicLibraryName: String? = nil
     ) {
         self.id = id
+        self.providerType = providerType
         self.name = name.isEmpty ? host : name
         self.scheme = scheme
         self.host = host
@@ -66,12 +94,15 @@ struct ServerProfile: Identifiable, Hashable, Codable {
         self.lastConnectedAt = lastConnectedAt
         self.isQuickConnect = isQuickConnect
         self.quickConnectID = quickConnectID
+        self.musicLibraryID = musicLibraryID
+        self.musicLibraryName = musicLibraryName
     }
 
-    // 旧版本档案兼容解码（没有 isQuickConnect / quickConnectID 字段）。
+    // 旧版本档案兼容解码（没有 providerType / isQuickConnect / quickConnectID 字段）。
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try c.decode(UUID.self, forKey: .id)
+        self.providerType = try c.decodeIfPresent(MusicProviderType.self, forKey: .providerType) ?? .synologyAudioStation
         self.name = try c.decode(String.self, forKey: .name)
         self.scheme = try c.decode(Scheme.self, forKey: .scheme)
         self.host = try c.decode(String.self, forKey: .host)
@@ -81,5 +112,7 @@ struct ServerProfile: Identifiable, Hashable, Codable {
         self.lastConnectedAt = try c.decodeIfPresent(Date.self, forKey: .lastConnectedAt)
         self.isQuickConnect = try c.decodeIfPresent(Bool.self, forKey: .isQuickConnect) ?? false
         self.quickConnectID = try c.decodeIfPresent(String.self, forKey: .quickConnectID) ?? ""
+        self.musicLibraryID = try c.decodeIfPresent(String.self, forKey: .musicLibraryID)
+        self.musicLibraryName = try c.decodeIfPresent(String.self, forKey: .musicLibraryName)
     }
 }

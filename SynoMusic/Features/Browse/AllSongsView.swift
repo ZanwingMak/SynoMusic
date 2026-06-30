@@ -136,14 +136,14 @@ struct AllSongsView: View {
             reachedEnd = true
             return
         }
-        guard let api = session.client?.audioStation else { return }
+        guard let musicClient = session.musicClient else { return }
         isInitialLoading = true
         defer { isInitialLoading = false }
         error = nil
         songs = []
         reachedEnd = false
         do {
-            let page = try await api.listSongs(
+            let page = try await musicClient.listSongs(
                 limit: pageSize,
                 offset: 0,
                 sortBy: sortBy.rawValue,
@@ -159,12 +159,12 @@ struct AllSongsView: View {
     /// 分页加载更多歌曲；审核模式的内置数据不分页。
     private func loadMore() async {
         if reviewMode.isEnabled { return }
-        guard let api = session.client?.audioStation,
+        guard let musicClient = session.musicClient,
               !reachedEnd, !isLoadingPage else { return }
         isLoadingPage = true
         defer { isLoadingPage = false }
         do {
-            let page = try await api.listSongs(
+            let page = try await musicClient.listSongs(
                 limit: pageSize,
                 offset: songs.count,
                 sortBy: sortBy.rawValue,
@@ -191,7 +191,7 @@ struct SongTrackRow: View {
         Button(action: { Haptics.tap(); onTap() }) {
             HStack(spacing: Metrics.m) {
                 CoverArt(
-                    url: session.client?.audioStation.songCoverURL(songID: song.id),
+                    url: session.musicClient?.songCoverURL(song: song),
                     cornerRadius: 6,
                     fallbackSeed: song.id,
                     lookup: CoverLookupQuery(song: song)

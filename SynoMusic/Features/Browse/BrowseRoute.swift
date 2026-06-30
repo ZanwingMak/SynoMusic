@@ -110,6 +110,16 @@ extension BrowseRoute {
             return nil
         }
     }
+
+    /// 当前阶段仍依赖 Audio Station 专有 API 的页面。
+    var isSynologyOnly: Bool {
+        switch self {
+        case .genre, .folder, .allGenres, .allFolders, .smartMixes:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 extension View {
@@ -131,7 +141,7 @@ private struct ServerRequiredGate<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        if session.client == nil && !reviewMode.isEnabled {
+        if session.musicClient == nil && !reviewMode.isEnabled {
             ServerRequiredEmptyState {
                 navigation.openAddServer()
             }
@@ -149,7 +159,7 @@ private struct ServerDependentOnlineGate<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        if session.client == nil || reviewMode.isEnabled {
+        if session.musicClient == nil || reviewMode.isEnabled {
             ServerRequiredEmptyState {
                 navigation.openAddServer()
             }

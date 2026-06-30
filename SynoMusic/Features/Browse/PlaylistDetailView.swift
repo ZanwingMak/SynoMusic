@@ -75,10 +75,11 @@ struct PlaylistDetailView: View {
         }
     }
 
+    /// 加载当前音乐源中的播放列表歌曲。
     private func load() async {
-        guard let api = session.client?.audioStation else { return }
+        guard let musicClient = session.musicClient else { return }
         isLoading = true; defer { isLoading = false }
-        do { self.songs = try await api.playlistSongs(id: playlist.id) }
+        do { self.songs = try await musicClient.playlistSongs(playlist: playlist) }
         catch { self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription }
     }
 }

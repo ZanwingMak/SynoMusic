@@ -3,7 +3,7 @@ import Foundation
 // MARK: - 核心媒体模型
 
 /// 一首歌曲（已解析为 UI 友好的形式）。
-struct Song: Identifiable, Hashable, Codable {
+struct Song: Identifiable, Hashable, Codable, Sendable {
     let id: String           // 群晖 Song.id（如 music_xxxxxxxx）
     let title: String
     let album: String?
@@ -52,7 +52,7 @@ extension Song {
 }
 
 /// 专辑。
-struct Album: Identifiable, Hashable, Codable {
+struct Album: Identifiable, Hashable, Codable, Sendable {
     /// 拼接 ID（"album_name|artist"），群晖 Album 没有原生 id。
     let id: String
     let name: String
@@ -63,20 +63,20 @@ struct Album: Identifiable, Hashable, Codable {
 }
 
 /// 艺术家。
-struct Artist: Identifiable, Hashable, Codable {
+struct Artist: Identifiable, Hashable, Codable, Sendable {
     let id: String            // 名称即 ID
     let name: String
     let albumCount: Int?
 }
 
 /// 流派。
-struct Genre: Identifiable, Hashable, Codable {
+struct Genre: Identifiable, Hashable, Codable, Sendable {
     let id: String
     let name: String
 }
 
 /// 播放列表（含智能列表）。
-struct Playlist: Identifiable, Hashable, Codable {
+struct Playlist: Identifiable, Hashable, Codable, Sendable {
     let id: String
     let name: String
     let library: String       // 'shared' / 'personal'
@@ -86,7 +86,7 @@ struct Playlist: Identifiable, Hashable, Codable {
 }
 
 /// 文件夹节点（用于按文件路径浏览）。
-struct FolderNode: Identifiable, Hashable, Codable {
+struct FolderNode: Identifiable, Hashable, Codable, Sendable {
     let id: String            // 服务器侧 ID
     let title: String
     let path: String
@@ -95,7 +95,7 @@ struct FolderNode: Identifiable, Hashable, Codable {
 }
 
 /// 一行歌词。
-struct LyricLine: Identifiable, Hashable {
+struct LyricLine: Identifiable, Hashable, Sendable {
     let id = UUID()
     let timestamp: TimeInterval
     let text: String

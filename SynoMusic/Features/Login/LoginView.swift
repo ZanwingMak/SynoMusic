@@ -117,7 +117,7 @@ struct LoginView: View {
         defer { isLoading = false }
         error = nil
         do {
-            let result = try await SynologyLoginHelper.login(
+            let result = try await MusicProviderLoginHelper.login(
                 profile: profile,
                 password: password,
                 otp: otp.isEmpty ? nil : otp
@@ -130,7 +130,7 @@ struct LoginView: View {
             serverStore.upsert(updated)
             serverStore.setActive(updated)
             dismiss()
-            session.sign(in: result.client)
+            session.sign(in: result.musicClient)
             Haptics.success()
         } catch let SynologyError.api(code, _) where code == 403 {
             self.error = "需要双重验证，请输入 OTP。".t

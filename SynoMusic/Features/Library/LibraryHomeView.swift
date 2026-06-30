@@ -18,7 +18,7 @@ struct LibraryHomeView: View {
                 if session.isRestoringStartupSession && !reviewMode.isEnabled {
                     LoadingState()
                         .frame(minHeight: 300)
-                } else if session.client == nil && !reviewMode.isEnabled {
+                } else if session.musicClient == nil && !reviewMode.isEnabled {
                     ServerRequiredEmptyState {
                         navigation.openAddServer()
                     }
@@ -26,7 +26,7 @@ struct LibraryHomeView: View {
                 } else if vm.isLoading && vm.recentAlbums.isEmpty {
                     LoadingState().frame(height: 280)
                 } else if let err = vm.error {
-                    ErrorStateView(title: "加载失败".t, message: err) { Task { await vm.load(client: session.client, useMockData: reviewMode.isEnabled) } }
+                    ErrorStateView(title: "加载失败".t, message: err) { Task { await vm.load(musicClient: session.musicClient, useMockData: reviewMode.isEnabled) } }
                         .frame(height: 280)
                 } else {
                     if !vm.recentAlbums.isEmpty {
@@ -46,7 +46,7 @@ struct LibraryHomeView: View {
             .padding(.horizontal, Metrics.l)
             .padding(.top, Metrics.s)
         }
-        .refreshable { await vm.load(client: session.client, force: true, useMockData: reviewMode.isEnabled) }
+        .refreshable { await vm.load(musicClient: session.musicClient, force: true, useMockData: reviewMode.isEnabled) }
         .background(Color(.systemBackground).ignoresSafeArea())
         .navigationTitle("SynoMusic")
         .navigationBarTitleDisplayMode(.large)
@@ -62,7 +62,7 @@ struct LibraryHomeView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
-        .task { await vm.load(client: session.client, useMockData: reviewMode.isEnabled) }
+        .task { await vm.load(musicClient: session.musicClient, useMockData: reviewMode.isEnabled) }
     }
 
     /// 首页右上角的购买与订阅入口。
@@ -168,13 +168,15 @@ private struct QuickActions: View {
                 }
                 .buttonStyle(.plain)
 
-                routeCard(
-                    route: .smartMixes,
-                    title: "智能歌单".t,
-                    subtitle: "自动整理".t,
-                    icon: "wand.and.stars",
-                    gradient: [Color(red: 0.95, green: 0.68, blue: 0.22), Color(red: 0.88, green: 0.28, blue: 0.48)]
-                )
+                if session.musicClient == nil || session.isSynologySession || reviewMode.isEnabled {
+                    routeCard(
+                        route: .smartMixes,
+                        title: "智能歌单".t,
+                        subtitle: "自动整理".t,
+                        icon: "wand.and.stars",
+                        gradient: [Color(red: 0.95, green: 0.68, blue: 0.22), Color(red: 0.88, green: 0.28, blue: 0.48)]
+                    )
+                }
 
                 NavigationLink(value: BrowseRoute.favorites) {
                     ActionCard(
@@ -234,7 +236,7 @@ private struct QuickActions: View {
 
     /// 点击随机播放时先检查是否已连接服务器。
     private func handleShuffleTap() {
-        guard session.client != nil || reviewMode.isEnabled else {
+        guard session.musicClient != nil || reviewMode.isEnabled else {
             Haptics.tap()
             showServerPrompt = true
             return
@@ -252,7 +254,7 @@ private struct QuickActions: View {
                 ActionCard(title: title, subtitle: subtitle, icon: icon, gradient: gradient)
             }
             .buttonStyle(.plain)
-        } else if route.requiresServer && session.client == nil && !reviewMode.isEnabled {
+        } else if route.requiresServer && session.musicClient == nil && !reviewMode.isEnabled {
             Button {
                 Haptics.tap()
                 showServerPrompt = true
@@ -276,7 +278,7 @@ private struct QuickActions: View {
 
     /// 判断是否显示依赖真实服务器或外部在线资源的快捷入口。
     private var shouldShowServerDependentEntries: Bool {
-        session.client != nil && !reviewMode.isEnabled
+        session.musicClient != nil && !reviewMode.isEnabled
     }
 
     /// 从服务器随机抓取歌曲，审核模式或未连接由入口提前处理。
@@ -285,14 +287,14 @@ private struct QuickActions: View {
             playback.play(queue: DemoMode.songs.shuffled(), startAt: 0, honoringShuffle: false, contextTitle: "随机100首".t)
             return
         }
-        guard let api = session.client?.audioStation else {
+        guard let musicClient = session.musicClient else {
             playback.setStatus("请先连接服务器再随机播放".t)
             return
         }
         isShuffling = true
         defer { isShuffling = false }
         do {
-            let songs = try await api.randomSongs(count: 100)
+            let songs = try await musicClient.randomSongs(count: 100)
             guard !songs.isEmpty else {
                 playback.setStatus("没有可播放的歌曲".t)
                 return
@@ -365,7 +367,7 @@ private struct FeaturedAlbumCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Metrics.s) {
             CoverArt(
-                url: session.client?.audioStation.albumCoverURL(album: album.name, albumArtist: album.artist),
+                url: session.musicClient?.albumCoverURL(album: album),
                 cornerRadius: 14,
                 fallbackSeed: album.id,
                 lookup: CoverLookupQuery(title: album.name, artist: album.artist, album: album.name)
@@ -433,7 +435,7 @@ struct AlbumCell: View {
     /// 专辑封面固定填满方形容器，避免异步图片按原始尺寸撑开网格。
     private var albumCover: some View {
         CoverArt(
-            url: session.client?.audioStation.albumCoverURL(album: album.name, albumArtist: album.artist),
+            url: session.musicClient?.albumCoverURL(album: album),
             cornerRadius: 10,
             fallbackSeed: album.id,
             lookup: CoverLookupQuery(title: album.name, artist: album.artist, album: album.name)

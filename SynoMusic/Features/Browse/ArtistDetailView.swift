@@ -60,10 +60,11 @@ struct ArtistDetailView: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// 加载当前艺人在统一音乐源中的专辑列表。
     private func load() async {
-        guard let api = session.client?.audioStation else { return }
+        guard let musicClient = session.musicClient else { return }
         isLoading = true; defer { isLoading = false }
-        do { self.albums = try await api.listAlbums(limit: 500, artist: artist.name) }
+        do { self.albums = try await musicClient.artistAlbums(artist: artist) }
         catch { self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription }
     }
 }

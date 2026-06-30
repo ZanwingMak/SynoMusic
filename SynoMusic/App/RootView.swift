@@ -80,7 +80,7 @@ struct RootView: View {
 
     /// 主框架身份：真实会话按服务器区分，审核/Demo 使用稳定值避免反复重建。
     private var shellIdentity: String {
-        if let id = session.client?.profile.id.uuidString { return id }
+        if let id = session.musicClient?.profile.id.uuidString { return id }
         if reviewMode.isEnabled { return AppReviewMode.shellIdentity }
         if !serverStore.profiles.isEmpty { return "no-active-session-with-profiles" }
         return "demo-mode"
@@ -104,10 +104,10 @@ struct RootView: View {
         defer {
             isAutoLogging = false
             session.setRestoringStartupSession(false)
-            if session.client == nil { session.autoLoginProfileID = nil }
+            if session.musicClient == nil { session.autoLoginProfileID = nil }
         }
         do {
-            let result = try await SynologyLoginHelper.login(
+            let result = try await MusicProviderLoginHelper.login(
                 profile: p,
                 password: pwd,
                 report: { [weak playback] key in playback?.setStatus(key.t) }
@@ -115,7 +115,7 @@ struct RootView: View {
             var updated = result.profile
             updated.lastConnectedAt = Date()
             serverStore.upsert(updated)
-            session.sign(in: result.client)
+            session.sign(in: result.musicClient)
             Haptics.success()
         } catch {
             // 静默失败：用户进入 LoginFlowView 手动处理

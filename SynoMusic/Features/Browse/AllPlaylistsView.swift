@@ -13,7 +13,7 @@ struct AllPlaylistsView: View {
             } else if let err = error {
                 ErrorStateView(title: "加载失败".t, message: err) { Task { await load() } }
             } else if playlists.isEmpty {
-                EmptyStateView(systemImage: "music.note.list", title: "暂无播放列表".t, message: "在 Audio Station 中创建播放列表，会出现在这里。".t)
+                EmptyStateView(systemImage: "music.note.list", title: "暂无播放列表".t, message: "服务器音乐源中的播放列表会出现在这里。".t)
             } else {
                 List {
                     ForEach(playlists) { p in
@@ -43,10 +43,11 @@ struct AllPlaylistsView: View {
         .task { await load() }
     }
 
+    /// 加载当前音乐源中的服务器播放列表。
     private func load() async {
-        guard let api = session.client?.audioStation else { return }
+        guard let musicClient = session.musicClient else { return }
         isLoading = true; defer { isLoading = false }
-        do { self.playlists = try await api.listPlaylists() }
+        do { self.playlists = try await musicClient.listPlaylists(limit: 200, offset: 0) }
         catch { self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription }
     }
 }

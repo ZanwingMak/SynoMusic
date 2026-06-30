@@ -25,8 +25,11 @@ struct BrowseRootView: View {
         ("流派".t, "guitars.fill", .allGenres, [Color(red: 0.3, green: 0.8, blue: 0.7), Color(red: 0.1, green: 0.5, blue: 0.5)]),
         ("文件夹".t, "folder.fill", .allFolders, [Color(red: 0.6, green: 0.6, blue: 0.6), Color(red: 0.35, green: 0.35, blue: 0.4)])
         ]
-        guard shouldHideServerDependentEntries else { return all }
-        return all.filter { $0.route != .radio && $0.route != .podcasts }
+        if shouldHideServerDependentEntries {
+            return all.filter { $0.route != .radio && $0.route != .podcasts }
+        }
+        guard !session.isSynologySession else { return all }
+        return all.filter { !$0.route.isSynologyOnly }
     }
 
     var body: some View {
@@ -61,7 +64,7 @@ struct BrowseRootView: View {
                 CategoryTile(label: cat.label, icon: cat.icon, gradient: cat.gradient)
             }
             .buttonStyle(.plain)
-        } else if cat.route.requiresServer && session.client == nil && !reviewMode.isEnabled {
+        } else if cat.route.requiresServer && session.musicClient == nil && !reviewMode.isEnabled {
             Button {
                 Haptics.tap()
                 showServerPrompt = true
@@ -85,7 +88,7 @@ struct BrowseRootView: View {
 
     /// 判断是否隐藏依赖真实服务器或外部在线资源的入口。
     private var shouldHideServerDependentEntries: Bool {
-        reviewMode.isEnabled || session.client == nil
+        reviewMode.isEnabled || session.musicClient == nil
     }
 }
 

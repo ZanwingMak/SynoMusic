@@ -16,7 +16,7 @@ struct SearchView: View {
 
     var body: some View {
         Group {
-            if session.client == nil && !reviewMode.isEnabled {
+            if session.musicClient == nil && !reviewMode.isEnabled {
                 ServerRequiredEmptyState(systemImage: "magnifyingglass") {
                     navigation.openAddServer()
                 }
@@ -112,14 +112,14 @@ struct SearchView: View {
             }
             return
         }
-        guard let api = session.client?.audioStation else { return }
+        guard let musicClient = session.musicClient else { return }
         let trimmed = k.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { results = []; return }
         isLoading = true
         defer { isLoading = false }
         error = nil
         do {
-            self.results = try await api.searchSongs(keyword: trimmed)
+            self.results = try await musicClient.searchSongs(keyword: trimmed, limit: 100, offset: 0)
         } catch {
             self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
@@ -132,7 +132,7 @@ private struct SearchResultRow: View {
     var body: some View {
         HStack(spacing: Metrics.m) {
             CoverArt(
-                url: session.client?.audioStation.songCoverURL(songID: song.id),
+                url: session.musicClient?.songCoverURL(song: song),
                 cornerRadius: 6,
                 fallbackSeed: song.id,
                 lookup: CoverLookupQuery(song: song)

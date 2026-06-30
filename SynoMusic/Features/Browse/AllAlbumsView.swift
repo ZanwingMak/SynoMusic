@@ -74,14 +74,15 @@ struct AllAlbumsView: View {
             albums = DemoMode.albums
             return
         }
-        guard let api = session.client?.audioStation else { return }
+        guard let musicClient = session.musicClient else { return }
         if !force && !albums.isEmpty { return }
         isLoading = true
         defer { isLoading = false }
         error = nil
         do {
-            self.albums = try await api.listAlbums(
+            self.albums = try await musicClient.listAlbums(
                 limit: 500,
+                offset: 0,
                 sortBy: sortBy.rawValue,
                 sortDirection: sortBy == .recently_added ? "DESC" : "ASC"
             )
