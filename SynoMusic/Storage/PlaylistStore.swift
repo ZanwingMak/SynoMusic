@@ -5,6 +5,8 @@ import SwiftUI
 /// 与 Synology 服务器侧的 Audio Station Playlist 区分；本地歌单仅在本机存储。
 struct LocalPlaylist: Identifiable, Codable, Hashable {
     let id: UUID
+    /// 歌单所属服务器作用域；nil 为旧版本本地歌单，默认只在 Synology 会话中展示。
+    var scopeID: String?
     var name: String
     /// 取自预设色板（0..7），UI 据此渲染封面渐变。
     var colorIndex: Int
@@ -28,6 +30,7 @@ final class PlaylistStore: ObservableObject {
     static let favoritesID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
 
     @Published private(set) var playlists: [LocalPlaylist] = []
+    @Published private(set) var activeScopeID: String?
 
     private let key = "noc.localPlaylists"
     private let defaults: UserDefaults
@@ -39,11 +42,17 @@ final class PlaylistStore: ObservableObject {
         ensureFavorites()
     }
 
+    /// 当前会话下应展示的本地歌单。
+    var visiblePlaylists: [LocalPlaylist] {
+        playlists.filter(isVisible)
+    }
+
     /// 「我喜欢的」内置歌单。
     var favoritesPlaylist: LocalPlaylist {
-        playlists.first(where: { $0.id == Self.favoritesID })
+        playlists.first(where: { $0.id == Self.favoritesID && isVisible($0) })
             ?? LocalPlaylist(
                 id: Self.favoritesID,
+                scopeID: activeScopeID,
                 name: "我喜欢的",
                 colorIndex: 0,
                 songIDs: [],
@@ -56,11 +65,20 @@ final class PlaylistStore: ObservableObject {
 
     /// 用户自定义歌单（不含内置）。
     var userPlaylists: [LocalPlaylist] {
-        playlists.filter { !$0.isBuiltin }
+        playlists.filter { isVisible($0) && !$0.isBuiltin }
     }
 
     func playlist(_ id: UUID) -> LocalPlaylist? {
-        playlists.first(where: { $0.id == id })
+        playlists.first(where: { $0.id == id && isVisible($0) })
+    }
+
+    /// 根据当前服务器切换本地歌单作用域。
+    func setActiveScope(for profile: ServerProfile?) {
+        let nextScope = profile.map(Self.scopeID(for:))
+        guard activeScopeID != nextScope else { return }
+        activeScopeID = nextScope
+        ensureFavorites()
+        objectWillChange.send()
     }
 
     // MARK: 创建 / 重命名 / 删除
@@ -70,6 +88,7 @@ final class PlaylistStore: ObservableObject {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         let p = LocalPlaylist(
             id: UUID(),
+            scopeID: activeScopeID,
             name: trimmed.isEmpty ? "新歌单" : trimmed,
             colorIndex: max(0, min(colorIndex, 7)),
             songIDs: [],
@@ -84,7 +103,7 @@ final class PlaylistStore: ObservableObject {
     }
 
     func rename(_ id: UUID, to name: String) {
-        guard let idx = playlists.firstIndex(where: { $0.id == id }),
+        guard let idx = visibleIndex(id),
               !playlists[idx].isBuiltin else { return }
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
@@ -94,14 +113,14 @@ final class PlaylistStore: ObservableObject {
     }
 
     func setColor(_ id: UUID, colorIndex: Int) {
-        guard let idx = playlists.firstIndex(where: { $0.id == id }) else { return }
+        guard let idx = visibleIndex(id) else { return }
         playlists[idx].colorIndex = max(0, min(colorIndex, 7))
         playlists[idx].updatedAt = Date()
         save()
     }
 
     func delete(_ id: UUID) {
-        guard let idx = playlists.firstIndex(where: { $0.id == id }),
+        guard let idx = visibleIndex(id),
               !playlists[idx].isBuiltin else { return }
         playlists.remove(at: idx)
         save()
@@ -109,7 +128,7 @@ final class PlaylistStore: ObservableObject {
 
     /// 清空一个歌单的全部歌曲（内置可清空，但歌单本身保留）。
     func clear(_ id: UUID) {
-        guard let idx = playlists.firstIndex(where: { $0.id == id }) else { return }
+        guard let idx = visibleIndex(id) else { return }
         playlists[idx].songIDs.removeAll()
         playlists[idx].snapshots.removeAll()
         playlists[idx].updatedAt = Date()
@@ -122,7 +141,7 @@ final class PlaylistStore: ObservableObject {
     func add(_ song: Song, to playlistIDs: Set<UUID>) {
         guard !playlistIDs.isEmpty else { return }
         for id in playlistIDs {
-            guard let idx = playlists.firstIndex(where: { $0.id == id }) else { continue }
+            guard let idx = visibleIndex(id) else { continue }
             if !playlists[idx].songIDs.contains(song.id) {
                 playlists[idx].songIDs.append(song.id)
                 playlists[idx].snapshots.append(song)
@@ -133,7 +152,7 @@ final class PlaylistStore: ObservableObject {
     }
 
     func remove(_ songID: String, from playlistID: UUID) {
-        guard let idx = playlists.firstIndex(where: { $0.id == playlistID }) else { return }
+        guard let idx = visibleIndex(playlistID) else { return }
         playlists[idx].songIDs.removeAll { $0 == songID }
         playlists[idx].snapshots.removeAll { $0.id == songID }
         playlists[idx].updatedAt = Date()
@@ -142,7 +161,7 @@ final class PlaylistStore: ObservableObject {
 
     func remove(ids: Set<String>, from playlistID: UUID) {
         guard !ids.isEmpty,
-              let idx = playlists.firstIndex(where: { $0.id == playlistID }) else { return }
+              let idx = visibleIndex(playlistID) else { return }
         playlists[idx].songIDs.removeAll { ids.contains($0) }
         playlists[idx].snapshots.removeAll { ids.contains($0.id) }
         playlists[idx].updatedAt = Date()
@@ -150,12 +169,12 @@ final class PlaylistStore: ObservableObject {
     }
 
     func contains(songID: String, in playlistID: UUID) -> Bool {
-        playlists.first(where: { $0.id == playlistID })?.contains(songID) ?? false
+        playlists.first(where: { $0.id == playlistID && isVisible($0) })?.contains(songID) ?? false
     }
 
     /// 一首歌当前被加入了哪些歌单。
     func playlists(containing songID: String) -> [UUID] {
-        playlists.filter { $0.contains(songID) }.map(\.id)
+        playlists.filter { isVisible($0) && $0.contains(songID) }.map(\.id)
     }
 
     /// 用云端快照替换本地歌单，并补齐内置「我喜欢的」歌单。
@@ -209,6 +228,7 @@ final class PlaylistStore: ObservableObject {
         } else {
             playlists.insert(LocalPlaylist(
                 id: Self.favoritesID,
+                scopeID: nil,
                 name: "我喜欢的",
                 colorIndex: 0,
                 songIDs: ids,
@@ -224,9 +244,10 @@ final class PlaylistStore: ObservableObject {
     }
 
     private func ensureFavorites() {
-        if !playlists.contains(where: { $0.id == Self.favoritesID }) {
+        if !playlists.contains(where: { $0.id == Self.favoritesID && isVisible($0) }) {
             playlists.insert(LocalPlaylist(
                 id: Self.favoritesID,
+                scopeID: activeScopeID,
                 name: "我喜欢的",
                 colorIndex: 0,
                 songIDs: [],
@@ -237,6 +258,25 @@ final class PlaylistStore: ObservableObject {
             ), at: 0)
             save()
         }
+    }
+
+    /// 生成服务器作用域 ID；provider 改变时也会自然切换歌单空间。
+    static func scopeID(for profile: ServerProfile) -> String {
+        "\(profile.providerType.rawValue):\(profile.id.uuidString)"
+    }
+
+    /// 当前作用域下可见歌单的数组索引。
+    private func visibleIndex(_ id: UUID) -> Int? {
+        playlists.firstIndex { $0.id == id && isVisible($0) }
+    }
+
+    /// 判断歌单是否属于当前服务器作用域。
+    private func isVisible(_ playlist: LocalPlaylist) -> Bool {
+        guard let activeScopeID else {
+            return playlist.scopeID == nil
+        }
+        if playlist.scopeID == activeScopeID { return true }
+        return playlist.scopeID == nil && activeScopeID.hasPrefix("\(MusicProviderType.synologyAudioStation.rawValue):")
     }
 
     private func save() {

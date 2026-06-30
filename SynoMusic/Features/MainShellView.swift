@@ -80,6 +80,7 @@ struct MainShellView: View {
             playback.apiClient = session.client
             playback.musicClient = session.musicClient
             playback.playlistStore = playlists
+            playlists.setActiveScope(for: session.musicClient?.profile)
         }
         .onChange(of: session.client) { _, newClient in
             playback.apiClient = newClient
@@ -88,6 +89,7 @@ struct MainShellView: View {
         .onReceive(session.$musicClient) { newClient in
             playback.apiClient = newClient?.legacySynologyClient
             playback.musicClient = newClient
+            playlists.setActiveScope(for: newClient?.profile)
         }
         .onChange(of: session.isLoggedIn) { _, _ in
             playback.musicClient = session.musicClient

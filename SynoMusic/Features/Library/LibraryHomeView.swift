@@ -62,7 +62,21 @@ struct LibraryHomeView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
-        .task { await vm.load(musicClient: session.musicClient, useMockData: reviewMode.isEnabled) }
+        .task(id: homeLoadIdentity) {
+            await vm.load(musicClient: session.musicClient, force: true, useMockData: reviewMode.isEnabled)
+        }
+    }
+
+    /// 首页加载身份；音乐源、服务器或音乐库变化都需要重新加载。
+    private var homeLoadIdentity: String {
+        guard let profile = session.musicClient?.profile else {
+            return reviewMode.isEnabled ? "review" : "none"
+        }
+        return [
+            profile.providerType.rawValue,
+            profile.id.uuidString,
+            profile.musicLibraryID ?? ""
+        ].joined(separator: ":")
     }
 
     /// 首页右上角的购买与订阅入口。

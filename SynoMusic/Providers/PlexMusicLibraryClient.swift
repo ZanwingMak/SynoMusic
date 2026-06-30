@@ -289,15 +289,16 @@ final class PlexMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         let media = item.mediaAttributes
         let part = item.partAttributes
         let partKey = part?["key"]
+        let fileName = fileTitle(from: part?["file"])
         let thumb = item.attributes["thumb"] ?? item.attributes["parentThumb"] ?? item.attributes["grandparentThumb"]
         cache(itemID: itemID, partKey: partKey, thumbPath: thumb)
 
         return Song(
             id: globalID(itemID),
-            title: item.attributes["title"] ?? "未知歌曲",
-            album: item.attributes["parentTitle"],
-            artist: item.attributes["grandparentTitle"] ?? item.attributes["originalTitle"],
-            albumArtist: item.attributes["grandparentTitle"],
+            title: bestText(item.attributes["title"], fallback: fileName, unknown: "未知歌曲"),
+            album: bestOptionalText(item.attributes["parentTitle"]),
+            artist: bestOptionalText(item.attributes["grandparentTitle"] ?? item.attributes["originalTitle"]),
+            albumArtist: bestOptionalText(item.attributes["grandparentTitle"]),
             genre: nil,
             composer: nil,
             trackNumber: Int(item.attributes["index"] ?? ""),
@@ -315,11 +316,15 @@ final class PlexMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
     /// 映射 Plex Album 到通用 Album，并缓存封面路径。
     private func mapAlbum(_ item: PlexXMLItem) -> Album {
         let itemID = item.attributes["ratingKey"] ?? item.attributes["key"] ?? UUID().uuidString
-        let artist = item.attributes["parentTitle"] ?? item.attributes["parentTitleSort"] ?? "未知艺术家"
+        let artist = bestText(
+            item.attributes["parentTitle"],
+            fallback: item.attributes["parentTitleSort"],
+            unknown: "未知艺术家"
+        )
         cache(itemID: itemID, partKey: nil, thumbPath: item.attributes["thumb"] ?? item.attributes["parentThumb"])
         return Album(
             id: globalID(itemID),
-            name: item.attributes["title"] ?? "未知专辑",
+            name: bestText(item.attributes["title"], fallback: nil, unknown: "未知专辑"),
             artist: artist,
             displayArtist: artist,
             year: Int(item.attributes["year"] ?? ""),
@@ -333,7 +338,7 @@ final class PlexMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         cache(itemID: itemID, partKey: nil, thumbPath: item.attributes["thumb"])
         return Artist(
             id: globalID(itemID),
-            name: item.attributes["title"] ?? "未知艺术家",
+            name: bestText(item.attributes["title"], fallback: nil, unknown: "未知艺术家"),
             albumCount: Int(item.attributes["childCount"] ?? "")
         )
     }
@@ -344,7 +349,7 @@ final class PlexMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         cache(itemID: itemID, partKey: nil, thumbPath: item.attributes["thumb"])
         return Playlist(
             id: globalID(itemID),
-            name: item.attributes["title"] ?? "播放列表",
+            name: bestText(item.attributes["title"], fallback: nil, unknown: "播放列表"),
             library: providerType.rawValue,
             songCount: Int(item.attributes["leafCount"] ?? item.attributes["viewedLeafCount"] ?? ""),
             isSmart: item.attributes["smart"] == "1",
@@ -402,6 +407,41 @@ final class PlexMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         return raw < 10_000 ? raw * 1000 : raw
     }
 
+    /// 从 Plex 文件路径中提取可读文件名，作为乱码标题的兜底。
+    private func fileTitle(from path: String?) -> String? {
+        guard let path, !path.isEmpty else { return nil }
+        let name = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
+        let trimmed = name.removingPercentEncoding?.trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// 返回可展示文本；当 Plex 元数据全是问号时使用兜底文本。
+    private func bestText(_ primary: String?, fallback: String?, unknown: String) -> String {
+        if let text = bestOptionalText(primary) { return text }
+        if let text = bestOptionalText(fallback) { return text }
+        return unknown
+    }
+
+    /// 返回可选可展示文本；过滤空白和明显的问号占位符。
+    private func bestOptionalText(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !isQuestionPlaceholder(trimmed) else { return nil }
+        return trimmed
+    }
+
+    /// 判断字符串是否基本由问号和分隔符构成。
+    private func isQuestionPlaceholder(_ value: String) -> Bool {
+        let visible = value.unicodeScalars.filter { !$0.properties.isWhitespace }
+        guard !visible.isEmpty else { return false }
+        let questionCount = visible.filter { $0 == "?" || $0 == "？" }.count
+        let allowedCount = visible.filter { scalar in
+            scalar == "?" || scalar == "？" || scalar == "." || scalar == "-" || scalar == "_" || scalar == "·"
+        }.count
+        return questionCount > 0 && allowedCount == visible.count
+    }
+
     /// 发起 Plex XML 请求并解析 MediaContainer。
     private func requestXML(
         path: String,
@@ -429,7 +469,7 @@ final class PlexMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         do {
             (data, response) = try await session.data(for: request)
         } catch let urlError as URLError where urlError.code == .cancelled {
-            throw PlexMusicError.network("请求已取消")
+            throw CancellationError()
         } catch {
             throw PlexMusicError.network(error.localizedDescription)
         }

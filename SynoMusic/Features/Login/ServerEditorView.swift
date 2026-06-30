@@ -147,6 +147,10 @@ struct ServerEditorView: View {
                 }
             }
             .onAppear { setupOnAppear() }
+            .onReceive(NotificationCenter.default.publisher(for: .plexAuthReturned)) { _ in
+                guard showPlexPinSheet, plexPin != nil else { return }
+                Task { await continuePlexPinAuthorization(showPendingError: false) }
+            }
         }
     }
 
@@ -605,7 +609,7 @@ struct ServerEditorView: View {
     }
 
     /// 在用户完成浏览器授权后继续 Plex 服务器发现。
-    private func continuePlexPinAuthorization() async {
+    private func continuePlexPinAuthorization(showPendingError: Bool = true) async {
         guard let plexPin else { return }
         isConnecting = true
         progressMessage = "正在确认 Plex 授权...".t
@@ -620,6 +624,8 @@ struct ServerEditorView: View {
             }
             showPlexPinSheet = false
             try await continuePlexServerDiscovery(account: account)
+        } catch PlexAccountError.authorizationPending where !showPendingError {
+            return
         } catch {
             self.error = error.localizedDescription.t
             Haptics.warning()

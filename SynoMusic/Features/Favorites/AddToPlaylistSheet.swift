@@ -40,7 +40,7 @@ struct AddToPlaylistSheet: View {
                 }
 
                 Section("选择歌单".t) {
-                    ForEach(playlists.playlists) { p in
+                    ForEach(playlists.visiblePlaylists) { p in
                         Button {
                             toggle(p.id)
                         } label: {

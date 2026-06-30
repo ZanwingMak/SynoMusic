@@ -963,26 +963,18 @@ private struct ServerRowItem: View {
                     .font(.system(size: 22, weight: .regular))
                     .foregroundStyle(isDefault ? accentColor : Color.secondary.opacity(0.6))
 
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text(displayName)
                             .font(.nocBody.weight(.semibold))
                             .foregroundStyle(.primary)
-                        tagPill(profile.providerType.titleKey.t, color: accentColor)
-                        if profile.isQuickConnect {
-                            tagPill("QC", color: .blue)
-                        }
-                        if isCurrentSession {
-                            tagPill("已登录".t, color: .green)
-                        }
-                        if isDefault {
-                            tagPill("默认".t, color: accentColor)
-                        }
+                            .lineLimit(2)
+                        tagRow
                     }
                     Text(serverSubtitle)
                         .font(.nocLabel)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        .lineLimit(2)
                 }
 
                 Spacer(minLength: 8)
@@ -1007,6 +999,33 @@ private struct ServerRowItem: View {
         .disabled(isSwitching)
     }
 
+    /// 服务器状态标签；允许换行，避免长语言撑爆一行。
+    private var tagRow: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 6) {
+                tagItems
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                tagItems
+            }
+        }
+    }
+
+    /// 根据服务器状态生成标签集合。
+    @ViewBuilder
+    private var tagItems: some View {
+        tagPill(profile.providerType.titleKey.t, color: accentColor)
+        if profile.isQuickConnect {
+            tagPill("QC", color: .blue)
+        }
+        if isCurrentSession {
+            tagPill("已登录".t, color: .green)
+        }
+        if isDefault {
+            tagPill("默认".t, color: accentColor)
+        }
+    }
+
     /// 备注名为空时回退到主机；保证列表行不出现空白条目。
     private var displayName: String {
         let trimmed = profile.name.trimmingCharacters(in: .whitespaces)
@@ -1022,9 +1041,13 @@ private struct ServerRowItem: View {
         return "\(profile.username) @ \(profile.displayURL)"
     }
 
+    /// 绘制单个服务器状态标签。
     private func tagPill(_ text: String, color: Color) -> some View {
         Text(text)
             .font(.caption2.weight(.semibold))
+            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: 92, alignment: .leading)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(color.opacity(0.15), in: Capsule())

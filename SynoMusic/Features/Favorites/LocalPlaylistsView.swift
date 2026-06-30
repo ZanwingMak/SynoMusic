@@ -34,7 +34,7 @@ struct LocalPlaylistsView: View {
             }
 
             Section {
-                ForEach(playlists.playlists) { p in
+                ForEach(playlists.visiblePlaylists) { p in
                     NavigationLink(value: BrowseRoute.localPlaylist(p.id)) {
                         PlaylistRow(playlist: p)
                     }

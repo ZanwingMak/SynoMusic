@@ -80,7 +80,13 @@ struct RootView: View {
 
     /// 主框架身份：真实会话按服务器区分，审核/Demo 使用稳定值避免反复重建。
     private var shellIdentity: String {
-        if let id = session.musicClient?.profile.id.uuidString { return id }
+        if let profile = session.musicClient?.profile {
+            return [
+                profile.providerType.rawValue,
+                profile.id.uuidString,
+                profile.musicLibraryID ?? ""
+            ].joined(separator: ":")
+        }
         if reviewMode.isEnabled { return AppReviewMode.shellIdentity }
         if !serverStore.profiles.isEmpty { return "no-active-session-with-profiles" }
         return "demo-mode"
@@ -143,6 +149,9 @@ struct RootView: View {
             openShortcutAction(.downloads)
         case "widgets":
             navigation.openWidgets()
+        case "plex-auth":
+            navigation.selectedTab = .settings
+            NotificationCenter.default.post(name: .plexAuthReturned, object: nil)
         default:
             break
         }
@@ -157,6 +166,11 @@ struct RootView: View {
             navigation.openDownloads()
         }
     }
+}
+
+/// App 内部通知名集合。
+extension Notification.Name {
+    static let plexAuthReturned = Notification.Name("synomusic.plexAuthReturned")
 }
 
 /// 顶部状态条：从顶部滑入，可点关闭。

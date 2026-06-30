@@ -289,7 +289,7 @@ enum PlexAccountService {
             "code": code,
             "context[device][product]": productName,
             "context[device][platform]": "iOS",
-            "forwardUrl": "https://app.plex.tv/desktop"
+            "forwardUrl": "synomusic://plex-auth"
         ]
         let fragment = values
             .map { key, value in
