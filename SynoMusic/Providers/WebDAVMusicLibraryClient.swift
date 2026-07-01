@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 
 /// WebDAV 音乐源错误。
@@ -42,6 +43,7 @@ final class WebDAVMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
     private let maxScanDepth = 8
     private var password: String
     private var tracksCache: [FileMusicTrack]?
+    private var durationCache: [String: TimeInterval] = [:]
 
     init(profile: ServerProfile, password: String = "") {
         self.profile = profile
@@ -102,8 +104,8 @@ final class WebDAVMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         let albums = FileMusicLibraryIndex.albums(from: tracks, providerType: providerType, profile: profile)
         let artists = FileMusicLibraryIndex.artists(from: tracks, providerType: providerType, profile: profile)
         return LibraryHomeSnapshot(
-            recentAlbums: Array(albums.prefix(18)),
-            albums: Array(albums.prefix(60)),
+            recentAlbums: Array(albums.prefix(24)),
+            albums: albums,
             artists: Array(artists.prefix(30))
         )
     }
@@ -166,7 +168,8 @@ final class WebDAVMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         let key = FileMusicLibraryIndex.remoteID(from: album.id, providerType: providerType, profile: profile)
             .replacingOccurrences(of: "album:", with: "")
         let filtered = try await loadTracks().filter { "\($0.album ?? "未知专辑")|\($0.artist ?? "未知艺术家")" == key }
-        return filtered.map { FileMusicLibraryIndex.song(from: $0, providerType: providerType, profile: profile) }
+        let resolved = await tracksWithResolvedDurations(filtered)
+        return resolved.map { FileMusicLibraryIndex.song(from: $0, providerType: providerType, profile: profile) }
     }
 
     /// WebDAV 不强制约定封面位置，交给默认封面和线上封面搜索兜底。
@@ -194,6 +197,7 @@ final class WebDAVMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
     /// 清空 WebDAV 本地索引缓存。
     func logout() async {
         tracksCache = nil
+        durationCache = [:]
         password = ""
     }
 
@@ -275,6 +279,55 @@ final class WebDAVMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         )
     }
 
+    /// 为专辑详情中的 WebDAV 音频补充真实时长；读取失败时保留未知时长。
+    private func tracksWithResolvedDurations(_ tracks: [FileMusicTrack]) async -> [FileMusicTrack] {
+        var nextCache = durationCache
+        await withTaskGroup(of: (String, TimeInterval).self) { group in
+            for track in tracks where track.duration <= 0 && nextCache[track.remoteID] == nil {
+                group.addTask { [self] in
+                    (track.remoteID, await remoteDuration(for: track))
+                }
+            }
+            for await (remoteID, duration) in group where duration > 0 {
+                nextCache[remoteID] = duration
+            }
+        }
+        durationCache = nextCache
+        return tracks.map { track in
+            trackWithDuration(track, duration: nextCache[track.remoteID] ?? track.duration)
+        }
+    }
+
+    /// 通过 AVURLAsset 读取远程音频时长，避免 WebDAV 目录协议只能显示 0:00。
+    private func remoteDuration(for track: FileMusicTrack) async -> TimeInterval {
+        guard let rawURL = URL(string: track.remoteID) else { return 0 }
+        let url = authenticatedURL(rawURL)
+        let options = assetHeaderOptions()
+        let asset = AVURLAsset(url: url, options: options)
+        do {
+            let duration = try await asset.load(.duration)
+            let seconds = CMTimeGetSeconds(duration)
+            return seconds.isFinite && seconds > 0 ? seconds : 0
+        } catch {
+            return 0
+        }
+    }
+
+    /// 返回替换时长后的文件条目，保持其它扫描信息不变。
+    private func trackWithDuration(_ track: FileMusicTrack, duration: TimeInterval) -> FileMusicTrack {
+        FileMusicTrack(
+            remoteID: track.remoteID,
+            title: track.title,
+            album: track.album,
+            artist: track.artist,
+            duration: duration,
+            codec: track.codec,
+            filesize: track.filesize,
+            path: track.path,
+            modifiedAt: track.modifiedAt
+        )
+    }
+
     /// 返回 WebDAV 根路径，默认使用服务端根目录。
     private func rootPath() -> String {
         let raw = profile.musicLibraryID?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "/"
@@ -305,9 +358,21 @@ final class WebDAVMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
 
     /// 给 URLRequest 添加 Basic Auth。
     private func applyBasicAuth(to request: inout URLRequest) {
-        guard !profile.username.isEmpty || !password.isEmpty else { return }
+        guard let value = basicAuthorizationHeader() else { return }
+        request.setValue(value, forHTTPHeaderField: "Authorization")
+    }
+
+    /// 生成 WebDAV Basic Auth 头，供目录扫描和 AVURLAsset 元数据读取复用。
+    private func basicAuthorizationHeader() -> String? {
+        guard !profile.username.isEmpty || !password.isEmpty else { return nil }
         let raw = "\(profile.username):\(password)"
-        request.setValue("Basic \(Data(raw.utf8).base64EncodedString())", forHTTPHeaderField: "Authorization")
+        return "Basic \(Data(raw.utf8).base64EncodedString())"
+    }
+
+    /// 返回 AVURLAsset 可识别的 HTTP 头配置。
+    private func assetHeaderOptions() -> [String: Any]? {
+        guard let header = basicAuthorizationHeader() else { return nil }
+        return ["AVURLAssetHTTPHeaderFieldsKey": ["Authorization": header]]
     }
 
     /// 给 AVPlayer 可直接访问的 URL 添加 userinfo。

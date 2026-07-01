@@ -44,11 +44,6 @@ struct SettingsView: View {
             cloudSyncSection
             aboutSection
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if playback.currentSong != nil {
-                Color.clear.frame(height: Metrics.miniPlayerHeight + 16)
-            }
-        }
         .tint(theme.current.accent(in: colorScheme))
         .id("settings-\(theme.currentID)-\(theme.appearance.rawValue)")
         .navigationTitle("设置".t)

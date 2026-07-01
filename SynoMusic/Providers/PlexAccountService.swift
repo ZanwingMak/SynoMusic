@@ -97,7 +97,7 @@ struct PlexConnectionOption: Identifiable, Sendable {
 /// Plex 账号登录与服务器发现服务。
 enum PlexAccountService {
     private static let productName = "SynoMusic"
-    private static let appVersion = "1.5.2"
+    private static let appVersion = "1.5.3"
 
     /// 创建 Plex 浏览器授权 PIN。
     static func createPin() async throws -> PlexAuthPin {
@@ -349,7 +349,7 @@ enum PlexAccountService {
         do {
             (data, response) = try await URLSession.shared.data(for: request)
         } catch let urlError as URLError where urlError.code == .cancelled {
-            throw PlexAccountError.network("请求已取消")
+            throw CancellationError()
         } catch {
             throw PlexAccountError.network(error.localizedDescription)
         }

@@ -10,7 +10,6 @@ struct ServerEditorView: View {
     @EnvironmentObject private var reviewMode: AppReviewMode
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
-    @Environment(\.scenePhase) private var scenePhase
 
     @State var profile: ServerProfile
     @State private var password: String = ""
@@ -28,7 +27,6 @@ struct ServerEditorView: View {
     @State private var plexPendingAccount: PlexAccountInfo?
     @State private var plexPendingOption: PlexConnectionOption?
     @State private var plexPin: PlexAuthPin?
-    @State private var plexAuthPollTask: Task<Void, Never>?
     @State private var isCheckingPlexPin: Bool = false
     @State private var showPlexServerPicker: Bool = false
     @State private var showPlexLibraryPicker: Bool = false
@@ -170,15 +168,12 @@ struct ServerEditorView: View {
                     )
                 }
             }
-            .sheet(isPresented: $showPlexPinSheet, onDismiss: {
-                cancelPlexAuthPolling()
-            }) {
+            .sheet(isPresented: $showPlexPinSheet) {
                 if let plexPin {
                     PlexPinAuthSheet(
                         pin: plexPin,
                         onOpen: { openURL(plexPin.authURL) },
                         onCancel: {
-                            cancelPlexAuthPolling()
                             showPlexPinSheet = false
                         },
                         onContinue: { Task { await continuePlexPinAuthorization() } }
@@ -198,14 +193,6 @@ struct ServerEditorView: View {
                 )
             }
             .onAppear { setupOnAppear() }
-            .onReceive(NotificationCenter.default.publisher(for: .plexAuthReturned)) { _ in
-                guard showPlexPinSheet, plexPin != nil else { return }
-                Task { await continuePlexPinAuthorization(showPendingError: false) }
-            }
-            .onChange(of: scenePhase) { _, phase in
-                guard phase == .active, showPlexPinSheet, plexPin != nil else { return }
-                Task { await pollPlexPinAuthorizationOnce() }
-            }
             .fileImporter(isPresented: $showSMBFolderImporter, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in
                 handleSMBFolderImport(result)
             }
@@ -813,7 +800,6 @@ struct ServerEditorView: View {
         do {
             plexPin = try await PlexAccountService.createPin()
             showPlexPinSheet = true
-            startPlexAuthPolling()
         } catch {
             self.error = error.localizedDescription.t
             Haptics.warning()
@@ -821,7 +807,7 @@ struct ServerEditorView: View {
     }
 
     /// 在用户完成浏览器授权后继续 Plex 服务器发现。
-    private func continuePlexPinAuthorization(showPendingError: Bool = true) async {
+    private func continuePlexPinAuthorization() async {
         guard let plexPin else { return }
         guard !isCheckingPlexPin else { return }
         isCheckingPlexPin = true
@@ -837,59 +823,11 @@ struct ServerEditorView: View {
             guard let account = try await PlexAccountService.checkPin(plexPin) else {
                 throw PlexAccountError.authorizationPending
             }
-            cancelPlexAuthPolling()
             showPlexPinSheet = false
             try await continuePlexServerDiscovery(account: account)
-        } catch PlexAccountError.authorizationPending where !showPendingError {
-            return
-        } catch {
-            self.error = error.localizedDescription.t
+        } catch is CancellationError {
+            playback.setStatus("Plex 授权检查被系统中断，请再点一次「我已完成授权」。".t)
             Haptics.warning()
-        }
-    }
-
-    /// 启动 Plex PIN 授权状态轮询，避免依赖 Plex 网页是否成功回调自定义 URL scheme。
-    private func startPlexAuthPolling() {
-        cancelPlexAuthPolling()
-        guard let pin = plexPin else { return }
-        plexAuthPollTask = Task { @MainActor in
-            while !Task.isCancelled {
-                if let expiresAt = pin.expiresAt, Date() > expiresAt {
-                    break
-                }
-                guard showPlexPinSheet, plexPin?.id == pin.id else {
-                    break
-                }
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-                guard !Task.isCancelled else { break }
-                await pollPlexPinAuthorizationOnce()
-            }
-        }
-    }
-
-    /// 取消 Plex PIN 授权状态轮询。
-    private func cancelPlexAuthPolling() {
-        plexAuthPollTask?.cancel()
-        plexAuthPollTask = nil
-    }
-
-    /// 静默检查一次 Plex PIN 状态，授权完成时自动进入服务器发现。
-    private func pollPlexPinAuthorizationOnce() async {
-        guard let plexPin, !isCheckingPlexPin else { return }
-        isCheckingPlexPin = true
-        defer { isCheckingPlexPin = false }
-        do {
-            guard let account = try await PlexAccountService.checkPin(plexPin) else { return }
-            cancelPlexAuthPolling()
-            showPlexPinSheet = false
-            isConnecting = true
-            defer {
-                isConnecting = false
-                progressMessage = nil
-            }
-            try await continuePlexServerDiscovery(account: account)
-        } catch PlexAccountError.authorizationPending {
-            return
         } catch {
             self.error = error.localizedDescription.t
             Haptics.warning()
@@ -1336,7 +1274,7 @@ private struct PlexPinAuthSheet: View {
                     .foregroundStyle(Theme.accent)
                 Text("使用浏览器完成 Plex 授权".t)
                     .font(.nocTitle)
-                Text("授权完成后回到 SynoMusic，会自动继续。".t)
+                Text("授权完成后回到 SynoMusic，点击「我已完成授权」。".t)
                     .font(.nocBody)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1356,9 +1294,11 @@ private struct PlexPinAuthSheet: View {
                     onContinue()
                 } label: {
                     Label("我已完成授权".t, systemImage: "checkmark.circle")
-                        .frame(maxWidth: .infinity)
+                        .font(.nocBody.weight(.semibold))
+                        .frame(maxWidth: .infinity, minHeight: 52)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(PrimaryButtonStyle())
+                .controlSize(.large)
                 Spacer()
             }
             .padding(24)

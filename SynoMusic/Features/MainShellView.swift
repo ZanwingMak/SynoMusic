@@ -72,7 +72,7 @@ struct MainShellView: View {
                     onQueue: { showQueueSheet = true }
                 )
                 .padding(.horizontal, Metrics.s)
-                .padding(.bottom, 52)   // TabBar 高度
+                .padding(.bottom, Metrics.miniPlayerBottomOffset)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
@@ -188,7 +188,7 @@ extension View {
     func reserveMiniPlayer(visible: Bool) -> some View {
         self.safeAreaInset(edge: .bottom, spacing: 0) {
             if visible {
-                Color.clear.frame(height: Metrics.miniPlayerHeight + 8)
+                Color.clear.frame(height: Metrics.miniPlayerReservedHeight)
             }
         }
     }

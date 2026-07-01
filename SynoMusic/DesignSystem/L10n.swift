@@ -2334,7 +2334,9 @@ enum L10n {
             "加载节目失败": "加载节目失败",
             "没有可播放的节目": "没有可播放的节目",
             "换个播客或稍后重试。": "换个播客或稍后重试。",
-            "播客单集": "播客单集"
+            "播客单集": "播客单集",
+            "正在恢复购买…": "正在恢复购买…",
+            "正在打开兑换页面…": "正在打开兑换页面…"
         ],
         "zh-Hant": [
             "每周": "每週",
@@ -2420,7 +2422,9 @@ enum L10n {
             "加载节目失败": "載入節目失敗",
             "没有可播放的节目": "沒有可播放的節目",
             "换个播客或稍后重试。": "換個 Podcast 或稍後重試。",
-            "播客单集": "Podcast 單集"
+            "播客单集": "Podcast 單集",
+            "正在恢复购买…": "正在恢復購買…",
+            "正在打开兑换页面…": "正在開啟兌換頁面…"
         ],
         "en": [
             "每周": "Weekly",
@@ -2506,7 +2510,9 @@ enum L10n {
             "加载节目失败": "Failed to Load Episodes",
             "没有可播放的节目": "No Playable Episodes",
             "换个播客或稍后重试。": "Try another podcast or try again later.",
-            "播客单集": "Podcast Episodes"
+            "播客单集": "Podcast Episodes",
+            "正在恢复购买…": "Restoring purchases…",
+            "正在打开兑换页面…": "Opening redemption sheet…"
         ],
         "ja": [
             "每周": "毎週",
@@ -2592,7 +2598,9 @@ enum L10n {
             "加载节目失败": "エピソードの読み込みに失敗しました",
             "没有可播放的节目": "再生できるエピソードがありません",
             "换个播客或稍后重试。": "別のポッドキャストを選ぶか、後でもう一度お試しください。",
-            "播客单集": "エピソード"
+            "播客单集": "エピソード",
+            "正在恢复购买…": "購入を復元中…",
+            "正在打开兑换页面…": "引き換え画面を開いています…"
         ],
         "ko": [
             "每周": "매주",
@@ -2678,7 +2686,9 @@ enum L10n {
             "加载节目失败": "에피소드 불러오기 실패",
             "没有可播放的节目": "재생 가능한 에피소드가 없습니다",
             "换个播客或稍后重试。": "다른 팟캐스트를 선택하거나 나중에 다시 시도하세요.",
-            "播客单集": "팟캐스트 에피소드"
+            "播客单集": "팟캐스트 에피소드",
+            "正在恢复购买…": "구입 복원 중…",
+            "正在打开兑换页面…": "교환 화면 여는 중…"
         ],
         "de": [
             "每周": "Wöchentlich",
@@ -2764,7 +2774,9 @@ enum L10n {
             "加载节目失败": "Episoden konnten nicht geladen werden",
             "没有可播放的节目": "Keine abspielbaren Episoden",
             "换个播客或稍后重试。": "Wähle einen anderen Podcast oder versuche es später erneut.",
-            "播客单集": "Podcast-Episoden"
+            "播客单集": "Podcast-Episoden",
+            "正在恢复购买…": "Käufe werden wiederhergestellt…",
+            "正在打开兑换页面…": "Einlöseseite wird geöffnet…"
         ],
         "fr": [
             "每周": "Hebdo",
@@ -2850,7 +2862,9 @@ enum L10n {
             "加载节目失败": "Échec du chargement des épisodes",
             "没有可播放的节目": "Aucun épisode lisible",
             "换个播客或稍后重试。": "Essayez un autre podcast ou réessayez plus tard.",
-            "播客单集": "Épisodes de podcast"
+            "播客单集": "Épisodes de podcast",
+            "正在恢复购买…": "Restauration des achats…",
+            "正在打开兑换页面…": "Ouverture de la page d’échange…"
         ]
     ]
 
@@ -3461,11 +3475,13 @@ enum L10n {
             "选择音乐库": "選擇音樂庫",
             "使用浏览器完成 Plex 授权": "使用瀏覽器完成 Plex 授權",
             "授权完成后回到 SynoMusic，会自动继续。": "授權完成後回到 SynoMusic，會自動繼續。",
+            "授权完成后回到 SynoMusic，点击「我已完成授权」。": "授權完成後回到 SynoMusic，點擊「我已完成授權」。",
             "点击下方按钮打开 Plex 官方授权页。授权完成后回到 SynoMusic，继续发现你的 Plex 音乐服务器。": "點擊下方按鈕開啟 Plex 官方授權頁。授權完成後回到 SynoMusic，繼續尋找你的 Plex 音樂伺服器。",
             "打开 Plex 授权页": "開啟 Plex 授權頁",
             "我已完成授权": "我已完成授權",
             "Plex 授权": "Plex 授權",
-            "Plex 授权已失效，请重新登录或更新 X-Plex-Token。": "Plex 授權已失效，請重新登入或更新 X-Plex-Token。"
+            "Plex 授权已失效，请重新登录或更新 X-Plex-Token。": "Plex 授權已失效，請重新登入或更新 X-Plex-Token。",
+            "Plex 授权检查被系统中断，请再点一次「我已完成授权」。": "Plex 授權檢查被系統中斷，請再點一次「我已完成授權」。"
         ],
         "en": [
             "AirPlay": "AirPlay",
@@ -3519,11 +3535,13 @@ enum L10n {
             "选择音乐库": "Choose Library",
             "使用浏览器完成 Plex 授权": "Authorize Plex in your browser",
             "授权完成后回到 SynoMusic，会自动继续。": "Return to SynoMusic after authorizing. It will continue automatically.",
+            "授权完成后回到 SynoMusic，点击「我已完成授权」。": "Return to SynoMusic after authorizing, then tap “I Finished Authorization”.",
             "点击下方按钮打开 Plex 官方授权页。授权完成后回到 SynoMusic，继续发现你的 Plex 音乐服务器。": "Open Plex’s official authorization page. After authorizing, return to SynoMusic to discover your Plex music server.",
             "打开 Plex 授权页": "Open Plex Authorization",
             "我已完成授权": "I Finished Authorization",
             "Plex 授权": "Plex Authorization",
-            "Plex 授权已失效，请重新登录或更新 X-Plex-Token。": "Plex authorization expired. Sign in again or update X-Plex-Token."
+            "Plex 授权已失效，请重新登录或更新 X-Plex-Token。": "Plex authorization expired. Sign in again or update X-Plex-Token.",
+            "Plex 授权检查被系统中断，请再点一次「我已完成授权」。": "The Plex authorization check was interrupted by the system. Tap “I Finished Authorization” again."
         ],
         "ja": [
             "AirPlay": "AirPlay",
@@ -3577,11 +3595,13 @@ enum L10n {
             "选择音乐库": "ライブラリを選択",
             "使用浏览器完成 Plex 授权": "ブラウザで Plex 認証を完了",
             "授权完成后回到 SynoMusic，会自动继续。": "認証後に SynoMusic に戻ると、自動で続行します。",
+            "授权完成后回到 SynoMusic，点击「我已完成授权」。": "認証後に SynoMusic に戻り、「認証を完了しました」をタップしてください。",
             "点击下方按钮打开 Plex 官方授权页。授权完成后回到 SynoMusic，继续发现你的 Plex 音乐服务器。": "下のボタンで Plex 公式認証ページを開きます。認証後、SynoMusic に戻って Plex 音楽サーバーの検出を続けてください。",
             "打开 Plex 授权页": "Plex 認証ページを開く",
             "我已完成授权": "認証を完了しました",
             "Plex 授权": "Plex 認証",
-            "Plex 授权已失效，请重新登录或更新 X-Plex-Token。": "Plex 認証の期限が切れました。再ログインするか X-Plex-Token を更新してください。"
+            "Plex 授权已失效，请重新登录或更新 X-Plex-Token。": "Plex 認証の期限が切れました。再ログインするか X-Plex-Token を更新してください。",
+            "Plex 授权检查被系统中断，请再点一次「我已完成授权」。": "Plex 認証チェックがシステムにより中断されました。もう一度「認証を完了しました」をタップしてください。"
         ],
         "ko": [
             "AirPlay": "AirPlay",
@@ -3635,11 +3655,13 @@ enum L10n {
             "选择音乐库": "라이브러리 선택",
             "使用浏览器完成 Plex 授权": "브라우저에서 Plex 인증 완료",
             "授权完成后回到 SynoMusic，会自动继续。": "인증 후 SynoMusic으로 돌아오면 자동으로 계속됩니다.",
+            "授权完成后回到 SynoMusic，点击「我已完成授权」。": "인증 후 SynoMusic으로 돌아와 “인증을 완료했습니다”를 탭하세요.",
             "点击下方按钮打开 Plex 官方授权页。授权完成后回到 SynoMusic，继续发现你的 Plex 音乐服务器。": "아래 버튼으로 Plex 공식 인증 페이지를 여세요. 인증 후 SynoMusic으로 돌아와 Plex 음악 서버 검색을 계속하세요.",
             "打开 Plex 授权页": "Plex 인증 페이지 열기",
             "我已完成授权": "인증을 완료했습니다",
             "Plex 授权": "Plex 인증",
-            "Plex 授权已失效，请重新登录或更新 X-Plex-Token。": "Plex 인증이 만료되었습니다. 다시 로그인하거나 X-Plex-Token을 업데이트하세요."
+            "Plex 授权已失效，请重新登录或更新 X-Plex-Token。": "Plex 인증이 만료되었습니다. 다시 로그인하거나 X-Plex-Token을 업데이트하세요.",
+            "Plex 授权检查被系统中断，请再点一次「我已完成授权」。": "Plex 인증 확인이 시스템에 의해 중단되었습니다. “인증을 완료했습니다”를 다시 탭하세요."
         ],
         "de": [
             "AirPlay": "AirPlay",
@@ -3693,11 +3715,13 @@ enum L10n {
             "选择音乐库": "Bibliothek wählen",
             "使用浏览器完成 Plex 授权": "Plex-Autorisierung im Browser abschließen",
             "授权完成后回到 SynoMusic，会自动继续。": "Kehre nach der Autorisierung zu SynoMusic zurück. Es geht automatisch weiter.",
+            "授权完成后回到 SynoMusic，点击「我已完成授权」。": "Kehre nach der Autorisierung zu SynoMusic zurück und tippe auf „Autorisierung abgeschlossen“.",
             "点击下方按钮打开 Plex 官方授权页。授权完成后回到 SynoMusic，继续发现你的 Plex 音乐服务器。": "Öffne die offizielle Plex-Autorisierungsseite. Kehre danach zu SynoMusic zurück, um deinen Plex-Musikserver zu finden.",
             "打开 Plex 授权页": "Plex-Autorisierung öffnen",
             "我已完成授权": "Autorisierung abgeschlossen",
             "Plex 授权": "Plex-Autorisierung",
-            "Plex 授权已失效，请重新登录或更新 X-Plex-Token。": "Die Plex-Autorisierung ist abgelaufen. Melde dich erneut an oder aktualisiere X-Plex-Token."
+            "Plex 授权已失效，请重新登录或更新 X-Plex-Token。": "Die Plex-Autorisierung ist abgelaufen. Melde dich erneut an oder aktualisiere X-Plex-Token.",
+            "Plex 授权检查被系统中断，请再点一次「我已完成授权」。": "Die Plex-Autorisierungsprüfung wurde vom System unterbrochen. Tippe erneut auf „Autorisierung abgeschlossen“."
         ],
         "fr": [
             "AirPlay": "AirPlay",
@@ -3751,11 +3775,13 @@ enum L10n {
             "选择音乐库": "Choisir la bibliothèque",
             "使用浏览器完成 Plex 授权": "Terminer l’autorisation Plex dans le navigateur",
             "授权完成后回到 SynoMusic，会自动继续。": "Revenez à SynoMusic après l’autorisation. La suite se fera automatiquement.",
+            "授权完成后回到 SynoMusic，点击「我已完成授权」。": "Revenez à SynoMusic après l’autorisation, puis touchez « J’ai terminé l’autorisation ».",
             "点击下方按钮打开 Plex 官方授权页。授权完成后回到 SynoMusic，继续发现你的 Plex 音乐服务器。": "Ouvrez la page officielle d’autorisation Plex. Une fois autorisé, revenez à SynoMusic pour découvrir votre serveur musical Plex.",
             "打开 Plex 授权页": "Ouvrir l’autorisation Plex",
             "我已完成授权": "J’ai terminé l’autorisation",
             "Plex 授权": "Autorisation Plex",
-            "Plex 授权已失效，请重新登录或更新 X-Plex-Token。": "L’autorisation Plex a expiré. Reconnectez-vous ou mettez à jour X-Plex-Token."
+            "Plex 授权已失效，请重新登录或更新 X-Plex-Token。": "L’autorisation Plex a expiré. Reconnectez-vous ou mettez à jour X-Plex-Token.",
+            "Plex 授权检查被系统中断，请再点一次「我已完成授权」。": "La vérification de l’autorisation Plex a été interrompue par le système. Touchez à nouveau « J’ai terminé l’autorisation »."
         ]
     ]
 }

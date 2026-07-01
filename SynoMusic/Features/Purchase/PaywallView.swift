@@ -170,6 +170,7 @@ struct PaywallView: View {
     private var restoreAndRedeem: some View {
         VStack(spacing: 8) {
             Button {
+                Haptics.tap()
                 Task { await purchase.manageSubscriptions() }
             } label: {
                 Label("管理订阅".t, systemImage: "person.crop.circle.badge.checkmark")
@@ -177,18 +178,30 @@ struct PaywallView: View {
             .buttonStyle(SecondaryButtonStyle())
 
             Button {
+                Haptics.tap()
                 Task { await purchase.restorePurchases() }
             } label: {
-                Label("已经购买？恢复购买".t, systemImage: "arrow.clockwise.circle")
+                operationLabel(
+                    title: purchase.isRestoringPurchases ? "正在恢复购买…".t : "已经购买？恢复购买".t,
+                    systemImage: "arrow.clockwise.circle",
+                    isLoading: purchase.isRestoringPurchases
+                )
             }
             .buttonStyle(SecondaryButtonStyle())
+            .disabled(purchase.isRestoringPurchases)
 
             Button {
+                Haptics.tap()
                 Task { await purchase.redeemOfferCode() }
             } label: {
-                Label("App 兑换".t, systemImage: "giftcard")
+                operationLabel(
+                    title: purchase.isRedeemingOfferCode ? "正在打开兑换页面…".t : "App 兑换".t,
+                    systemImage: "giftcard",
+                    isLoading: purchase.isRedeemingOfferCode
+                )
             }
             .buttonStyle(SecondaryButtonStyle())
+            .disabled(purchase.isRedeemingOfferCode)
         }
     }
 
@@ -332,6 +345,19 @@ struct PaywallView: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    /// 生成带即时反馈的 StoreKit 操作按钮内容。
+    private func operationLabel(title: String, systemImage: String, isLoading: Bool) -> some View {
+        HStack(spacing: 8) {
+            if isLoading {
+                ProgressView()
+            } else {
+                Image(systemName: systemImage)
+            }
+            Text(title)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     /// 同步当前选中的商品，避免商品加载完成后没有默认档位。

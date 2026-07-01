@@ -186,7 +186,7 @@ private struct SongRow: View {
                     .lineLimit(1)
             }
             Spacer()
-            Text(formatDuration(song.duration))
+            Text(durationText(for: song.duration))
                 .font(.nocLabel)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -196,7 +196,9 @@ private struct SongRow: View {
         .contentShape(Rectangle())
     }
 
-    private func formatDuration(_ s: TimeInterval) -> String {
+    /// 格式化歌曲时长；文件型音乐源暂未读到时长时避免显示误导性的 0:00。
+    private func durationText(for s: TimeInterval) -> String {
+        guard s > 0 else { return "--:--" }
         let total = Int(s)
         return String(format: "%d:%02d", total / 60, total % 60)
     }

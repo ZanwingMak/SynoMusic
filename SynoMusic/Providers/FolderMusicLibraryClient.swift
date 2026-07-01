@@ -62,8 +62,8 @@ final class FolderMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         let albums = FileMusicLibraryIndex.albums(from: tracks, providerType: providerType, profile: profile)
         let artists = FileMusicLibraryIndex.artists(from: tracks, providerType: providerType, profile: profile)
         return LibraryHomeSnapshot(
-            recentAlbums: Array(albums.prefix(18)),
-            albums: Array(albums.prefix(60)),
+            recentAlbums: Array(albums.prefix(24)),
+            albums: albums,
             artists: Array(artists.prefix(30))
         )
     }

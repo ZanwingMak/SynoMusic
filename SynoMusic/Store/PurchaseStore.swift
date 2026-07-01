@@ -173,6 +173,8 @@ final class PurchaseStore: ObservableObject {
     @Published private(set) var hasLoadedEntitlements = false
     @Published private(set) var isLoadingProducts = false
     @Published private(set) var isPurchasing = false
+    @Published private(set) var isRestoringPurchases = false
+    @Published private(set) var isRedeemingOfferCode = false
     @Published private(set) var statusMessage: String?
 
     private var updatesTask: Task<Void, Never>?
@@ -238,6 +240,10 @@ final class PurchaseStore: ObservableObject {
 
     /// 触发系统恢复购买流程，并刷新当前权益。
     func restorePurchases() async {
+        guard !isRestoringPurchases else { return }
+        isRestoringPurchases = true
+        statusMessage = "正在恢复购买…".t
+        defer { isRestoringPurchases = false }
         do {
             try await AppStore.sync()
             await refreshEntitlements()
@@ -270,10 +276,14 @@ final class PurchaseStore: ObservableObject {
 
     /// 打开 App Store 的兑换码面板。
     func redeemOfferCode() async {
+        guard !isRedeemingOfferCode else { return }
         guard let scene = activeWindowScene else {
             statusMessage = "当前无法打开兑换页面".t
             return
         }
+        isRedeemingOfferCode = true
+        statusMessage = "正在打开兑换页面…".t
+        defer { isRedeemingOfferCode = false }
         do {
             try await AppStore.presentOfferCodeRedeemSheet(in: scene)
         } catch {
