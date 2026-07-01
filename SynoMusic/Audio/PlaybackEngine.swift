@@ -469,49 +469,45 @@ final class PlaybackEngine: ObservableObject {
         // 1. 电台/播客：song.id 以 "radio:" / "podcast:" 开头，直接用 song.path 作为 stream URL
         // 2. 已登录：走 Audio Station streamURL
         // 3. 未登录：走 Demo 模拟
-        let url: URL?
-        if let localURL = downloadManager?.localURL(for: song.id) {
-            url = localURL
-        } else if song.id.hasPrefix("local:"), let path = song.path {
-            url = URL(fileURLWithPath: path)
-        } else if song.isDirectRemoteStream, let path = song.path {
-            url = URL(string: path)
-        } else if musicClient != nil || apiClient != nil {
-            let effective = transcodeOverride ?? quality
-            effectiveQuality = effective
-            url = streamURL(for: song, quality: effective)
-        } else {
-            startDemoPlayback(for: song, autoPlay: autoPlay)
-            return
-        }
-        guard let url else {
-            setStatus("无法构造流地址：\(song.title)")
-            return
-        }
-        isDemoPlayback = false
-
-        let item = AVPlayerItem(url: url)
-        player.removeAllItems()
-        player.insert(item, after: nil)
-
-        isBuffering = true
-        observeStall(for: item)
-        observeFailure(for: item)
-
-        if autoPlay {
-            activateAudioSessionIfNeeded()
-            prepareFadeInIfNeeded()
-            player.play()
-            fadeInIfNeeded()
-            setPlayingState(true)
-        } else {
-            player.volume = 1
-            setPlayingState(false)
-        }
-        updateNowPlayingMetadata()
-        refreshLiveActivity()
-
         Task { @MainActor in
+            let url: URL?
+            do {
+                url = try await self.resolvePlaybackURL(for: song, autoPlay: autoPlay)
+            } catch {
+                guard self.activeLoadID == loadID, self.currentSong?.id == song.id else { return }
+                self.isBuffering = false
+                self.setStatus(error.localizedDescription)
+                return
+            }
+            guard self.activeLoadID == loadID, self.currentSong?.id == song.id else { return }
+            guard let url else {
+                if self.isDemoPlayback { return }
+                self.isBuffering = false
+                self.setStatus("无法构造流地址：\(song.title)")
+                return
+            }
+            self.isDemoPlayback = false
+
+            let item = AVPlayerItem(url: url)
+            self.player.removeAllItems()
+            self.player.insert(item, after: nil)
+
+            self.isBuffering = true
+            self.observeStall(for: item)
+            self.observeFailure(for: item)
+
+            if autoPlay {
+                self.activateAudioSessionIfNeeded()
+                self.prepareFadeInIfNeeded()
+                self.player.play()
+                self.fadeInIfNeeded()
+                self.setPlayingState(true)
+            } else {
+                self.player.volume = 1
+                self.setPlayingState(false)
+            }
+            self.updateNowPlayingMetadata()
+            self.refreshLiveActivity()
             await self.refreshDuration(for: item, song: song, loadID: loadID)
             guard self.activeLoadID == loadID, self.currentSong?.id == song.id else { return }
             self.updateNowPlayingPlaybackState()
@@ -541,6 +537,29 @@ final class PlaybackEngine: ObservableObject {
             return url
         }
         return apiClient?.audioStation.streamURL(songID: song.id, format: quality.streamFormat)
+    }
+
+    /// 准备当前歌曲播放 URL；普通源同步返回，SMB 等源可先异步缓存后返回本地 URL。
+    private func resolvePlaybackURL(for song: Song, autoPlay: Bool) async throws -> URL? {
+        if let localURL = downloadManager?.localURL(for: song.id) {
+            return localURL
+        }
+        if song.id.hasPrefix("local:"), let path = song.path {
+            return URL(fileURLWithPath: path)
+        }
+        if song.isDirectRemoteStream, let path = song.path {
+            return URL(string: path)
+        }
+        guard musicClient != nil || apiClient != nil else {
+            startDemoPlayback(for: song, autoPlay: autoPlay)
+            return nil
+        }
+        let effective = transcodeOverride ?? quality
+        effectiveQuality = effective
+        if let asyncClient = musicClient as? AsyncStreamResolvingMusicClient {
+            return try await asyncClient.preparedStreamURL(song: song, quality: effective)
+        }
+        return streamURL(for: song, quality: effective)
     }
 
     /// 统一读取服务器歌词，兼容新 provider 和旧 Synology 路径。

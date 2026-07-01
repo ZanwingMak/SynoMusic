@@ -34,6 +34,7 @@ struct ServerEditorView: View {
     @State private var showPlexLibraryPicker: Bool = false
     @State private var showPlexPinSheet: Bool = false
     @State private var showSMBFolderImporter: Bool = false
+    @State private var showWebDAVDirectoryPicker: Bool = false
 
     /// 编辑模式（QC / 直连）。
     enum Mode: String, CaseIterable, Identifiable {
@@ -62,6 +63,21 @@ struct ServerEditorView: View {
             }
         }
     }
+
+    /// SMB 连接模式：手动 SMB2 连接，或沿用系统文件 App 授权文件夹。
+    enum SMBConnectionMode: String, CaseIterable, Identifiable {
+        case manual, fileProvider
+
+        var id: String { rawValue }
+
+        var titleKey: String {
+            switch self {
+            case .manual: return "手动连接"
+            case .fileProvider: return "文件 App"
+            }
+        }
+    }
+    @State private var smbConnectionMode: SMBConnectionMode = .manual
 
     private var loadingShown: Bool {
         #if DEBUG
@@ -95,11 +111,17 @@ struct ServerEditorView: View {
                     directSection
                     webDAVPathSection
                 } else if profile.providerType == .smb {
-                    smbFolderSection
+                    smbConnectionModeSection
+                    if smbConnectionMode == .manual {
+                        smbManualConnectionSection
+                        smbManualPathSection
+                    } else {
+                        smbFolderSection
+                    }
                 } else {
                     directSection
                 }
-                if profile.providerType != .smb {
+                if shouldShowAccountSection {
                     accountSection
                 }
                 actionSection
@@ -162,6 +184,18 @@ struct ServerEditorView: View {
                         onContinue: { Task { await continuePlexPinAuthorization() } }
                     )
                 }
+            }
+            .sheet(isPresented: $showWebDAVDirectoryPicker) {
+                WebDAVDirectoryPickerSheet(
+                    profile: profile,
+                    password: password,
+                    onCancel: { showWebDAVDirectoryPicker = false },
+                    onSelect: { item in
+                        profile.musicLibraryID = item.path
+                        profile.musicLibraryName = item.name
+                        showWebDAVDirectoryPicker = false
+                    }
+                )
             }
             .onAppear { setupOnAppear() }
             .onReceive(NotificationCenter.default.publisher(for: .plexAuthReturned)) { _ in
@@ -241,6 +275,22 @@ struct ServerEditorView: View {
         }
     }
 
+    /// SMB 连接模式选择：优先使用手动 SMB2 连接，系统文件 App 作为兼容备用。
+    private var smbConnectionModeSection: some View {
+        Section {
+            Picker("模式".t, selection: $smbConnectionMode) {
+                ForEach(SMBConnectionMode.allCases) { mode in
+                    Text(mode.titleKey.t).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+        } footer: {
+            Text(smbConnectionMode == .manual
+                ? "手动连接会使用 SMB2 读取音乐文件；路径可留空，也可填写 /共享名/子目录。".t
+                : "文件 App 模式适合已在系统文件 App 中连接过的 SMB 共享。".t)
+        }
+    }
+
     /// QuickConnect 模式：只需 ID + 通道（HTTP/HTTPS）。
     private var quickConnectSection: some View {
         Section {
@@ -299,14 +349,54 @@ struct ServerEditorView: View {
         }
     }
 
+    /// SMB 手动连接只需要主机和端口，不展示 HTTP/HTTPS 协议。
+    private var smbManualConnectionSection: some View {
+        Section {
+            ClearableTextField(title: "SMB 地址".t, text: $profile.host, keyboard: .URL)
+            HStack {
+                Text("端口".t)
+                Spacer()
+                ClearableTextField(title: "445", text: $portText, keyboard: .numberPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: 140)
+                    .onChange(of: portText) { _, new in
+                        let digits = new.filter(\.isNumber)
+                        if digits != new { portText = digits }
+                        if let v = Int(digits), v > 0, v <= 65535 { profile.port = v }
+                    }
+            }
+        } header: {
+            Text("连接".t)
+        }
+    }
+
     /// WebDAV 根目录设置；留空时扫描服务器根目录。
     private var webDAVPathSection: some View {
         Section {
             ClearableTextField(title: "目录路径（例如 /music）".t, text: optionalText(\.musicLibraryID), keyboard: .URL)
+            Button {
+                showWebDAVDirectoryPicker = true
+            } label: {
+                Label("浏览目录".t, systemImage: "folder")
+            }
+            .disabled(!canBrowseWebDAV)
         } header: {
             Text("WebDAV 目录".t)
         } footer: {
-            Text("Synology WebDAV 常用 HTTPS 端口是 5006；目录路径应填写音乐所在目录，例如 /music。".t)
+            Text(canBrowseWebDAV
+                ? "可以先连接 WebDAV 根目录，再从目录列表中选择音乐所在文件夹。".t
+                : "请先填写 WebDAV 地址、账号和密码，再浏览目录。".t)
+        }
+    }
+
+    /// SMB 手动连接的共享路径设置。
+    private var smbManualPathSection: some View {
+        Section {
+            ClearableTextField(title: "共享路径（选填，如 /music）".t, text: optionalText(\.musicLibraryID), keyboard: .URL)
+        } header: {
+            Text("SMB 路径".t)
+        } footer: {
+            Text("路径留空会扫描可访问的磁盘共享；建议填写 /共享名/音乐目录 以减少扫描时间。".t)
         }
     }
 
@@ -421,7 +511,11 @@ struct ServerEditorView: View {
         }
         guard isProviderConnectable else { return false }
         if profile.providerType == .smb {
-            return !password.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            if smbConnectionMode == .fileProvider {
+                return !password.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            return !profile.host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                && profile.port > 0 && profile.port <= 65535
         }
         if profile.providerType == .plex, plexLoginMode == .account {
             return true
@@ -451,14 +545,29 @@ struct ServerEditorView: View {
             return "授权并发现服务器".t
         }
         if profile.providerType == .smb {
-            return "连接文件夹".t
+            return smbConnectionMode == .manual ? "连接并保存".t : "连接文件夹".t
         }
         return "连接并保存".t
     }
 
+    /// 是否展示账号密码区域。
+    private var shouldShowAccountSection: Bool {
+        profile.providerType != .smb || smbConnectionMode == .manual
+    }
+
     /// Plex 账号授权模式不展示可编辑凭据选项，避免用户误改造成连接失败。
     private var shouldShowCredentialOptions: Bool {
-        !(profile.providerType == .plex && plexLoginMode == .account) && profile.providerType != .smb
+        !(profile.providerType == .plex && plexLoginMode == .account)
+            && !(profile.providerType == .smb && smbConnectionMode == .fileProvider)
+    }
+
+    /// WebDAV 目录浏览前需要具备的连接信息。
+    private var canBrowseWebDAV: Bool {
+        profile.providerType == .webDAV
+            && !profile.host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && profile.port > 0
+            && !profile.username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !password.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     /// SMB 文件夹按钮标题。
@@ -475,7 +584,9 @@ struct ServerEditorView: View {
             return "启用了二步验证的账号需在「高级」填入 OTP。密码加密保存于 Keychain。".t
         }
         if profile.providerType == .smb {
-            return "SMB 文件夹授权会加密保存于 Keychain。".t
+            return smbConnectionMode == .manual
+                ? "SMB 密码会加密保存于 Keychain。".t
+                : "SMB 文件夹授权会加密保存于 Keychain。".t
         }
         return "密码或访问令牌会加密保存于 Keychain。".t
     }
@@ -496,12 +607,14 @@ struct ServerEditorView: View {
         if isEditingExisting {
             mode = profile.isQuickConnect ? .quickConnect : .direct
             plexLoginMode = .account
+            smbConnectionMode = profile.providerType == .smb && profile.musicLibraryID?.hasPrefix("file:") == true ? .fileProvider : .manual
             password = serverStore.password(for: profile) ?? ""
         } else {
             // 添加新档案：强制清空密码，避免 SwiftUI 复用 / 系统自动填残留
             password = ""
             mode = .direct
             plexLoginMode = .account
+            smbConnectionMode = .manual
         }
         if mode == .quickConnect {
             enterQuickConnectMode()
@@ -594,9 +707,9 @@ struct ServerEditorView: View {
             }
         case .smb:
             mode = .direct
+            smbConnectionMode = .manual
             profile.isQuickConnect = false
             profile.quickConnectID = ""
-            profile.username = ""
             if profile.port == 5000 || profile.port == 5001 || profile.port == 8096 || profile.port == 32400 || profile.port == 5006 {
                 profile.port = 445
                 portText = "445"
@@ -975,6 +1088,126 @@ struct ServerEditorView: View {
             get: { profile[keyPath: keyPath] ?? "" },
             set: { profile[keyPath: keyPath] = $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
         )
+    }
+}
+
+/// WebDAV 目录选择页；登录后用 PROPFIND 浏览目录，让用户选择音乐根目录。
+private struct WebDAVDirectoryPickerSheet: View {
+    let profile: ServerProfile
+    let password: String
+    let onCancel: () -> Void
+    let onSelect: (WebDAVDirectoryItem) -> Void
+
+    @State private var currentPath: String
+    @State private var items: [WebDAVDirectoryItem] = []
+    @State private var isLoading = false
+    @State private var error: String?
+
+    init(
+        profile: ServerProfile,
+        password: String,
+        onCancel: @escaping () -> Void,
+        onSelect: @escaping (WebDAVDirectoryItem) -> Void
+    ) {
+        self.profile = profile
+        self.password = password
+        self.onCancel = onCancel
+        self.onSelect = onSelect
+        _currentPath = State(initialValue: profile.musicLibraryID?.isEmpty == false ? profile.musicLibraryID! : "/")
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(currentPath)
+                            .font(.system(.callout, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                        Button {
+                            onSelect(WebDAVDirectoryItem(path: currentPath, name: selectedName, isDirectory: true))
+                        } label: {
+                            Label("选择当前目录".t, systemImage: "checkmark.circle.fill")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                Section {
+                    if isLoading {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
+                    } else if let error {
+                        Text(error)
+                            .foregroundStyle(.secondary)
+                    } else if items.isEmpty {
+                        EmptyStateView(systemImage: "folder", title: "空目录".t, message: "这里还没有音频文件。".t)
+                    } else {
+                        ForEach(items) { item in
+                            if item.isDirectory {
+                                Button {
+                                    currentPath = item.path
+                                } label: {
+                                    Label(item.name, systemImage: "folder.fill")
+                                }
+                            } else {
+                                Label(item.name, systemImage: "music.note")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("浏览目录".t)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消".t) { onCancel() }
+                }
+                ToolbarItemGroup(placement: .primaryAction) {
+                    Button("根目录".t) { currentPath = "/" }
+                    Button("上级".t) { currentPath = parentPath }
+                        .disabled(currentPath == "/")
+                }
+            }
+            .task(id: currentPath) {
+                await load()
+            }
+        }
+    }
+
+    /// 当前目录展示名。
+    private var selectedName: String {
+        let name = currentPath.split(separator: "/").last.map(String.init) ?? "WebDAV"
+        return name.isEmpty ? "WebDAV" : name
+    }
+
+    /// 当前目录的上级路径。
+    private var parentPath: String {
+        var parts = currentPath.split(separator: "/", omittingEmptySubsequences: true).map(String.init)
+        guard !parts.isEmpty else { return "/" }
+        parts.removeLast()
+        return parts.isEmpty ? "/" : "/" + parts.joined(separator: "/")
+    }
+
+    /// 读取当前目录内容。
+    private func load() async {
+        isLoading = true
+        error = nil
+        defer { isLoading = false }
+        do {
+            let client = WebDAVMusicLibraryClient(profile: profile, password: password)
+            items = try await client.browseDirectory(path: currentPath)
+        } catch {
+            items = []
+            self.error = error.localizedDescription
+        }
     }
 }
 

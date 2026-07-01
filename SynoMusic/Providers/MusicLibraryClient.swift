@@ -39,6 +39,11 @@ protocol MusicLibraryClient: AnyObject, Sendable {
     func logout() async
 }
 
+/// 需要异步准备播放 URL 的音乐源，例如 SMB 需要先缓存远端文件再交给 AVPlayer。
+protocol AsyncStreamResolvingMusicClient: AnyObject, Sendable {
+    func preparedStreamURL(song: Song, quality: AudioQuality) async throws -> URL?
+}
+
 extension MusicLibraryClient {
     var legacySynologyClient: SynologyClient? { nil }
 

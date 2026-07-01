@@ -24,6 +24,15 @@ enum WebDAVMusicError: LocalizedError {
     }
 }
 
+/// WebDAV 目录浏览项，用于添加服务器时让用户选择音乐目录。
+struct WebDAVDirectoryItem: Identifiable, Hashable, Sendable {
+    let path: String
+    let name: String
+    let isDirectory: Bool
+
+    var id: String { path }
+}
+
 /// WebDAV 音乐库客户端；使用 PROPFIND 扫描目录，仅接入音频文件。
 final class WebDAVMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
     let providerType: MusicProviderType = .webDAV
@@ -54,6 +63,25 @@ final class WebDAVMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         self.password = trimmed
         _ = try await listDirectory(rootURL())
         tracksCache = nil
+    }
+
+    /// 读取指定 WebDAV 路径下的目录和音频文件，供配置页浏览选择。
+    func browseDirectory(path: String) async throws -> [WebDAVDirectoryItem] {
+        let directoryURL = url(forWebDAVPath: path)
+        return try await listDirectory(directoryURL)
+            .filter { !sameWebDAVPath($0.url, directoryURL) }
+            .filter { $0.isDirectory || FileMusicLibraryIndex.isAudioFile($0.url) }
+            .map { entry in
+                WebDAVDirectoryItem(
+                    path: webDAVPath(from: entry.url),
+                    name: FileMusicLibraryIndex.cleanName(entry.url.lastPathComponent, unknown: entry.isDirectory ? "未命名目录" : "未知歌曲"),
+                    isDirectory: entry.isDirectory
+                )
+            }
+            .sorted { lhs, rhs in
+                if lhs.isDirectory != rhs.isDirectory { return lhs.isDirectory && !rhs.isDirectory }
+                return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+            }
     }
 
     /// 返回 WebDAV 根目录作为一个音乐库。
@@ -256,11 +284,23 @@ final class WebDAVMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
 
     /// 构造 WebDAV 根 URL。
     private func rootURL() -> URL {
+        url(forWebDAVPath: rootPath())
+    }
+
+    /// 根据 WebDAV 路径构造请求 URL。
+    private func url(forWebDAVPath path: String) -> URL {
         guard var url = profile.baseURL else { return URL(string: "http://127.0.0.1/")! }
-        rootPath().split(separator: "/", omittingEmptySubsequences: true).forEach { component in
+        path.split(separator: "/", omittingEmptySubsequences: true).forEach { component in
             url.appendPathComponent(String(component))
         }
         return url
+    }
+
+    /// 把绝对 URL 还原为 WebDAV 路径。
+    private func webDAVPath(from url: URL) -> String {
+        let decoded = url.path.removingPercentEncoding ?? url.path
+        guard !decoded.isEmpty else { return "/" }
+        return decoded.hasPrefix("/") ? decoded : "/" + decoded
     }
 
     /// 给 URLRequest 添加 Basic Auth。
@@ -384,7 +424,19 @@ private final class WebDAVResponseParser: NSObject, XMLParserDelegate {
         if let absolute = URL(string: href), absolute.scheme != nil {
             return absolute
         }
-        return URL(string: href, relativeTo: baseURL)?.absoluteURL
+        let decoded = href.removingPercentEncoding ?? href
+        if decoded.hasPrefix("/") {
+            guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else { return nil }
+            components.path = decoded
+            components.query = nil
+            components.fragment = nil
+            return components.url
+        }
+        var url = baseURL!
+        decoded.split(separator: "/", omittingEmptySubsequences: true).forEach { component in
+            url.appendPathComponent(String(component))
+        }
+        return url
     }
 
     /// 去掉命名空间前缀。

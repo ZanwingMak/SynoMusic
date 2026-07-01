@@ -46,8 +46,13 @@ enum MusicProviderLoginHelper {
             return MusicProviderLoginResult(musicClient: client, profile: profile)
         case .smb:
             if let report { await report("正在读取文件夹...") }
-            let client = FolderMusicLibraryClient(profile: profile)
-            try await client.authenticate(bookmark: password)
+            if profile.musicLibraryID?.hasPrefix("file:") == true {
+                let client = FolderMusicLibraryClient(profile: profile)
+                try await client.authenticate(bookmark: password)
+                return MusicProviderLoginResult(musicClient: client, profile: profile)
+            }
+            let client = SMBNetworkMusicLibraryClient(profile: profile)
+            try await client.authenticate(password: password)
             return MusicProviderLoginResult(musicClient: client, profile: profile)
         }
     }

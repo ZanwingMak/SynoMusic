@@ -13,9 +13,14 @@ settings:
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
     MARKETING_VERSION: "1.5.2"
-    CURRENT_PROJECT_VERSION: "24"
+    CURRENT_PROJECT_VERSION: "25"
     DEVELOPMENT_TEAM: 2Q2LMV7BR6
     CODE_SIGN_STYLE: Automatic
+
+packages:
+  SMBClient:
+    url: https://github.com/kishikawakatsumi/SMBClient.git
+    revision: 66eafaa6d17e034e8036dee4b3ebc1b52cb53919
 
 targets:
   SynoMusic:
@@ -38,6 +43,7 @@ targets:
     dependencies:
       - target: SynoMusicLive
         embed: true
+      - package: SMBClient
     info:
       path: SynoMusic/Resources/Info.plist
       properties:
