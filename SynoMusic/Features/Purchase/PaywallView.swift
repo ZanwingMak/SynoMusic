@@ -13,6 +13,9 @@ struct PaywallView: View {
     @State private var selectedProductID: String?
     @State private var toastMessage: String?
     @State private var toastDismissTask: Task<Void, Never>?
+    @State private var showPurchaseSuccessAlert = false
+    @State private var purchaseSuccessTitle = ""
+    @State private var purchaseSuccessMessage = ""
 
     let feature: PremiumFeature
 
@@ -23,18 +26,24 @@ struct PaywallView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    header
-                    planTabs
-                    selectedPlanCard
-                    featureList
-                    restoreAndRedeem
-                    statusMessage
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        header {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
+                                proxy.scrollTo(PaywallAnchor.features, anchor: .top)
+                            }
+                        }
+                        planTabs
+                        selectedPlanCard
+                        featureList
+                        restoreAndRedeem
+                        statusMessage
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 132)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 132)
             }
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .navigationTitle((purchase.hasFullAccess ? "购买与订阅" : "解锁完整功能").t)
@@ -52,6 +61,14 @@ struct PaywallView: View {
                     .padding(.horizontal, 24)
                     .padding(.bottom, 112)
             }
+            .overlay {
+                purchaseProgressOverlay
+            }
+            .alert(purchaseSuccessTitle, isPresented: $showPurchaseSuccessAlert) {
+                Button("好的".t) { }
+            } message: {
+                Text(purchaseSuccessMessage)
+            }
             .task {
                 await purchase.loadProductsIfNeeded()
                 syncSelectedProduct()
@@ -65,15 +82,29 @@ struct PaywallView: View {
         }
     }
 
-    private var header: some View {
+    /// 生成付费墙顶部说明区，并提供快速跳转到包含功能的入口。
+    private func header(scrollToFeatures: @escaping () -> Void) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: purchase.hasFullAccess ? "crown.fill" : "sparkles")
                 .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(accentColor)
-            Text(feature.title.t)
-                .font(.largeTitle.bold())
-                .foregroundStyle(.primary)
-                .minimumScaleFactor(0.82)
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(feature.title.t)
+                    .font(.largeTitle.bold())
+                    .foregroundStyle(.primary)
+                    .minimumScaleFactor(0.82)
+                Spacer(minLength: 8)
+                Button {
+                    Haptics.tap()
+                    scrollToFeatures()
+                } label: {
+                    Label("查看包含功能".t, systemImage: "list.bullet.rectangle")
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+                }
+                .buttonStyle(.bordered)
+                .tint(accentColor)
+            }
             Text(feature.lockedMessage.t)
                 .font(.callout)
                 .foregroundStyle(.secondary)
@@ -177,6 +208,7 @@ struct PaywallView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .id(PaywallAnchor.features)
     }
 
     private var restoreAndRedeem: some View {
@@ -293,6 +325,32 @@ struct PaywallView: View {
         .background(.ultraThinMaterial)
     }
 
+    /// 购买流程等待遮罩，避免 App Store 确认期间用户误以为没有响应。
+    @ViewBuilder
+    private var purchaseProgressOverlay: some View {
+        if purchase.isPurchasing {
+            ZStack {
+                Color.black.opacity(0.18)
+                    .ignoresSafeArea()
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .tint(accentColor)
+                    Text("正在处理购买…".t)
+                        .font(.headline)
+                    Text("正在与 App Store 确认购买状态。".t)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(22)
+                .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .shadow(color: .black.opacity(0.16), radius: 18, y: 8)
+                .padding(.horizontal, 44)
+            }
+            .transition(.opacity)
+        }
+    }
+
     private var compactFeatureColumns: [GridItem] {
         [
             GridItem(.flexible(minimum: 120), spacing: 8),
@@ -317,6 +375,7 @@ struct PaywallView: View {
             ("text.badge.checkmark", "歌词工具"),
             ("globe", "在线资料工具"),
             ("square.and.arrow.down", "本地音乐导入"),
+            ("arrow.up.arrow.down.square", "导入/导出服务器配置"),
             ("icloud", "iCloud 云同步"),
             ("sparkles.rectangle.stack", "Siri 与小组件")
         ]
@@ -325,7 +384,7 @@ struct PaywallView: View {
     }
 
     private var shouldHideServerDependentPremiumFeatures: Bool {
-        reviewMode.isEnabled || session.client == nil
+        reviewMode.isEnabled || session.musicClient == nil
     }
 
     private var serverDependentPremiumFeatureTitles: Set<String> {
@@ -427,7 +486,16 @@ struct PaywallView: View {
     /// 购买当前顶部 Tab 选中的商品。
     private func purchaseSelectedProduct() {
         guard let selectedProduct else { return }
-        Task { await purchase.purchase(selectedProduct) }
+        let isLifetime = SynoMusicProduct(rawValue: selectedProduct.id) == .lifetime
+        Task {
+            await purchase.purchase(selectedProduct)
+            guard purchase.hasFullAccess else { return }
+            purchaseSuccessTitle = isLifetime ? "感谢购买".t : "感谢订阅".t
+            purchaseSuccessMessage = "完整功能已经解锁，感谢支持 SynoMusic。".t
+            showPurchaseSuccessAlert = true
+            showToast(purchaseSuccessMessage)
+            Haptics.success()
+        }
     }
 
     /// 展示付费墙局部 toast，并在短暂延迟后自动隐藏。
@@ -522,6 +590,11 @@ struct PaywallView: View {
         @unknown default: return String(format: "%d 天".t, period.value)
         }
     }
+}
+
+/// 付费墙内部滚动锚点。
+private enum PaywallAnchor {
+    static let features = "paywall-features"
 }
 
 /// 付费墙内的紧凑功能说明行。

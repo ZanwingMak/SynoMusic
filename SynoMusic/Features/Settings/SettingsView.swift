@@ -27,6 +27,9 @@ struct SettingsView: View {
     @State private var switchingProfileID: UUID?
     @State private var refreshingQuickConnectID: UUID?
     @State private var isSyncingCloud: Bool = false
+    @State private var isShowingServerImport = false
+    @State private var isShowingServerExport = false
+    @State private var serverExportDocument = ServerConfigurationExportDocument()
 
     /// 当前设置页主题强调色。
     private var accentColor: Color {
@@ -87,6 +90,21 @@ struct SettingsView: View {
             if let p = pendingDelete {
                 Text(String(format: "将移除「%@」与该服务器保存的密码。该操作不可撤销。".t, p.name))
             }
+        }
+        .fileImporter(
+            isPresented: $isShowingServerImport,
+            allowedContentTypes: [.json],
+            allowsMultipleSelection: false
+        ) { result in
+            handleServerConfigurationImport(result)
+        }
+        .fileExporter(
+            isPresented: $isShowingServerExport,
+            document: serverExportDocument,
+            contentType: .json,
+            defaultFilename: "SynoMusic-Servers"
+        ) { result in
+            handleServerConfigurationExportCompletion(result)
         }
     }
 
@@ -158,6 +176,7 @@ struct SettingsView: View {
             } label: {
                 Label("添加服务器".t, systemImage: "plus")
             }
+            serverConfigurationTransferRows
         } header: {
             Text("服务器".t)
         } footer: {
@@ -212,6 +231,35 @@ struct SettingsView: View {
         }
     }
 
+    /// 服务器配置导入导出入口；完整功能解锁后可用。
+    @ViewBuilder
+    private var serverConfigurationTransferRows: some View {
+        if purchase.canUse(.serverConfigurationTransfer) {
+            Button {
+                beginServerConfigurationExport()
+            } label: {
+                themedLabel("导出服务器配置".t, systemImage: "square.and.arrow.up")
+            }
+            Button {
+                Haptics.tap()
+                isShowingServerImport = true
+            } label: {
+                themedLabel("导入服务器配置".t, systemImage: "square.and.arrow.down")
+            }
+        } else {
+            Button {
+                showPaywall(for: .serverConfigurationTransfer)
+            } label: {
+                HStack {
+                    themedLabel("导入/导出服务器配置".t, systemImage: "arrow.up.arrow.down.square")
+                    Spacer()
+                    Image(systemName: "lock.fill")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
     private var languageSection: some View {
         Section {
             Picker(selection: $lm.current) {
@@ -262,10 +310,12 @@ struct SettingsView: View {
 
     private var qualitySection: some View {
         Section {
-            Picker("流式音质".t, selection: $playback.quality) {
+            Picker(selection: $playback.quality) {
                 ForEach(AudioQuality.allCases) { q in
                     Text(q.titleKey.t).tag(q)
                 }
+            } label: {
+                themedLabel("流式音质".t, systemImage: "waveform")
             }
         } header: {
             Text("音质".t)
@@ -277,10 +327,12 @@ struct SettingsView: View {
     private var playbackEnhancementSection: some View {
         Section {
             if purchase.canUse(.playbackEnhancements) {
-                Picker("播放器样式".t, selection: $playbackSettings.playerArtworkStyle) {
+                Picker(selection: $playbackSettings.playerArtworkStyle) {
                     ForEach(PlayerArtworkStyle.allCases) { style in
                         Text(style.titleKey.t).tag(style)
                     }
+                } label: {
+                    themedLabel("播放器样式".t, systemImage: "rectangle.stack")
                 }
                 Toggle(isOn: $playbackSettings.crossfadeEnabled) {
                     themedLabel("歌曲淡入淡出".t, systemImage: "waveform")
@@ -296,10 +348,12 @@ struct SettingsView: View {
                         Slider(value: $playbackSettings.crossfadeDuration, in: 1...8, step: 1)
                     }
                 }
-                Picker("均衡器预设".t, selection: $playbackSettings.equalizerPreset) {
+                Picker(selection: $playbackSettings.equalizerPreset) {
                     ForEach(EqualizerPreset.allCases) { preset in
                         Text(preset.titleKey.t).tag(preset)
                     }
+                } label: {
+                    themedLabel("均衡器预设".t, systemImage: "slider.horizontal.3")
                 }
             } else {
                 Button {
@@ -362,7 +416,7 @@ struct SettingsView: View {
 
     /// 判断是否显示依赖真实服务器会话的下载与导入入口。
     private var shouldShowServerDependentEntries: Bool {
-        session.client != nil && !reviewMode.isEnabled
+        session.musicClient != nil && !reviewMode.isEnabled
     }
 
     /// 绘制本地音乐导入入口，锁定时保留设置行样式并改为弹付费墙。
@@ -541,7 +595,12 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section("关于".t) {
-            infoRow("版本".t, Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+            HStack {
+                themedLabel("版本".t, systemImage: "number.circle")
+                Spacer()
+                Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+                    .foregroundStyle(.secondary)
+            }
             Button {
                 Haptics.tap()
                 requestReview()
@@ -571,7 +630,7 @@ struct SettingsView: View {
 
     private var serverSectionFooter: String {
         if purchase.canUse(.serverProfiles) {
-            return "点击行设为默认；下次启动 App 会用默认服务器自动登录。点 ⓘ 编辑配置；左滑删除。".t
+            return "点击行设为默认；下次启动 App 会用默认服务器自动登录。点 ⓘ 编辑配置；左滑删除。导出的配置不包含密码；导入后请重新输入密码或重新授权。".t
         }
         return "免费版最多保存 1 个服务器配置；解锁后可添加多个服务器。".t
     }
@@ -754,6 +813,81 @@ struct SettingsView: View {
         Haptics.success()
     }
 
+    /// 准备服务器配置导出文件，并打开系统文件保存面板。
+    private func beginServerConfigurationExport() {
+        guard !serverStore.profiles.isEmpty else {
+            playback.setStatus("暂无可导出的服务器配置。".t)
+            Haptics.warning()
+            return
+        }
+        do {
+            let archive = ServerConfigurationArchive(
+                version: 1,
+                exportedAt: Date(),
+                activeProfileID: serverStore.activeProfileID,
+                profiles: serverStore.profiles
+            )
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            encoder.dateEncodingStrategy = .iso8601
+            serverExportDocument = ServerConfigurationExportDocument(data: try encoder.encode(archive))
+            Haptics.tap()
+            isShowingServerExport = true
+        } catch {
+            playback.setStatus("服务器配置导出失败".t + "：\(error.localizedDescription)")
+            Haptics.warning()
+        }
+    }
+
+    /// 处理系统文件保存面板回调，给用户明确导出结果。
+    private func handleServerConfigurationExportCompletion(_ result: Result<URL, Error>) {
+        switch result {
+        case .success:
+            playback.setStatus("服务器配置已导出。".t)
+            Haptics.success()
+        case .failure(let error):
+            playback.setStatus("服务器配置导出失败".t + "：\(error.localizedDescription)")
+            Haptics.warning()
+        }
+    }
+
+    /// 处理服务器配置 JSON 导入结果，并合并到当前配置列表。
+    private func handleServerConfigurationImport(_ result: Result<[URL], Error>) {
+        do {
+            guard let url = try result.get().first else { return }
+            let didAccess = url.startAccessingSecurityScopedResource()
+            defer {
+                if didAccess { url.stopAccessingSecurityScopedResource() }
+            }
+            let archive = try decodeServerConfigurationArchive(from: Data(contentsOf: url))
+            guard !archive.profiles.isEmpty else {
+                playback.setStatus("服务器配置导入失败".t)
+                Haptics.warning()
+                return
+            }
+            archive.profiles.forEach { serverStore.upsert($0) }
+            if let activeID = archive.activeProfileID,
+               let active = archive.profiles.first(where: { $0.id == activeID }) {
+                serverStore.setActive(active)
+            }
+            playback.setStatus(String(format: "已导入 %d 个服务器配置。".t, archive.profiles.count))
+            Haptics.success()
+        } catch {
+            playback.setStatus("服务器配置导入失败".t + "：\(error.localizedDescription)")
+            Haptics.warning()
+        }
+    }
+
+    /// 解码服务器配置归档，兼容新旧日期编码格式。
+    private func decodeServerConfigurationArchive(from data: Data) throws -> ServerConfigurationArchive {
+        let isoDecoder = JSONDecoder()
+        isoDecoder.dateDecodingStrategy = .iso8601
+        if let archive = try? isoDecoder.decode(ServerConfigurationArchive.self, from: data) {
+            return archive
+        }
+        return try JSONDecoder().decode(ServerConfigurationArchive.self, from: data)
+    }
+
     /// 调用系统好评弹窗。
     private func requestReview() {
         guard let scene = activeWindowScene else { return }
@@ -860,6 +994,36 @@ struct SettingsView: View {
             playback.setStatus("切换失败".t + "：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
             Haptics.warning()
         }
+    }
+}
+
+/// 服务器配置导入导出的 JSON 归档；不包含 Keychain 密码。
+private struct ServerConfigurationArchive: Codable {
+    let version: Int
+    let exportedAt: Date
+    let activeProfileID: UUID?
+    let profiles: [ServerProfile]
+}
+
+/// SwiftUI 文件导出用 JSON 文档。
+private struct ServerConfigurationExportDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.json] }
+
+    var data: Data
+
+    /// 创建空白或指定内容的导出文档。
+    init(data: Data = Data()) {
+        self.data = data
+    }
+
+    /// 从系统文件读取配置文档内容。
+    init(configuration: ReadConfiguration) throws {
+        data = configuration.file.regularFileContents ?? Data()
+    }
+
+    /// 将 JSON 数据包装成系统可保存的文件。
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
     }
 }
 
@@ -1141,7 +1305,7 @@ struct WidgetManagerView: View {
 
     /// 返回特色小组件副标题，避免未登录或审核模式露出下载能力。
     private var featureWidgetSubtitle: String {
-        session.client == nil || reviewMode.isEnabled
+        session.musicClient == nil || reviewMode.isEnabled
             ? "智能歌单和小组件管理"
             : "智能歌单、下载和小组件管理"
     }

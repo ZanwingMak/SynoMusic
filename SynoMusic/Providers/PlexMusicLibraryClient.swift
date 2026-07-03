@@ -665,7 +665,7 @@ final class PlexMusicLibraryClient: MusicLibraryClient, AsyncStreamResolvingMusi
     /// 设置 Plex 客户端识别与 token 请求头。
     private func applyHeaders(to request: inout URLRequest) {
         request.setValue("SynoMusic", forHTTPHeaderField: "X-Plex-Product")
-        request.setValue("1.5.4", forHTTPHeaderField: "X-Plex-Version")
+        request.setValue("1.5.5", forHTTPHeaderField: "X-Plex-Version")
         request.setValue(deviceID, forHTTPHeaderField: "X-Plex-Client-Identifier")
         request.setValue("iOS", forHTTPHeaderField: "X-Plex-Platform")
         if let token, !token.isEmpty {

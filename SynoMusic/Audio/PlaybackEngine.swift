@@ -158,6 +158,7 @@ final class PlaybackEngine: ObservableObject {
     private var nowPlayingArtworkCache: [String: UIImage] = [:]
     private let playedHistoryKey = "syno.playback.history.songs"
     private let queueHistoryKey = "syno.playback.history.queues"
+    private var historyScopeKey = "global"
     private let lyricFontSizeKey = "syno.lyrics.fontSize"
     private let lyricAutoScrollKey = "syno.lyrics.autoScroll"
     private let lyricDelayKey = "syno.lyrics.delay"
@@ -416,6 +417,15 @@ final class PlaybackEngine: ObservableObject {
     func removeQueueHistory(id: UUID) {
         queueHistory.removeAll { $0.id == id }
         persistHistories()
+    }
+
+    /// 切换播放历史作用域；不同服务器配置会读取各自独立的历史记录。
+    func setHistoryScope(for profile: ServerProfile?) {
+        let nextKey = historyScopeIdentifier(for: profile)
+        guard nextKey != historyScopeKey else { return }
+        persistHistories()
+        historyScopeKey = nextKey
+        loadHistories()
     }
 
     /// 用最新评分替换队列和历史里的歌曲快照。
@@ -803,11 +813,13 @@ final class PlaybackEngine: ObservableObject {
     /// 从 UserDefaults 恢复播放历史，失败时安全回落为空列表。
     private func loadHistories() {
         let decoder = JSONDecoder()
-        if let data = UserDefaults.standard.data(forKey: playedHistoryKey),
+        playedHistory = []
+        queueHistory = []
+        if let data = UserDefaults.standard.data(forKey: scopedPlayedHistoryKey),
            let songs = try? decoder.decode([Song].self, from: data) {
             playedHistory = songs
         }
-        if let data = UserDefaults.standard.data(forKey: queueHistoryKey),
+        if let data = UserDefaults.standard.data(forKey: scopedQueueHistoryKey),
            let snapshots = try? decoder.decode([PlaybackQueueSnapshot].self, from: data) {
             queueHistory = snapshots
         }
@@ -817,11 +829,31 @@ final class PlaybackEngine: ObservableObject {
     private func persistHistories() {
         let encoder = JSONEncoder()
         if let data = try? encoder.encode(playedHistory) {
-            UserDefaults.standard.set(data, forKey: playedHistoryKey)
+            UserDefaults.standard.set(data, forKey: scopedPlayedHistoryKey)
         }
         if let data = try? encoder.encode(queueHistory) {
-            UserDefaults.standard.set(data, forKey: queueHistoryKey)
+            UserDefaults.standard.set(data, forKey: scopedQueueHistoryKey)
         }
+    }
+
+    /// 当前服务器作用域下的单曲历史存储键。
+    private var scopedPlayedHistoryKey: String {
+        "\(playedHistoryKey).\(historyScopeKey)"
+    }
+
+    /// 当前服务器作用域下的队列历史存储键。
+    private var scopedQueueHistoryKey: String {
+        "\(queueHistoryKey).\(historyScopeKey)"
+    }
+
+    /// 将服务器配置转换为稳定历史作用域标识。
+    private func historyScopeIdentifier(for profile: ServerProfile?) -> String {
+        guard let profile else { return "global" }
+        return [
+            profile.providerType.rawValue,
+            profile.id.uuidString,
+            profile.musicLibraryID ?? ""
+        ].joined(separator: "-")
     }
 
     /// 记录单曲播放历史；同一首歌只保留最近一次位置。

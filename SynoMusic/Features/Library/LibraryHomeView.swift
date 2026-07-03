@@ -182,7 +182,7 @@ private struct QuickActions: View {
                 }
                 .buttonStyle(.plain)
 
-                if session.musicClient == nil || session.isSynologySession || reviewMode.isEnabled {
+                if !reviewMode.isEnabled {
                     routeCard(
                         route: .smartMixes,
                         title: "智能歌单".t,

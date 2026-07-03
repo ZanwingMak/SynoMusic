@@ -89,6 +89,7 @@ enum PremiumFeature: String, Identifiable {
     case playbackEnhancements
     case onlineMetadata
     case localImport
+    case serverConfigurationTransfer
 
     var id: String { rawValue }
 
@@ -113,6 +114,7 @@ enum PremiumFeature: String, Identifiable {
         case .playbackEnhancements: return "播放增强"
         case .onlineMetadata: return "在线资料工具"
         case .localImport: return "本地音乐导入"
+        case .serverConfigurationTransfer: return "导入/导出服务器配置"
         }
     }
 
@@ -155,6 +157,8 @@ enum PremiumFeature: String, Identifiable {
             return "在线资料工具需要解锁完整功能后使用。"
         case .localImport:
             return "本地音乐导入需要解锁完整功能后使用。"
+        case .serverConfigurationTransfer:
+            return "服务器配置导入导出需要解锁完整功能后使用。"
         }
     }
 }

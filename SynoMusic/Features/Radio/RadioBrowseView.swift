@@ -12,7 +12,7 @@ struct RadioBrowseView: View {
 
     /// 常用快捷过滤项。
     private static let countries: [(code: String, label: String)] = [
-        ("CN", "中国".t), ("HK", "香港".t), ("TW", "台湾".t),
+        ("CN", "中国大陆".t), ("HK", "香港".t), ("TW", "台湾".t),
         ("JP", "日本".t), ("KR", "韩国".t),
         ("US", "美国".t), ("GB", "英国".t), ("FR", "法国".t), ("DE", "德国".t),
         ("BR", "巴西".t), ("IN", "印度".t), ("AU", "澳大利亚".t)

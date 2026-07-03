@@ -68,6 +68,7 @@ final class LanguageManager: ObservableObject {
         let code = current.lookupCode
         if code == AppLanguage.zhHans.rawValue { return key }
         return L10n.table[code]?[key]
+            ?? L10n.release155Additions[code]?[key]
             ?? L10n.release154Additions[code]?[key]
             ?? L10n.release152Additions[code]?[key]
             ?? L10n.commercialAdditions[code]?[key]
@@ -75,6 +76,7 @@ final class LanguageManager: ObservableObject {
             ?? L10n.commercialTable[code]?[key]
             ?? L10n.auditAdditions[code]?[key]
             ?? L10n.table[AppLanguage.en.rawValue]?[key]
+            ?? L10n.release155Additions[AppLanguage.en.rawValue]?[key]
             ?? L10n.release154Additions[AppLanguage.en.rawValue]?[key]
             ?? L10n.release152Additions[AppLanguage.en.rawValue]?[key]
             ?? L10n.release144Additions[AppLanguage.en.rawValue]?[key]
@@ -3199,6 +3201,130 @@ enum L10n {
             "正在使用审核模式数据": "Données de révision utilisées",
             "已进入审核模式": "Mode de révision activé",
             "退出审核模式": "Quitter le mode de révision"
+        ]
+    ]
+
+    /// 1.5.5 设置页、付费墙和服务器配置导入导出补丁。
+    static let release155Additions: [String: [String: String]] = [
+        "zh-Hant": [
+            "查看包含功能": "查看包含功能",
+            "正在处理购买…": "正在處理購買…",
+            "正在与 App Store 确认购买状态。": "正在與 App Store 確認購買狀態。",
+            "感谢订阅": "感謝訂閱",
+            "感谢购买": "感謝購買",
+            "完整功能已经解锁，感谢支持 SynoMusic。": "完整功能已解鎖，感謝支持 SynoMusic。",
+            "好的": "好的",
+            "导入/导出服务器配置": "匯入/匯出伺服器設定",
+            "导入服务器配置": "匯入伺服器設定",
+            "导出服务器配置": "匯出伺服器設定",
+            "服务器配置导入导出需要解锁完整功能后使用。": "伺服器設定匯入匯出需要解鎖完整功能後使用。",
+            "导出的配置不包含密码；导入后请重新输入密码或重新授权。": "匯出的設定不包含密碼；匯入後請重新輸入密碼或重新授權。",
+            "暂无可导出的服务器配置。": "暫無可匯出的伺服器設定。",
+            "服务器配置已导出。": "伺服器設定已匯出。",
+            "服务器配置导出失败": "伺服器設定匯出失敗",
+            "服务器配置导入失败": "伺服器設定匯入失敗",
+            "已导入 %d 个服务器配置。": "已匯入 %d 個伺服器設定。",
+            "中国大陆": "中國大陸"
+        ],
+        "en": [
+            "查看包含功能": "View Included Features",
+            "正在处理购买…": "Processing purchase…",
+            "正在与 App Store 确认购买状态。": "Confirming purchase status with the App Store.",
+            "感谢订阅": "Thanks for subscribing",
+            "感谢购买": "Thanks for your purchase",
+            "完整功能已经解锁，感谢支持 SynoMusic。": "Full Access is unlocked. Thanks for supporting SynoMusic.",
+            "好的": "OK",
+            "导入/导出服务器配置": "Import/Export Server Profiles",
+            "导入服务器配置": "Import Server Profiles",
+            "导出服务器配置": "Export Server Profiles",
+            "服务器配置导入导出需要解锁完整功能后使用。": "Importing and exporting server profiles requires Full Access.",
+            "导出的配置不包含密码；导入后请重新输入密码或重新授权。": "Exported profiles do not include passwords; re-enter passwords or reauthorize after import.",
+            "暂无可导出的服务器配置。": "No server profiles to export.",
+            "服务器配置已导出。": "Server profiles exported.",
+            "服务器配置导出失败": "Server profile export failed",
+            "服务器配置导入失败": "Server profile import failed",
+            "已导入 %d 个服务器配置。": "Imported %d server profiles.",
+            "中国大陆": "Mainland China"
+        ],
+        "ja": [
+            "查看包含功能": "含まれる機能を見る",
+            "正在处理购买…": "購入を処理中…",
+            "正在与 App Store 确认购买状态。": "App Store で購入状態を確認しています。",
+            "感谢订阅": "ご登録ありがとうございます",
+            "感谢购买": "ご購入ありがとうございます",
+            "完整功能已经解锁，感谢支持 SynoMusic。": "全機能が解放されました。SynoMusic をご支援いただきありがとうございます。",
+            "好的": "OK",
+            "导入/导出服务器配置": "サーバー設定の読み込み/書き出し",
+            "导入服务器配置": "サーバー設定を読み込む",
+            "导出服务器配置": "サーバー設定を書き出す",
+            "服务器配置导入导出需要解锁完整功能后使用。": "サーバー設定の読み込み/書き出しには全機能の解放が必要です。",
+            "导出的配置不包含密码；导入后请重新输入密码或重新授权。": "書き出した設定にパスワードは含まれません。読み込み後に再入力または再認証してください。",
+            "暂无可导出的服务器配置。": "書き出せるサーバー設定がありません。",
+            "服务器配置已导出。": "サーバー設定を書き出しました。",
+            "服务器配置导出失败": "サーバー設定の書き出しに失敗しました",
+            "服务器配置导入失败": "サーバー設定の読み込みに失敗しました",
+            "已导入 %d 个服务器配置。": "%d 件のサーバー設定を読み込みました。",
+            "中国大陆": "中国本土"
+        ],
+        "ko": [
+            "查看包含功能": "포함 기능 보기",
+            "正在处理购买…": "구입 처리 중…",
+            "正在与 App Store 确认购买状态。": "App Store에서 구입 상태를 확인하는 중입니다.",
+            "感谢订阅": "구독해 주셔서 감사합니다",
+            "感谢购买": "구입해 주셔서 감사합니다",
+            "完整功能已经解锁，感谢支持 SynoMusic。": "전체 기능이 잠금 해제되었습니다. SynoMusic을 지원해 주셔서 감사합니다.",
+            "好的": "확인",
+            "导入/导出服务器配置": "서버 설정 가져오기/내보내기",
+            "导入服务器配置": "서버 설정 가져오기",
+            "导出服务器配置": "서버 설정 내보내기",
+            "服务器配置导入导出需要解锁完整功能后使用。": "서버 설정 가져오기/내보내기는 전체 기능 잠금 해제 후 사용할 수 있습니다.",
+            "导出的配置不包含密码；导入后请重新输入密码或重新授权。": "내보낸 설정에는 비밀번호가 포함되지 않습니다. 가져온 후 비밀번호를 다시 입력하거나 다시 인증하세요.",
+            "暂无可导出的服务器配置。": "내보낼 서버 설정이 없습니다.",
+            "服务器配置已导出。": "서버 설정을 내보냈습니다.",
+            "服务器配置导出失败": "서버 설정 내보내기 실패",
+            "服务器配置导入失败": "서버 설정 가져오기 실패",
+            "已导入 %d 个服务器配置。": "서버 설정 %d개를 가져왔습니다.",
+            "中国大陆": "중국 본토"
+        ],
+        "de": [
+            "查看包含功能": "Enthaltene Funktionen anzeigen",
+            "正在处理购买…": "Kauf wird verarbeitet…",
+            "正在与 App Store 确认购买状态。": "Kaufstatus wird mit dem App Store bestätigt.",
+            "感谢订阅": "Danke für dein Abo",
+            "感谢购买": "Danke für deinen Kauf",
+            "完整功能已经解锁，感谢支持 SynoMusic。": "Vollzugriff ist freigeschaltet. Danke für deine Unterstützung von SynoMusic.",
+            "好的": "OK",
+            "导入/导出服务器配置": "Serverprofile importieren/exportieren",
+            "导入服务器配置": "Serverprofile importieren",
+            "导出服务器配置": "Serverprofile exportieren",
+            "服务器配置导入导出需要解锁完整功能后使用。": "Import und Export von Serverprofilen erfordern Vollzugriff.",
+            "导出的配置不包含密码；导入后请重新输入密码或重新授权。": "Exportierte Profile enthalten keine Passwörter; gib sie nach dem Import erneut ein oder autorisiere neu.",
+            "暂无可导出的服务器配置。": "Keine Serverprofile zum Exportieren.",
+            "服务器配置已导出。": "Serverprofile exportiert.",
+            "服务器配置导出失败": "Export der Serverprofile fehlgeschlagen",
+            "服务器配置导入失败": "Import der Serverprofile fehlgeschlagen",
+            "已导入 %d 个服务器配置。": "%d Serverprofile importiert.",
+            "中国大陆": "Festlandchina"
+        ],
+        "fr": [
+            "查看包含功能": "Voir les fonctions incluses",
+            "正在处理购买…": "Traitement de l’achat…",
+            "正在与 App Store 确认购买状态。": "Confirmation de l’achat avec l’App Store.",
+            "感谢订阅": "Merci pour votre abonnement",
+            "感谢购买": "Merci pour votre achat",
+            "完整功能已经解锁，感谢支持 SynoMusic。": "L’accès complet est déverrouillé. Merci de soutenir SynoMusic.",
+            "好的": "OK",
+            "导入/导出服务器配置": "Importer/exporter les profils de serveur",
+            "导入服务器配置": "Importer les profils de serveur",
+            "导出服务器配置": "Exporter les profils de serveur",
+            "服务器配置导入导出需要解锁完整功能后使用。": "L’importation et l’exportation des profils de serveur nécessitent l’accès complet.",
+            "导出的配置不包含密码；导入后请重新输入密码或重新授权。": "Les profils exportés ne contiennent pas les mots de passe ; saisissez-les à nouveau ou réautorisez après importation.",
+            "暂无可导出的服务器配置。": "Aucun profil de serveur à exporter.",
+            "服务器配置已导出。": "Profils de serveur exportés.",
+            "服务器配置导出失败": "Échec de l’exportation des profils de serveur",
+            "服务器配置导入失败": "Échec de l’importation des profils de serveur",
+            "已导入 %d 个服务器配置。": "%d profils de serveur importés.",
+            "中国大陆": "Chine continentale"
         ]
     ]
 

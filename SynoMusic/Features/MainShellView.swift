@@ -79,6 +79,7 @@ struct MainShellView: View {
         .onAppear {
             playback.apiClient = session.client
             playback.musicClient = session.musicClient
+            playback.setHistoryScope(for: session.musicClient?.profile)
             playback.playlistStore = playlists
             playlists.setActiveScope(for: session.musicClient?.profile)
         }
@@ -89,10 +90,12 @@ struct MainShellView: View {
         .onReceive(session.$musicClient) { newClient in
             playback.apiClient = newClient?.legacySynologyClient
             playback.musicClient = newClient
+            playback.setHistoryScope(for: newClient?.profile)
             playlists.setActiveScope(for: newClient?.profile)
         }
         .onChange(of: session.isLoggedIn) { _, _ in
             playback.musicClient = session.musicClient
+            playback.setHistoryScope(for: session.musicClient?.profile)
         }
         .animation(.spring(response: 0.45, dampingFraction: 0.85), value: playback.currentSong)
         .animation(.easeInOut(duration: 0.18), value: theme.currentID)
