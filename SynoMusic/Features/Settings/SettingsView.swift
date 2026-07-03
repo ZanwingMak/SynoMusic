@@ -1496,12 +1496,12 @@ struct DownloadsListView: View {
 
     /// 按当前播放队列顺序批量下载歌曲。
     private func downloadCurrentQueue() async {
-        guard let api = session.client?.audioStation else {
+        guard session.musicClient != nil || session.client != nil else {
             playback.setStatus("请先连接服务器再下载".t)
             return
         }
         let songs = playback.queue.filter { song in
-            !song.isDirectRemoteStream && downloads.status(for: song.id) != .completed
+            downloads.status(for: song.id) != .completed
         }
         guard !songs.isEmpty else {
             playback.setStatus("当前队列没有需要下载的歌曲".t)
@@ -1510,25 +1510,43 @@ struct DownloadsListView: View {
         isDownloadingQueue = true
         queueProgress = (0, songs.count)
         defer { isDownloadingQueue = false }
+        var unsupportedCount = 0
         for song in songs {
-            guard let url = api.streamURL(songID: song.id, format: playback.quality.streamFormat) else {
+            let url: URL?
+            do {
+                url = try await MusicDownloadResolver.url(
+                    for: song,
+                    quality: playback.quality,
+                    musicClient: session.musicClient,
+                    legacyClient: session.client
+                )
+            } catch {
+                playback.setStatus("下载失败".t + "：\(song.title)")
                 queueProgress.done += 1
                 continue
             }
-            let fileExtension = playback.quality == .original ? (song.codec ?? "mp3") : "mp3"
+            guard let url else {
+                unsupportedCount += 1
+                queueProgress.done += 1
+                continue
+            }
+            let fileExtension = MusicDownloadResolver.fileExtension(for: song, quality: playback.quality, url: url)
             do {
                 try await downloads.download(
                     song: song,
                     streamURL: url,
                     fileExtension: fileExtension,
-                    allowInvalidCertificate: session.client?.profile.ignoreInvalidCertificate == true
+                    allowInvalidCertificate: MusicDownloadResolver.allowsInvalidCertificate(
+                        musicClient: session.musicClient,
+                        legacyClient: session.client
+                    )
                 )
             } catch {
                 playback.setStatus("下载失败".t + "：\(song.title)")
             }
             queueProgress.done += 1
         }
-        playback.setStatus("队列下载完成".t)
+        playback.setStatus(unsupportedCount == songs.count ? "当前音乐源不支持下载。".t : "队列下载完成".t)
         Haptics.success()
     }
 

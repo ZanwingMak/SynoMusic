@@ -254,26 +254,42 @@ struct FullPlayerView: View {
             paywallFeature = .songDownloads
             return
         }
-        guard let song = playback.currentSong, !song.isDirectRemoteStream else {
+        guard let song = playback.currentSong else {
             playback.setStatus("无法下载当前歌曲".t)
             return
         }
-        guard let api = session.client?.audioStation else {
+        guard session.musicClient != nil || session.client != nil else {
             playback.setStatus("请先连接服务器再下载".t)
             return
         }
-        guard let url = api.streamURL(songID: song.id, format: playback.quality.streamFormat) else {
-            playback.setStatus("无法下载当前歌曲".t)
+        let url: URL?
+        do {
+            url = try await MusicDownloadResolver.url(
+                for: song,
+                quality: playback.quality,
+                musicClient: session.musicClient,
+                legacyClient: session.client
+            )
+        } catch {
+            playback.setStatus("下载失败".t + "：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
+            Haptics.warning()
             return
         }
-        let fileExtension = playback.quality == .original ? (song.codec ?? "mp3") : "mp3"
+        guard let url else {
+            playback.setStatus("当前音乐源不支持下载。".t)
+            return
+        }
+        let fileExtension = MusicDownloadResolver.fileExtension(for: song, quality: playback.quality, url: url)
         do {
             playback.setStatus("正在下载".t + "：\(song.title)")
             try await downloads.download(
                 song: song,
                 streamURL: url,
                 fileExtension: fileExtension,
-                allowInvalidCertificate: session.client?.profile.ignoreInvalidCertificate == true
+                allowInvalidCertificate: MusicDownloadResolver.allowsInvalidCertificate(
+                    musicClient: session.musicClient,
+                    legacyClient: session.client
+                )
             )
             playback.setStatus("下载完成".t + "：\(song.title)")
             Haptics.success()
@@ -918,7 +934,7 @@ extension FullPlayerView {
 
     /// 判断当前界面是否可以展示下载相关操作。
     private var shouldShowDownloadActions: Bool {
-        session.client != nil && !reviewMode.isEnabled
+        (session.musicClient != nil || session.client != nil) && !reviewMode.isEnabled
     }
 
     /// 底部工具栏的等宽按钮容器，保证图标切换时其它按钮不横向跳动。

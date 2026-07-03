@@ -152,11 +152,12 @@ struct SmartMixesView: View {
             return
         }
         guard requireServerOrPrompt() else { return }
-        guard let api = session.client?.audioStation else {
+        guard let client = session.musicClient else {
+            showUnsupportedFeature()
             return
         }
         do {
-            let songs = try await api.randomSongs(count: 80)
+            let songs = try await client.randomSongs(count: 80)
             playSongs(songs, title: "随机探索")
         } catch {
             showError(error)
@@ -171,11 +172,12 @@ struct SmartMixesView: View {
             return
         }
         guard requireServerOrPrompt() else { return }
-        guard let api = session.client?.audioStation else {
+        guard let client = session.musicClient else {
+            showUnsupportedFeature()
             return
         }
         do {
-            let pool = try await api.listSongs(limit: 500, sortBy: "title", sortDirection: "ASC")
+            let pool = try await client.listSongs(limit: 500, offset: 0, sortBy: "title", sortDirection: "ASC")
             let rated = pool.filter { ($0.rating ?? 0) >= 4 }
             playSongs(Array((rated.isEmpty ? pool : rated).prefix(100)), title: "高评分歌曲")
         } catch {
@@ -190,11 +192,12 @@ struct SmartMixesView: View {
             return
         }
         guard requireServerOrPrompt() else { return }
-        guard let api = session.client?.audioStation else {
+        guard let client = session.musicClient else {
+            showUnsupportedFeature()
             return
         }
         do {
-            let songs = try await api.listSongs(limit: 120, sortBy: "recently_added", sortDirection: "DESC")
+            let songs = try await client.listSongs(limit: 120, offset: 0, sortBy: "recently_added", sortDirection: "DESC")
             playSongs(songs, title: "最近添加精选")
         } catch {
             showError(error)
@@ -208,7 +211,7 @@ struct SmartMixesView: View {
 
     /// 判断是否显示下载缓存相关的智能歌单入口。
     private var shouldShowDownloadedMix: Bool {
-        session.client != nil && !reviewMode.isEnabled
+        !reviewMode.isEnabled
     }
 
     /// 使用统一上下文播放智能歌单。
@@ -228,9 +231,15 @@ struct SmartMixesView: View {
         Haptics.warning()
     }
 
+    /// 当前音乐源无法执行对应智能歌单动作时展示统一提示。
+    private func showUnsupportedFeature() {
+        errorMessage = "当前音乐源不支持该功能。".t
+        Haptics.warning()
+    }
+
     /// 没有服务器时弹出确认框；已连接时允许继续执行。
     private func requireServerOrPrompt() -> Bool {
-        guard session.client == nil && !reviewMode.isEnabled else { return true }
+        guard session.musicClient == nil && !reviewMode.isEnabled else { return true }
         showServerPrompt = true
         loadingMixID = nil
         Haptics.warning()

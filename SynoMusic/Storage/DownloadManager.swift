@@ -57,7 +57,7 @@ final class DownloadManager: ObservableObject {
         return fileManager.fileExists(atPath: url.path) ? url : nil
     }
 
-    /// 下载一首歌（按 streamURL 抓字节，保存到本地）。
+    /// 下载一首歌；网络 URL 抓取字节，本地 file URL 直接复制到下载目录。
     func download(song: Song, streamURL: URL, fileExtension: String, allowInvalidCertificate: Bool = false) async throws {
         let ext = fileExtension.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? "mp3"
@@ -78,10 +78,14 @@ final class DownloadManager: ObservableObject {
         upsert(entry)
 
         do {
-            let session = makeSession(allowInvalidCertificate: allowInvalidCertificate)
-            let (data, _) = try await session.data(from: streamURL)
-            try data.write(to: dest, options: .atomic)
-            entry.size = Int64(data.count)
+            if streamURL.isFileURL {
+                entry.size = try copyLocalFile(from: streamURL, to: dest)
+            } else {
+                let session = makeSession(allowInvalidCertificate: allowInvalidCertificate)
+                let (data, _) = try await session.data(from: streamURL)
+                try data.write(to: dest, options: .atomic)
+                entry.size = Int64(data.count)
+            }
             entry.status = .completed
             upsert(entry)
         } catch {
@@ -160,6 +164,19 @@ final class DownloadManager: ObservableObject {
             return URLSession(configuration: config)
         }
         return URLSession(configuration: config, delegate: DownloadCertDelegate(), delegateQueue: nil)
+    }
+
+    /// 把本地文件复制到下载目录，并返回复制后的文件大小。
+    private func copyLocalFile(from source: URL, to destination: URL) throws -> Int64 {
+        let isSameFile = source.standardizedFileURL == destination.standardizedFileURL
+        if !isSameFile && fileManager.fileExists(atPath: destination.path) {
+            try fileManager.removeItem(at: destination)
+        }
+        if !isSameFile {
+            try fileManager.copyItem(at: source, to: destination)
+        }
+        let attrs = try fileManager.attributesOfItem(atPath: destination.path)
+        return (attrs[.size] as? NSNumber)?.int64Value ?? 0
     }
 }
 

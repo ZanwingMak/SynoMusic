@@ -3207,32 +3207,44 @@ enum L10n {
         "zh-Hant": [
             "SynoMusic 是一个非官方的自托管音乐客户端，支持连接你授权的音乐服务器和本地文件。Synology、Plex、Jellyfin、Emby 等名称归各自所有。": "SynoMusic 是一個非官方的自託管音樂用戶端，支援連接你授權的音樂伺服器與本機檔案。Synology、Plex、Jellyfin、Emby 等名稱歸各自所有。",
             "我正在用 SynoMusic 连接自己的自托管音乐库。": "我正在用 SynoMusic 連接自己的自託管音樂庫。",
-            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby 的預設連接埠：HTTP 8096，HTTPS 8920。HTTPS 會預設信任自簽名憑證；如使用有效憑證，可關閉此開關。"
+            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby 的預設連接埠：HTTP 8096，HTTPS 8920。HTTPS 會預設信任自簽名憑證；如使用有效憑證，可關閉此開關。",
+            "当前音乐源不支持该功能。": "目前音樂來源不支援此功能。",
+            "当前音乐源不支持下载。": "目前音樂來源不支援下載。"
         ],
         "en": [
             "SynoMusic 是一个非官方的自托管音乐客户端，支持连接你授权的音乐服务器和本地文件。Synology、Plex、Jellyfin、Emby 等名称归各自所有。": "SynoMusic is an unofficial self-hosted music client for music servers and local files you authorize. Synology, Plex, Jellyfin, Emby, and related names belong to their respective owners.",
             "我正在用 SynoMusic 连接自己的自托管音乐库。": "I'm using SynoMusic to connect to my own self-hosted music library.",
-            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby defaults: HTTP 8096, HTTPS 8920. HTTPS trusts self-signed certificates by default; turn this off when using a valid certificate."
+            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby defaults: HTTP 8096, HTTPS 8920. HTTPS trusts self-signed certificates by default; turn this off when using a valid certificate.",
+            "当前音乐源不支持该功能。": "The current music source does not support this feature.",
+            "当前音乐源不支持下载。": "The current music source does not support downloads."
         ],
         "ja": [
             "SynoMusic 是一个非官方的自托管音乐客户端，支持连接你授权的音乐服务器和本地文件。Synology、Plex、Jellyfin、Emby 等名称归各自所有。": "SynoMusic は、許可した音楽サーバーとローカルファイルに接続する非公式のセルフホスト音楽クライアントです。Synology、Plex、Jellyfin、Emby などの名称は各所有者に帰属します。",
             "我正在用 SynoMusic 连接自己的自托管音乐库。": "SynoMusic で自分のセルフホスト音楽ライブラリに接続しています。",
-            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby の既定ポート：HTTP 8096、HTTPS 8920。HTTPS では自己署名証明書を既定で信頼します。有効な証明書を使う場合はオフにできます。"
+            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby の既定ポート：HTTP 8096、HTTPS 8920。HTTPS では自己署名証明書を既定で信頼します。有効な証明書を使う場合はオフにできます。",
+            "当前音乐源不支持该功能。": "現在の音楽ソースはこの機能に対応していません。",
+            "当前音乐源不支持下载。": "現在の音楽ソースはダウンロードに対応していません。"
         ],
         "ko": [
             "SynoMusic 是一个非官方的自托管音乐客户端，支持连接你授权的音乐服务器和本地文件。Synology、Plex、Jellyfin、Emby 等名称归各自所有。": "SynoMusic은 사용자가 승인한 음악 서버와 로컬 파일에 연결하는 비공식 셀프 호스팅 음악 클라이언트입니다. Synology, Plex, Jellyfin, Emby 등의 명칭은 각 소유자에게 있습니다.",
             "我正在用 SynoMusic 连接自己的自托管音乐库。": "SynoMusic으로 내 셀프 호스팅 음악 라이브러리에 연결하고 있습니다.",
-            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby 기본 포트: HTTP 8096, HTTPS 8920. HTTPS는 기본적으로 자체 서명 인증서를 신뢰합니다. 유효한 인증서를 사용하는 경우 끌 수 있습니다."
+            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby 기본 포트: HTTP 8096, HTTPS 8920. HTTPS는 기본적으로 자체 서명 인증서를 신뢰합니다. 유효한 인증서를 사용하는 경우 끌 수 있습니다.",
+            "当前音乐源不支持该功能。": "현재 음악 소스는 이 기능을 지원하지 않습니다.",
+            "当前音乐源不支持下载。": "현재 음악 소스는 다운로드를 지원하지 않습니다."
         ],
         "de": [
             "SynoMusic 是一个非官方的自托管音乐客户端，支持连接你授权的音乐服务器和本地文件。Synology、Plex、Jellyfin、Emby 等名称归各自所有。": "SynoMusic ist ein inoffizieller Client für selbst gehostete Musikserver und lokale Dateien, die du autorisierst. Synology, Plex, Jellyfin, Emby und ähnliche Namen gehören ihren jeweiligen Inhabern.",
             "我正在用 SynoMusic 连接自己的自托管音乐库。": "Ich nutze SynoMusic, um meine selbst gehostete Musikbibliothek zu verbinden.",
-            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby-Standardports: HTTP 8096, HTTPS 8920. HTTPS vertraut standardmäßig selbstsignierten Zertifikaten; bei gültigem Zertifikat kannst du dies ausschalten."
+            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby-Standardports: HTTP 8096, HTTPS 8920. HTTPS vertraut standardmäßig selbstsignierten Zertifikaten; bei gültigem Zertifikat kannst du dies ausschalten.",
+            "当前音乐源不支持该功能。": "Die aktuelle Musikquelle unterstützt diese Funktion nicht.",
+            "当前音乐源不支持下载。": "Die aktuelle Musikquelle unterstützt keine Downloads."
         ],
         "fr": [
             "SynoMusic 是一个非官方的自托管音乐客户端，支持连接你授权的音乐服务器和本地文件。Synology、Plex、Jellyfin、Emby 等名称归各自所有。": "SynoMusic est un client musical auto-hébergé non officiel pour les serveurs musicaux et fichiers locaux que vous autorisez. Synology, Plex, Jellyfin, Emby et les noms associés appartiennent à leurs propriétaires respectifs.",
             "我正在用 SynoMusic 连接自己的自托管音乐库。": "J’utilise SynoMusic pour me connecter à ma bibliothèque musicale auto-hébergée.",
-            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Ports par défaut Jellyfin/Emby : HTTP 8096, HTTPS 8920. HTTPS fait confiance aux certificats autosignés par défaut ; désactivez cette option si vous utilisez un certificat valide."
+            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Ports par défaut Jellyfin/Emby : HTTP 8096, HTTPS 8920. HTTPS fait confiance aux certificats autosignés par défaut ; désactivez cette option si vous utilisez un certificat valide.",
+            "当前音乐源不支持该功能。": "La source musicale actuelle ne prend pas en charge cette fonctionnalité.",
+            "当前音乐源不支持下载。": "La source musicale actuelle ne prend pas en charge les téléchargements."
         ]
     ]
 

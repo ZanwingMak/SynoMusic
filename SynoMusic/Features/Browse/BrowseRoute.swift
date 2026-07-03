@@ -114,7 +114,7 @@ extension BrowseRoute {
     /// 当前阶段仍依赖 Audio Station 专有 API 的页面。
     var isSynologyOnly: Bool {
         switch self {
-        case .genre, .folder, .allGenres, .allFolders, .smartMixes:
+        case .genre, .folder, .allGenres, .allFolders:
             return true
         default:
             return false

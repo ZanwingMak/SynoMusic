@@ -58,3 +58,45 @@ extension MusicLibraryClient {
         }
     }
 }
+
+/// 音乐下载 URL 解析器：把不同音乐源的播放地址统一转换为可保存的 URL。
+enum MusicDownloadResolver {
+    /// 为歌曲解析可下载 URL；异步音乐源会先准备本地缓存，旧 Synology 路径作为兼容兜底。
+    static func url(
+        for song: Song,
+        quality: AudioQuality,
+        musicClient: MusicLibraryClient?,
+        legacyClient: SynologyClient?
+    ) async throws -> URL? {
+        if song.id.hasPrefix("local:"), let path = song.path, !path.isEmpty {
+            return URL(fileURLWithPath: path)
+        }
+        if song.isDirectRemoteStream {
+            return nil
+        }
+        if let asyncClient = musicClient as? AsyncStreamResolvingMusicClient {
+            return try await asyncClient.preparedStreamURL(song: song, quality: quality)
+        }
+        if let url = musicClient?.streamURL(song: song, quality: quality) {
+            return url
+        }
+        return legacyClient?.audioStation.streamURL(songID: song.id, format: quality.streamFormat)
+    }
+
+    /// 根据音质、歌曲编码和 URL 推断下载文件扩展名。
+    static func fileExtension(for song: Song, quality: AudioQuality, url: URL?) -> String {
+        if quality == .original, let codec = song.codec?.trimmingCharacters(in: .whitespacesAndNewlines), !codec.isEmpty {
+            return codec
+        }
+        if let ext = url?.pathExtension.trimmingCharacters(in: .whitespacesAndNewlines), !ext.isEmpty {
+            return ext
+        }
+        return "mp3"
+    }
+
+    /// 判断当前音乐源下载请求是否允许用户配置的自签名证书。
+    static func allowsInvalidCertificate(musicClient: MusicLibraryClient?, legacyClient: SynologyClient?) -> Bool {
+        musicClient?.profile.ignoreInvalidCertificate == true
+            || legacyClient?.profile.ignoreInvalidCertificate == true
+    }
+}
