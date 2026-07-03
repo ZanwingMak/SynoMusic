@@ -1,1 +1,1 @@
-"NSLocalNetworkUsageDescription" = "SynoMusic needs local network access to connect to Audio Station on your Synology NAS.";
+"NSLocalNetworkUsageDescription" = "SynoMusic needs local network access to connect to the music servers you authorize.";

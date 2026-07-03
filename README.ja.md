@@ -1,66 +1,33 @@
 # SynoMusic
 
-> Synology NAS 向けの、美しいネイティブ iOS 音楽クライアント — Audio Station ベース。
+> 自分の音楽ライブラリ向けのネイティブ iOS クライアント。Synology Audio Station、Plex、Jellyfin、Emby、WebDAV、SMB、ローカル読み込みに対応します。
 
 [English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
-[公式サイト](https://zanwingmak.github.io/SynoMusic/) · [最新リリース](https://github.com/ZanwingMak/SynoMusic/releases/latest)
+[公式サイト](https://zanwingmak.github.io/SynoMusic-OpenSource/) · [プライバシーポリシー](https://zanwingmak.github.io/SynoMusic-OpenSource/privacy.html) · [利用規約](https://zanwingmak.github.io/SynoMusic-OpenSource/terms.html)
 
-SynoMusic は DSM の Audio Station Web API を介して、洗練された iOS ネイティブ体験を提供します：ライブラリ閲覧、検索、再生、ローカルプレイリスト、世界のラジオ、ロック画面と Dynamic Island での完全制御。
-
-## スクリーンショット
-
-|  ライブラリ  |  ブラウズ  |  設定  |
-| :---: | :---: | :---: |
-| ![Library](docs/screenshots/01-library.png) | ![Browse](docs/screenshots/02-browse.png) | ![Settings](docs/screenshots/03-settings.png) |
-
-|  プレーヤー  |  サーバー設定  |
-| :---: | :---: |
-| ![Player](docs/screenshots/04-player.png) | ![Editor](docs/screenshots/05-editor.png) |
-
-## 最新リリース：1.3.5
-
-- 他の App の音声割り込み後も再生ボタンの状態が正しく同期されるよう修正しました。
-- 割り込み終了後、SynoMusic が割り込み前の状態に応じて自動再開するよう修正しました。
-- 詳細は [`CHANGELOG.md`](CHANGELOG.md) を参照してください。
+SynoMusic は、自分のサーバーやローカルファイルに音楽を保存している人のためのアプリです。許可した音楽ライブラリだけに接続し、認証情報は iOS Keychain に保存します。洗練されたプレーヤー、歌詞、ダウンロード、ウィジェット、ロック画面操作、Dynamic Island、テーマ設定を利用できます。
 
 ## 機能
 
-- **NAS ファースト**：複数サーバー、Keychain、2 段階認証（OTP）、自己署名証明書、HTTPS / QuickConnect
-- **ストリーミング**：AVQueuePlayer、原音 → MP3 自動フォールバック、AirPlay、リモートコマンドセンター
-- **ライブラリ**：アルバム / アーティスト / ジャンル / フォルダ / サーバーリスト / *すべての曲*
-- **ローカルプレイリスト**：複数のカスタム、組み込み「お気に入り」、一括編集、複数選択
-- **ラジオ**：Radio-Browser API による 30,000+ の世界の局
-- **プレーヤー**：フルスクリーン、同期歌詞、キュー編集、スリープタイマー、ジャケット ↔ 歌詞切替
-- **システム連携**：ロック画面の Now Playing、Dynamic Island Live Activity、リモートコマンド
-- **テーマ**：8 色のアクセント + システム / ライト / ダーク
-- **多言語**：簡体字中国語、繁体字中国語、英語、日本語、韓国語、ドイツ語、フランス語
+- **複数の音楽ソース**：Synology Audio Station、Plex、Jellyfin、Emby、WebDAV、SMB、ローカル読み込み。
+- **音楽専用**：Jellyfin、Emby、Plex、WebDAV、SMB 連携は音楽ライブラリのみを対象とし、動画、テレビ、写真機能は含みません。
+- **プライベート接続**：複数サーバープロファイル、Keychain 認証情報、HTTPS、自己署名証明書の信頼、QuickConnect、Plex 認証、WebDAV/SMB フォルダ選択。
+- **ネイティブ再生**：AVQueuePlayer、AirPlay、ロック画面、Dynamic Island、再生キュー、スリープタイマー、形式フォールバック。
+- **ライブラリ閲覧**：アルバム、アーティスト、ジャンル、フォルダ、プレイリスト、すべての曲、検索、スマートミックス、お気に入り、履歴。
+- **歌詞とメタデータ**：同期歌詞、歌詞編集、オンライン取得、カバー検索、曲とアーティスト情報検索。
+- **オフラインと読み込み**：曲のダウンロード、ダウンロードキュー、ローカルファイル読み込み、リンクからの読み込み。
 
-## 必要環境
+## 要件
 
-- **iOS 17 以降** の iPhone
-- Synology NAS に **Audio Station** がインストールされ、対象ユーザーに権限が付与されていること
-- Dynamic Island：iPhone 14 Pro 以降
+- **iOS 17 以降**の iPhone または iPad。
+- 対応する音楽ソース、またはローカル音声ファイル。
+- サーバー音楽ソースでは、音楽ライブラリへアクセスできるアカウントまたはトークンが必要です。
 
-## ソースからビルド
+## 免責事項
 
-```bash
-brew install xcodegen
-git clone https://github.com/ZanwingMak/SynoMusic.git
-cd SynoMusic
-xcodegen generate
-open SynoMusic.xcodeproj
-```
-
-## サポート
-
-- **PayPal** — [paypal.me/zanwing](https://paypal.me/zanwing)
-- **Buy Me a Coffee** — [buymeacoffee.com/zanwing](https://buymeacoffee.com/zanwing)
-- **Wise** — [wise.com/pay/me/zhenyingm1](https://wise.com/pay/me/zhenyingm1)
-- **WeChat / Alipay** — アプリ内の「設定 → サポートする」から QR
+SynoMusic は非公式クライアントです。Synology、Plex、Jellyfin、Emby、WebDAV、SMB、Apple などの名称は各所有者に帰属します。SynoMusic はこれらのプロジェクトまたは企業と提携しておらず、承認も受けていません。
 
 ## ライセンス
 
-本プロジェクトは **GNU GPL v3.0** の下でライセンスされています。詳しくは [`LICENSE`](LICENSE) を参照。
-
-> SynoMusic は非公式の Audio Station クライアントです。*Synology*、*DSM*、*Audio Station* は Synology Inc. の商標です。
+このプロジェクトは **GNU General Public License v3.0** の下で公開されています。[LICENSE](LICENSE) を参照してください。

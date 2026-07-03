@@ -1,12 +1,12 @@
 # SynoMusic
 
-> A beautiful, native iOS music client for your Synology NAS — built on Audio Station.
+> A native iOS music client for your own library: Synology Audio Station, Plex, Jellyfin, Emby, WebDAV, SMB, and local imports.
 
 [English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
-[Official Website](https://zanwingmak.github.io/SynoMusic/) · [Latest Release](https://github.com/ZanwingMak/SynoMusic/releases/latest)
+[Official Website](https://zanwingmak.github.io/SynoMusic-OpenSource/) · [Privacy Policy](https://zanwingmak.github.io/SynoMusic-OpenSource/privacy.html) · [Terms of Use](https://zanwingmak.github.io/SynoMusic-OpenSource/terms.html)
 
-SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a clean, fast, iOS-native music experience: browse, search, play, sync favorites and custom playlists, listen to global radio, and control everything from the Lock Screen and Dynamic Island.
+SynoMusic is built for people who keep music on their own servers. It connects only to music libraries you authorize, keeps credentials in iOS Keychain, and brings a polished iPhone player with lyrics, downloads, widgets, Lock Screen controls, Dynamic Island, and theme customization.
 
 ## Screenshots
 
@@ -18,30 +18,23 @@ SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a 
 | :---: | :---: |
 | ![Player](docs/screenshots/04-player.png) | ![Editor](docs/screenshots/05-editor.png) |
 
-## Latest release: 1.3.5
-
-- Keeps the player button state accurate when another app interrupts audio.
-- Restores SynoMusic playback automatically after the external interruption ends.
-- See [`CHANGELOG.md`](CHANGELOG.md) for the full release notes.
-
 ## Features
 
-- **NAS first**: Multi-server profiles with Keychain credentials, 2FA (OTP), self-signed certificate trust, HTTPS/QuickConnect
-- **Streaming**: AVQueuePlayer, automatic raw → MP3 transcode fallback when a format is unsupported, AirPlay, CarPlay-compatible Remote Command Center
-- **Library**: Albums, Artists, Genres, Folders, Server playlists, *All Songs* with paginated load and sort
-- **Local playlists**: Multiple custom playlists, "Favorites" as a pinned built-in, batch edit, multi-add via sheet
-- **Radio**: 30,000+ stations via the public Radio-Browser API, by country / tag / search
-- **Player**: Full-screen player with live lyrics, queue editing, sleep timer (presets, custom, time-of-day), tap cover ↔ lyrics
-- **System integration**: Lock Screen Now Playing, Dynamic Island Live Activity (compact, minimal, expanded), MPRemoteCommand
-- **Theming**: 8 accent color palettes + system / light / dark appearance
-- **Languages**: Simplified Chinese, Traditional Chinese, English, Japanese, Korean, German, French
-- **Offline**: Per-song downloads stored in the app sandbox
+- **Multiple music sources**: Synology Audio Station, Plex, Jellyfin, Emby, WebDAV, SMB, and local imports.
+- **Music only**: Jellyfin, Emby, Plex, WebDAV, and SMB integrations are scoped to music libraries, not video, TV, or photos.
+- **Private connections**: Multiple server profiles, Keychain credentials, HTTPS, self-signed certificate trust, QuickConnect, Plex authorization, and WebDAV/SMB folder selection.
+- **Native playback**: AVQueuePlayer, AirPlay, Lock Screen controls, Dynamic Island, playback queue, sleep timer, and format fallback.
+- **Library browsing**: Albums, artists, genres, folders, playlists, all songs, search, smart mixes, favorites, and playback history.
+- **Lyrics and metadata**: Synced lyrics, lyric editing, online lookup, cover search, and song/artist information search.
+- **Offline and import**: Song downloads, download queue, local file import, and link-based music import.
+- **System integration**: Widgets, Siri shortcuts, iCloud configuration sync, alternate app icons, and theme colors.
+- **Languages**: Simplified Chinese, Traditional Chinese, English, Japanese, Korean, German, and French.
 
 ## Requirements
 
-- iPhone running **iOS 17 or later**
-- A Synology NAS with **Audio Station** installed and the target user granted Audio Station permission in DSM
-- For Dynamic Island: iPhone 14 Pro or newer
+- iPhone or iPad running **iOS 17 or later**.
+- At least one supported music source or local audio files.
+- For server sources, you need an account/token with permission to access the music library.
 
 ## Build from source
 
@@ -55,41 +48,27 @@ xcodegen generate
 open SynoMusic.xcodeproj
 ```
 
-Set your own development team in Xcode → Signing & Capabilities, then run on a simulator or device.
+Set your own development team in Xcode -> Signing & Capabilities, then run on a simulator or device.
 
 ## Project layout
 
-```
+```text
 SynoMusic/
 ├── App/                 # @main entry + RootView
 ├── Audio/               # PlaybackEngine, NowPlaying, Live Activity bridge
 ├── DesignSystem/        # Theme, ThemeManager, L10n, Typography, Components
-├── Features/
-│   ├── Browse/          # Albums / Artists / Genres / Folders / All Songs
-│   ├── Favorites/       # Local playlists incl. built-in Favorites
-│   ├── Library/         # Home with shortcut cards
-│   ├── Login/           # Server editor + login flow
-│   ├── Player/          # MiniPlayerBar, FullPlayerView, SleepTimerSheet
-│   ├── Radio/           # RadioAPI + RadioBrowseView
-│   ├── Search/          # Debounced search
-│   └── Settings/        # Servers, theme, language, sponsor, about
-├── Models/              # Song / Album / Artist / Playlist / ServerProfile …
-├── Storage/             # ServerStore, PlaylistStore, KeychainStore, DownloadManager
-├── Synology/            # SynologyClient, AudioStationAPI, DTOs, errors
+├── Features/            # Library, Browse, Search, Settings, Player, Purchase
+├── Models/              # Song / Album / Artist / Playlist / ServerProfile
+├── Providers/           # Plex, Jellyfin, Emby, WebDAV, SMB, local music
+├── Storage/             # ServerStore, PlaylistStore, KeychainStore, downloads
+├── Synology/            # Synology Audio Station integration
 └── SynoMusicLive/       # Widget extension: Live Activity + Lock Screen
 ```
 
-## Sponsor
+## Disclaimer
 
-If SynoMusic saves you a Spotify subscription, consider supporting development.
-
-- **PayPal** — [paypal.me/zanwing](https://paypal.me/zanwing)
-- **Buy Me a Coffee** — [buymeacoffee.com/zanwing](https://buymeacoffee.com/zanwing)
-- **Wise** — [wise.com/pay/me/zhenyingm1](https://wise.com/pay/me/zhenyingm1)
-- **WeChat / Alipay** — open Settings → Sponsor for QR codes
+SynoMusic is an unofficial client. Synology, Plex, Jellyfin, Emby, WebDAV, SMB, Apple, and related names belong to their respective owners. SynoMusic is not affiliated with or endorsed by those projects or companies.
 
 ## License
 
-This project is licensed under the **GNU General Public License v3.0**. See [`LICENSE`](LICENSE).
-
-> SynoMusic is an unofficial Audio Station client. *Synology*, *DSM*, and *Audio Station* are trademarks of Synology Inc.
+This project is licensed under the **GNU General Public License v3.0**. See [LICENSE](LICENSE).

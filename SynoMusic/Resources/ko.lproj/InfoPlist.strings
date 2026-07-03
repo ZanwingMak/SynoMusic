@@ -1,1 +1,1 @@
-"NSLocalNetworkUsageDescription" = "SynoMusic은 Synology NAS의 Audio Station에 연결하기 위해 로컬 네트워크 접근 권한이 필요합니다.";
+"NSLocalNetworkUsageDescription" = "SynoMusic은 사용자가 승인한 음악 서버에 연결하기 위해 로컬 네트워크 접근 권한이 필요합니다.";

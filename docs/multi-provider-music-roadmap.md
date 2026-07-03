@@ -23,7 +23,7 @@ SynoMusic 的长期定位是：
 
 ### 阶段 1：多音乐源基础架构
 
-目标是把现有 Synology-only 结构改成 provider-neutral 结构。
+目标是把现有偏单一音乐源的结构改成 provider-neutral 结构。
 
 需要新增或调整：
 
@@ -144,7 +144,7 @@ var client: SynologyClient?
 var musicClient: MusicLibraryClient?
 ```
 
-等页面都迁移完成后，再删除 Synology-only 会话依赖。
+等页面都迁移完成后，再删除单一音乐源会话依赖。
 
 ## 各服务接入注意事项
 

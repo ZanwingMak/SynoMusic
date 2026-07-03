@@ -242,7 +242,7 @@ final class PurchaseStore: ObservableObject {
     func restorePurchases() async {
         guard !isRestoringPurchases else { return }
         isRestoringPurchases = true
-        statusMessage = "正在恢复购买…".t
+        statusMessage = nil
         defer { isRestoringPurchases = false }
         do {
             try await AppStore.sync()
@@ -282,7 +282,7 @@ final class PurchaseStore: ObservableObject {
             return
         }
         isRedeemingOfferCode = true
-        statusMessage = "正在打开兑换页面…".t
+        statusMessage = nil
         defer { isRedeemingOfferCode = false }
         do {
             try await AppStore.presentOfferCodeRedeemSheet(in: scene)

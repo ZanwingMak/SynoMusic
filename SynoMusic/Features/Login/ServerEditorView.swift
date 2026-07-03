@@ -308,15 +308,7 @@ struct ServerEditorView: View {
             }
             .pickerStyle(.segmented)
             .onChange(of: profile.scheme) { _, newValue in
-                let defaultsToFollow: Set<Int> = profile.providerType == .webDAV ? [5005, 5006] : [5000, 5001]
-                if defaultsToFollow.contains(profile.port) {
-                    if profile.providerType == .webDAV {
-                        profile.port = (newValue == .https) ? 5006 : 5005
-                    } else {
-                        profile.port = (newValue == .https) ? 5001 : 5000
-                    }
-                    portText = String(profile.port)
-                }
+                applySchemeDefaults(newValue)
             }
             ClearableTextField(title: "主机或 DDNS".t, text: $profile.host, keyboard: .URL)
             HStack {
@@ -575,6 +567,9 @@ struct ServerEditorView: View {
                 ? "SMB 密码会加密保存于 Keychain。".t
                 : "SMB 文件夹授权会加密保存于 Keychain。".t
         }
+        if [.jellyfin, .emby].contains(profile.providerType) {
+            return "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。".t
+        }
         return "密码或访问令牌会加密保存于 Keychain。".t
     }
 
@@ -662,46 +657,74 @@ struct ServerEditorView: View {
         switch providerType {
         case .synologyAudioStation:
             mode = .direct
-            if profile.port == 8096 || profile.port == 32400 || profile.port == 5006 || profile.port == 445 {
-                profile.port = profile.scheme == .https ? 5001 : 5000
-                portText = String(profile.port)
-            }
         case .jellyfin, .emby:
             mode = .direct
             profile.isQuickConnect = false
             profile.quickConnectID = ""
-            if profile.port == 5000 || profile.port == 5001 || profile.port == 32400 || profile.port == 5006 || profile.port == 445 {
-                profile.port = 8096
-                portText = "8096"
-            }
         case .plex:
             mode = .direct
             plexLoginMode = .account
             profile.isQuickConnect = false
             profile.quickConnectID = ""
-            if profile.port == 5000 || profile.port == 5001 || profile.port == 8096 || profile.port == 5006 || profile.port == 445 {
-                profile.port = 32400
-                portText = "32400"
-            }
         case .webDAV:
             mode = .direct
             profile.isQuickConnect = false
             profile.quickConnectID = ""
             profile.scheme = .https
-            if profile.port == 5000 || profile.port == 5001 || profile.port == 8096 || profile.port == 32400 || profile.port == 445 {
-                profile.port = 5006
-                portText = "5006"
-            }
         case .smb:
             mode = .direct
             smbConnectionMode = .manual
             profile.isQuickConnect = false
             profile.quickConnectID = ""
-            if profile.port == 5000 || profile.port == 5001 || profile.port == 8096 || profile.port == 32400 || profile.port == 5006 {
-                profile.port = 445
-                portText = "445"
-            }
         }
+        applyCurrentProviderPortDefault()
+        applyCertificateDefaultIfNeeded()
+    }
+
+    /// 根据当前音乐源和协议同步常见默认端口，只覆盖仍停留在已知默认端口的值。
+    private func applyCurrentProviderPortDefault() {
+        guard isKnownDefaultPort(profile.port) else { return }
+        profile.port = defaultPort(for: profile.providerType, scheme: profile.scheme)
+        portText = String(profile.port)
+    }
+
+    /// 协议切换时同步默认端口，并在 Jellyfin/Emby HTTPS 下默认允许自签名证书。
+    private func applySchemeDefaults(_ scheme: ServerProfile.Scheme) {
+        if isKnownDefaultPort(profile.port) {
+            profile.port = defaultPort(for: profile.providerType, scheme: scheme)
+            portText = String(profile.port)
+        }
+        if [.jellyfin, .emby].contains(profile.providerType) {
+            profile.ignoreInvalidCertificate = (scheme == .https)
+        }
+    }
+
+    /// HTTPS 切换或音乐源切换后，按 Jellyfin/Emby 的常见自签名场景设置证书默认值。
+    private func applyCertificateDefaultIfNeeded() {
+        if [.jellyfin, .emby].contains(profile.providerType), profile.scheme == .https {
+            profile.ignoreInvalidCertificate = true
+        }
+    }
+
+    /// 返回音乐源在对应协议下的默认端口。
+    private func defaultPort(for providerType: MusicProviderType, scheme: ServerProfile.Scheme) -> Int {
+        switch providerType {
+        case .synologyAudioStation:
+            return scheme == .https ? 5001 : 5000
+        case .jellyfin, .emby:
+            return scheme == .https ? 8920 : 8096
+        case .plex:
+            return 32400
+        case .webDAV:
+            return scheme == .https ? 5006 : 5005
+        case .smb:
+            return 445
+        }
+    }
+
+    /// 判断当前端口是否仍是 App 维护的默认端口，避免覆盖用户手动填写的自定义端口。
+    private func isKnownDefaultPort(_ port: Int) -> Bool {
+        [5000, 5001, 5005, 5006, 8096, 8920, 32400, 445].contains(port)
     }
 
     /// 同步 QuickConnect 表单的派生字段，避免出现 HTTPS 仍保存 5000 端口的中间状态。

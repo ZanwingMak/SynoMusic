@@ -11,6 +11,8 @@ struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedProductID: String?
+    @State private var toastMessage: String?
+    @State private var toastDismissTask: Task<Void, Never>?
 
     let feature: PremiumFeature
 
@@ -45,12 +47,20 @@ struct PaywallView: View {
             .safeAreaInset(edge: .bottom) {
                 purchaseBar
             }
+            .overlay(alignment: .bottom) {
+                toastOverlay
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 112)
+            }
             .task {
                 await purchase.loadProductsIfNeeded()
                 syncSelectedProduct()
             }
             .onChange(of: availableProductIDs) { _, _ in
                 syncSelectedProduct()
+            }
+            .onDisappear {
+                toastDismissTask?.cancel()
             }
         }
     }
@@ -181,10 +191,16 @@ struct PaywallView: View {
 
             Button {
                 Haptics.tap()
-                Task { await purchase.restorePurchases() }
+                showToast("正在恢复购买…".t)
+                Task {
+                    await purchase.restorePurchases()
+                    if let message = purchase.statusMessage {
+                        showToast(message)
+                    }
+                }
             } label: {
                 operationLabel(
-                    title: purchase.isRestoringPurchases ? "正在恢复购买…".t : "已经购买？恢复购买".t,
+                    title: "已经购买？恢复购买".t,
                     systemImage: "arrow.clockwise.circle",
                     isLoading: purchase.isRestoringPurchases
                 )
@@ -194,16 +210,37 @@ struct PaywallView: View {
 
             Button {
                 Haptics.tap()
-                Task { await purchase.redeemOfferCode() }
+                showToast("正在打开兑换页面…".t)
+                Task {
+                    await purchase.redeemOfferCode()
+                    if let message = purchase.statusMessage {
+                        showToast(message)
+                    }
+                }
             } label: {
                 operationLabel(
-                    title: purchase.isRedeemingOfferCode ? "正在打开兑换页面…".t : "App 兑换".t,
+                    title: "App 兑换".t,
                     systemImage: "giftcard",
                     isLoading: purchase.isRedeemingOfferCode
                 )
             }
             .buttonStyle(SecondaryButtonStyle())
             .disabled(purchase.isRedeemingOfferCode)
+        }
+    }
+
+    @ViewBuilder
+    private var toastOverlay: some View {
+        if let toastMessage {
+            Text(toastMessage)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(.black.opacity(0.82), in: Capsule())
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .accessibilityAddTraits(.isStaticText)
         }
     }
 
@@ -391,6 +428,24 @@ struct PaywallView: View {
     private func purchaseSelectedProduct() {
         guard let selectedProduct else { return }
         Task { await purchase.purchase(selectedProduct) }
+    }
+
+    /// 展示付费墙局部 toast，并在短暂延迟后自动隐藏。
+    private func showToast(_ message: String) {
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+            toastMessage = message
+        }
+        toastDismissTask?.cancel()
+        toastDismissTask = Task {
+            try? await Task.sleep(nanoseconds: 1_900_000_000)
+            await MainActor.run {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    if toastMessage == message {
+                        toastMessage = nil
+                    }
+                }
+            }
+        }
     }
 
     /// 返回商品的本地标题，避免 ASC 名称未配置时 UI 空洞。

@@ -68,12 +68,14 @@ final class LanguageManager: ObservableObject {
         let code = current.lookupCode
         if code == AppLanguage.zhHans.rawValue { return key }
         return L10n.table[code]?[key]
+            ?? L10n.release154Additions[code]?[key]
             ?? L10n.release152Additions[code]?[key]
             ?? L10n.commercialAdditions[code]?[key]
             ?? L10n.release144Additions[code]?[key]
             ?? L10n.commercialTable[code]?[key]
             ?? L10n.auditAdditions[code]?[key]
             ?? L10n.table[AppLanguage.en.rawValue]?[key]
+            ?? L10n.release154Additions[AppLanguage.en.rawValue]?[key]
             ?? L10n.release152Additions[AppLanguage.en.rawValue]?[key]
             ?? L10n.release144Additions[AppLanguage.en.rawValue]?[key]
             ?? L10n.commercialAdditions[AppLanguage.en.rawValue]?[key]
@@ -161,7 +163,6 @@ enum L10n {
             "强调色与 Light/Dark 偏好；保存到本地。": "強調色與 Light/Dark 偏好；儲存於本機。",
             "原始音质直接传输源文件（FLAC/WAV 等）。低带宽下选择压缩可降低卡顿概率。": "原始音質直接傳輸源檔案（FLAC/WAV 等）。低頻寬下選擇壓縮可降低卡頓機率。",
             "关闭「后台播放」后，App 进入后台会自动暂停。AirPlay 关闭后，控制中心的路由选择仍可用但 SynoMusic 不会主动声明输出。": "關閉「背景播放」後，App 進入背景會自動暫停。AirPlay 關閉後，控制中心的路由選擇仍可用，但 SynoMusic 不會主動宣告輸出。",
-            "SynoMusic 是一个非官方的 Audio Station 客户端。Synology 商标与 Audio Station 名称归群晖科技所有。": "SynoMusic 是一個非官方的 Audio Station 客戶端。Synology 商標與 Audio Station 名稱歸群暉科技所有。",
             "听听今天该听的": "今天聽點什麼",
             "早安": "早安",
             "中午好": "午安",
@@ -553,7 +554,6 @@ enum L10n {
             "强调色与 Light/Dark 偏好；保存到本地。": "Accent color + Light/Dark preference; saved locally.",
             "原始音质直接传输源文件（FLAC/WAV 等）。低带宽下选择压缩可降低卡顿概率。": "Original quality streams the source file (FLAC/WAV, etc.). Pick a compressed format on low bandwidth.",
             "关闭「后台播放」后，App 进入后台会自动暂停。AirPlay 关闭后，控制中心的路由选择仍可用但 SynoMusic 不会主动声明输出。": "When Background Playback is off, SynoMusic pauses after entering the background. When AirPlay is off, Control Center route selection still works, but SynoMusic will not actively advertise AirPlay output.",
-            "SynoMusic 是一个非官方的 Audio Station 客户端。Synology 商标与 Audio Station 名称归群晖科技所有。": "SynoMusic is an unofficial Audio Station client. Synology and Audio Station are trademarks of Synology Inc.",
             "点击行设为默认；下次启动 App 会用默认服务器自动登录。点 ⓘ 编辑配置；左滑删除。": "Tap a row to set default; the next launch auto-signs in to it. Tap ⓘ to edit; swipe left to delete.",
             "听听今天该听的": "What are we listening to today?",
             "早安": "Good morning",
@@ -3199,6 +3199,40 @@ enum L10n {
             "正在使用审核模式数据": "Données de révision utilisées",
             "已进入审核模式": "Mode de révision activé",
             "退出审核模式": "Quitter le mode de révision"
+        ]
+    ]
+
+    /// 1.5.4 多音乐源定位与连接细节补丁。
+    static let release154Additions: [String: [String: String]] = [
+        "zh-Hant": [
+            "SynoMusic 是一个非官方的自托管音乐客户端，支持连接你授权的音乐服务器和本地文件。Synology、Plex、Jellyfin、Emby 等名称归各自所有。": "SynoMusic 是一個非官方的自託管音樂用戶端，支援連接你授權的音樂伺服器與本機檔案。Synology、Plex、Jellyfin、Emby 等名稱歸各自所有。",
+            "我正在用 SynoMusic 连接自己的自托管音乐库。": "我正在用 SynoMusic 連接自己的自託管音樂庫。",
+            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby 的預設連接埠：HTTP 8096，HTTPS 8920。HTTPS 會預設信任自簽名憑證；如使用有效憑證，可關閉此開關。"
+        ],
+        "en": [
+            "SynoMusic 是一个非官方的自托管音乐客户端，支持连接你授权的音乐服务器和本地文件。Synology、Plex、Jellyfin、Emby 等名称归各自所有。": "SynoMusic is an unofficial self-hosted music client for music servers and local files you authorize. Synology, Plex, Jellyfin, Emby, and related names belong to their respective owners.",
+            "我正在用 SynoMusic 连接自己的自托管音乐库。": "I'm using SynoMusic to connect to my own self-hosted music library.",
+            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby defaults: HTTP 8096, HTTPS 8920. HTTPS trusts self-signed certificates by default; turn this off when using a valid certificate."
+        ],
+        "ja": [
+            "SynoMusic 是一个非官方的自托管音乐客户端，支持连接你授权的音乐服务器和本地文件。Synology、Plex、Jellyfin、Emby 等名称归各自所有。": "SynoMusic は、許可した音楽サーバーとローカルファイルに接続する非公式のセルフホスト音楽クライアントです。Synology、Plex、Jellyfin、Emby などの名称は各所有者に帰属します。",
+            "我正在用 SynoMusic 连接自己的自托管音乐库。": "SynoMusic で自分のセルフホスト音楽ライブラリに接続しています。",
+            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby の既定ポート：HTTP 8096、HTTPS 8920。HTTPS では自己署名証明書を既定で信頼します。有効な証明書を使う場合はオフにできます。"
+        ],
+        "ko": [
+            "SynoMusic 是一个非官方的自托管音乐客户端，支持连接你授权的音乐服务器和本地文件。Synology、Plex、Jellyfin、Emby 等名称归各自所有。": "SynoMusic은 사용자가 승인한 음악 서버와 로컬 파일에 연결하는 비공식 셀프 호스팅 음악 클라이언트입니다. Synology, Plex, Jellyfin, Emby 등의 명칭은 각 소유자에게 있습니다.",
+            "我正在用 SynoMusic 连接自己的自托管音乐库。": "SynoMusic으로 내 셀프 호스팅 음악 라이브러리에 연결하고 있습니다.",
+            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby 기본 포트: HTTP 8096, HTTPS 8920. HTTPS는 기본적으로 자체 서명 인증서를 신뢰합니다. 유효한 인증서를 사용하는 경우 끌 수 있습니다."
+        ],
+        "de": [
+            "SynoMusic 是一个非官方的自托管音乐客户端，支持连接你授权的音乐服务器和本地文件。Synology、Plex、Jellyfin、Emby 等名称归各自所有。": "SynoMusic ist ein inoffizieller Client für selbst gehostete Musikserver und lokale Dateien, die du autorisierst. Synology, Plex, Jellyfin, Emby und ähnliche Namen gehören ihren jeweiligen Inhabern.",
+            "我正在用 SynoMusic 连接自己的自托管音乐库。": "Ich nutze SynoMusic, um meine selbst gehostete Musikbibliothek zu verbinden.",
+            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Jellyfin/Emby-Standardports: HTTP 8096, HTTPS 8920. HTTPS vertraut standardmäßig selbstsignierten Zertifikaten; bei gültigem Zertifikat kannst du dies ausschalten."
+        ],
+        "fr": [
+            "SynoMusic 是一个非官方的自托管音乐客户端，支持连接你授权的音乐服务器和本地文件。Synology、Plex、Jellyfin、Emby 等名称归各自所有。": "SynoMusic est un client musical auto-hébergé non officiel pour les serveurs musicaux et fichiers locaux que vous autorisez. Synology, Plex, Jellyfin, Emby et les noms associés appartiennent à leurs propriétaires respectifs.",
+            "我正在用 SynoMusic 连接自己的自托管音乐库。": "J’utilise SynoMusic pour me connecter à ma bibliothèque musicale auto-hébergée.",
+            "Jellyfin/Emby 的默认端口：HTTP 8096，HTTPS 8920。HTTPS 会默认信任自签名证书；如使用有效证书，可关闭此开关。": "Ports par défaut Jellyfin/Emby : HTTP 8096, HTTPS 8920. HTTPS fait confiance aux certificats autosignés par défaut ; désactivez cette option si vous utilisez un certificat valide."
         ]
     ]
 

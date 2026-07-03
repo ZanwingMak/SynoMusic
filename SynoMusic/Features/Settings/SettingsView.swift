@@ -28,6 +28,11 @@ struct SettingsView: View {
     @State private var refreshingQuickConnectID: UUID?
     @State private var isSyncingCloud: Bool = false
 
+    /// 当前设置页主题强调色。
+    private var accentColor: Color {
+        theme.current.accent(in: colorScheme)
+    }
+
     var body: some View {
         Form {
             currentServerSection
@@ -214,7 +219,7 @@ struct SettingsView: View {
                     Text(lang.localizedTitle).tag(lang)
                 }
             } label: {
-                Label("语言".t, systemImage: "character.bubble")
+                themedLabel("语言".t, systemImage: "character.bubble")
             }
         } header: {
             Text("语言".t)
@@ -278,7 +283,7 @@ struct SettingsView: View {
                     }
                 }
                 Toggle(isOn: $playbackSettings.crossfadeEnabled) {
-                    Label("歌曲淡入淡出".t, systemImage: "waveform")
+                    themedLabel("歌曲淡入淡出".t, systemImage: "waveform")
                 }
                 if playbackSettings.crossfadeEnabled {
                     VStack(alignment: .leading, spacing: 8) {
@@ -301,8 +306,7 @@ struct SettingsView: View {
                     showPaywall(for: .playbackEnhancements)
                 } label: {
                     HStack {
-                        Label("播放增强".t, systemImage: "slider.horizontal.3")
-                            .foregroundStyle(.primary)
+                        themedLabel("播放增强".t, systemImage: "slider.horizontal.3")
                         Spacer()
                         Image(systemName: "lock.fill")
                             .foregroundStyle(.secondary)
@@ -323,7 +327,7 @@ struct SettingsView: View {
                 if purchase.canUse(.songDownloads) {
                     NavigationLink(value: SettingsRoute.downloads) {
                         HStack {
-                            Label("已下载歌曲".t, systemImage: "arrow.down.circle")
+                            themedLabel("已下载歌曲".t, systemImage: "arrow.down.circle")
                             Spacer()
                             Text("管理".t).foregroundStyle(.secondary)
                         }
@@ -333,7 +337,7 @@ struct SettingsView: View {
                         showPaywall(for: .songDownloads)
                     } label: {
                         HStack {
-                            Label("已下载歌曲".t, systemImage: "arrow.down.circle")
+                            themedLabel("已下载歌曲".t, systemImage: "arrow.down.circle")
                             Spacer()
                             Image(systemName: "lock.fill")
                                 .foregroundStyle(.secondary)
@@ -364,8 +368,7 @@ struct SettingsView: View {
     /// 绘制本地音乐导入入口，锁定时保留设置行样式并改为弹付费墙。
     private func localImportRow(isLocked: Bool) -> some View {
         HStack {
-            Label("本地音乐导入".t, systemImage: "square.and.arrow.down")
-                .foregroundStyle(.primary)
+            themedLabel("本地音乐导入".t, systemImage: "square.and.arrow.down")
             Spacer()
             if isLocked {
                 Image(systemName: "lock.fill")
@@ -379,15 +382,14 @@ struct SettingsView: View {
         Section {
             if purchase.canUse(.backgroundPlayback) {
                 Toggle(isOn: $playbackSettings.backgroundPlaybackEnabled) {
-                    Label("后台播放".t, systemImage: "play.circle")
+                    themedLabel("后台播放".t, systemImage: "play.circle")
                 }
             } else {
                 Button {
                     showPaywall(for: .backgroundPlayback)
                 } label: {
                     HStack {
-                        Label("后台播放".t, systemImage: "play.circle")
-                            .foregroundStyle(.primary)
+                        themedLabel("后台播放".t, systemImage: "play.circle")
                         Spacer()
                         Image(systemName: "lock.fill")
                             .foregroundStyle(.secondary)
@@ -425,7 +427,7 @@ struct SettingsView: View {
                     showPaywall(for: .allAccess)
                 } label: {
                     HStack {
-                        Label("解锁完整功能".t, systemImage: "sparkles")
+                        themedLabel("解锁完整功能".t, systemImage: "sparkles")
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
@@ -436,14 +438,26 @@ struct SettingsView: View {
                 }
             }
             Button {
-                Task { await purchase.restorePurchases() }
+                playback.setStatus("正在恢复购买…".t)
+                Task {
+                    await purchase.restorePurchases()
+                    if let message = purchase.statusMessage {
+                        playback.setStatus(message)
+                    }
+                }
             } label: {
-                Label("已经购买？恢复购买".t, systemImage: "arrow.clockwise.circle")
+                themedLabel("已经购买？恢复购买".t, systemImage: "arrow.clockwise.circle")
             }
             Button {
-                Task { await purchase.redeemOfferCode() }
+                playback.setStatus("正在打开兑换页面…".t)
+                Task {
+                    await purchase.redeemOfferCode()
+                    if let message = purchase.statusMessage {
+                        playback.setStatus(message)
+                    }
+                }
             } label: {
-                Label("App 兑换".t, systemImage: "giftcard")
+                themedLabel("App 兑换".t, systemImage: "giftcard")
             }
             if let message = purchase.statusMessage {
                 Text(message)
@@ -481,8 +495,7 @@ struct SettingsView: View {
     /// 绘制小组件管理入口行；锁定时保持设置列表样式但不触发导航。
     private func widgetManagerRow(isLocked: Bool) -> some View {
         HStack {
-            Label("小组件管理".t, systemImage: "rectangle.3.group")
-                .foregroundStyle(.primary)
+            themedLabel("小组件管理".t, systemImage: "rectangle.3.group")
             Spacer()
             if isLocked {
                 Image(systemName: "lock.fill")
@@ -495,7 +508,7 @@ struct SettingsView: View {
     private var cloudSyncSection: some View {
         Section {
             Toggle(isOn: cloudSyncBinding) {
-                Label("iCloud 云同步配置".t, systemImage: "icloud")
+                themedLabel("iCloud 云同步配置".t, systemImage: "icloud")
             }
             if cloudSync.isEnabled {
                 Button {
@@ -506,8 +519,10 @@ struct SettingsView: View {
                             ProgressView()
                         } else {
                             Image(systemName: "arrow.triangle.2.circlepath")
+                                .foregroundStyle(accentColor)
                         }
                         Text(isSyncingCloud ? "正在同步 iCloud".t : "立即同步配置".t)
+                            .foregroundStyle(accentColor)
                     }
                 }
                 .disabled(isSyncingCloud)
@@ -531,24 +546,24 @@ struct SettingsView: View {
                 Haptics.tap()
                 requestReview()
             } label: {
-                Label("给个好评".t, systemImage: "star.bubble.fill")
+                themedLabel("给个好评".t, systemImage: "star.bubble.fill")
             }
             ShareLink(item: shareMessage) {
-                Label("分享好友".t, systemImage: "square.and.arrow.up")
+                themedLabel("分享好友".t, systemImage: "square.and.arrow.up")
             }
             Link(destination: officialWebsiteURL) {
-                Label("官网".t, systemImage: "safari")
+                themedLabel("官网".t, systemImage: "safari")
             }
             Link(destination: feedbackURL) {
-                Label("问题反馈".t, systemImage: "exclamationmark.bubble")
+                themedLabel("问题反馈".t, systemImage: "exclamationmark.bubble")
             }
             Link(destination: termsURL) {
-                Label("服务条款 (EULA)".t, systemImage: "doc.text")
+                themedLabel("服务条款 (EULA)".t, systemImage: "doc.text")
             }
             Link(destination: privacyURL) {
-                Label("隐私政策".t, systemImage: "hand.raised")
+                themedLabel("隐私政策".t, systemImage: "hand.raised")
             }
-            Text("SynoMusic 是一个非官方的 Audio Station 客户端。Synology 商标与 Audio Station 名称归群晖科技所有。".t)
+            Text("SynoMusic 是一个非官方的自托管音乐客户端，支持连接你授权的音乐服务器和本地文件。Synology、Plex、Jellyfin、Emby 等名称归各自所有。".t)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -575,7 +590,7 @@ struct SettingsView: View {
     }
 
     private var shareMessage: String {
-        "我正在用 SynoMusic 连接自己的 Audio Station 音乐库。".t
+        "我正在用 SynoMusic 连接自己的自托管音乐库。".t
     }
 
     /// 商业版官网地址。
@@ -678,13 +693,24 @@ struct SettingsView: View {
     /// 展示不可关闭的播放能力行，右侧固定为开启状态。
     private func fixedPlaybackFeatureRow(_ title: String, systemImage: String) -> some View {
         HStack {
-            Label(title, systemImage: systemImage)
+            themedLabel(title, systemImage: systemImage)
             Spacer()
             Text("始终开启".t)
                 .font(.nocLabel)
                 .foregroundStyle(.secondary)
         }
         .contentShape(Rectangle())
+    }
+
+    /// 构建跟随主题强调色的设置行标签。
+    private func themedLabel(_ title: String, systemImage: String) -> some View {
+        Label {
+            Text(title)
+                .foregroundStyle(accentColor)
+        } icon: {
+            Image(systemName: systemImage)
+                .foregroundStyle(accentColor)
+        }
     }
 
     /// 打开添加服务器编辑器，免费版超过数量限制时改为展示付费墙。
