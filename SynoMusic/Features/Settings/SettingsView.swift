@@ -543,7 +543,7 @@ struct SettingsView: View {
                 Label("问题反馈".t, systemImage: "exclamationmark.bubble")
             }
             Link(destination: termsURL) {
-                Label("服务条款".t, systemImage: "doc.text")
+                Label("服务条款 (EULA)".t, systemImage: "doc.text")
             }
             Link(destination: privacyURL) {
                 Label("隐私政策".t, systemImage: "hand.raised")

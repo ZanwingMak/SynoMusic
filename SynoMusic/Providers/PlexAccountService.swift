@@ -97,7 +97,7 @@ struct PlexConnectionOption: Identifiable, Sendable {
 /// Plex 账号登录与服务器发现服务。
 enum PlexAccountService {
     private static let productName = "SynoMusic"
-    private static let appVersion = "1.5.3"
+    private static let appVersion = "1.5.4"
 
     /// 创建 Plex 浏览器授权 PIN。
     static func createPin() async throws -> PlexAuthPin {

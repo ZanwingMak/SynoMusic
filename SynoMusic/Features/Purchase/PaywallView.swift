@@ -140,9 +140,11 @@ struct PaywallView: View {
                             .foregroundStyle(accentColor)
                     }
 
-                    Text(subscriptionNote(for: product))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 7) {
+                        disclosureLine(systemImage: "calendar", text: planLengthText(for: product))
+                        disclosureLine(systemImage: "tag", text: priceDisclosureText(for: product))
+                        disclosureLine(systemImage: renewalIcon(for: product), text: renewalDisclosureText(for: product))
+                    }
                 }
                 .padding(14)
                 .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -235,7 +237,7 @@ struct PaywallView: View {
             .disabled(primaryActionDisabled)
 
             HStack(spacing: 12) {
-                Link("服务条款".t, destination: legalTermsURL)
+                Link("服务条款 (EULA)".t, destination: legalTermsURL)
                 Text("·")
                     .foregroundStyle(.secondary)
                 Link("隐私政策".t, destination: legalPrivacyURL)
@@ -243,7 +245,7 @@ struct PaywallView: View {
             .font(.caption.weight(.semibold))
             .foregroundStyle(accentColor)
 
-            Text("订阅由 App Store 管理，可随时在 Apple 账号中取消。".t)
+            Text("订阅会自动续订，除非在当前周期结束前至少 24 小时取消。".t)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -360,6 +362,18 @@ struct PaywallView: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// 生成合规披露行，确保订阅周期、价格和续订说明在购买流程中清晰可见。
+    private func disclosureLine(systemImage: String, text: String) -> some View {
+        Label {
+            Text(text)
+                .fixedSize(horizontal: false, vertical: true)
+        } icon: {
+            Image(systemName: systemImage)
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+    }
+
     /// 同步当前选中的商品，避免商品加载完成后没有默认档位。
     private func syncSelectedProduct() {
         guard !availableProducts.isEmpty else {
@@ -389,24 +403,62 @@ struct PaywallView: View {
         SynoMusicProduct(rawValue: product.id)?.subtitle.t ?? product.description
     }
 
-    /// 返回所选商品的订阅或一次性购买说明。
-    private func subscriptionNote(for product: Product) -> String {
+    /// 返回所选商品的周期说明。
+    private func planLengthText(for product: Product) -> String {
+        guard SynoMusicProduct(rawValue: product.id) != .lifetime else {
+            return "购买类型：一次性购买".t
+        }
+        guard let period = product.subscription?.subscriptionPeriod else {
+            return "订阅周期：以 App Store 显示为准".t
+        }
+        return String(format: "订阅周期：%@".t, periodText(period))
+    }
+
+    /// 返回所选商品的价格与单位周期说明。
+    private func priceDisclosureText(for product: Product) -> String {
+        guard SynoMusicProduct(rawValue: product.id) != .lifetime else {
+            return String(format: "价格：%@，一次性购买".t, product.displayPrice)
+        }
+        guard let period = product.subscription?.subscriptionPeriod else {
+            return String(format: "价格：%@".t, product.displayPrice)
+        }
+        return String(format: "价格：%@ / %@".t, product.displayPrice, periodText(period))
+    }
+
+    /// 返回所选商品的续订或非续订说明。
+    private func renewalDisclosureText(for product: Product) -> String {
         SynoMusicProduct(rawValue: product.id) == .lifetime
-            ? "终身解锁为一次性购买。".t
-            : "订阅由 App Store 管理，可随时在 Apple 账号中取消。".t
+            ? "终身解锁不自动续订。".t
+            : "试用结束后自动续订；可随时在 Apple 账号中取消。".t
+    }
+
+    /// 返回披露行使用的图标，区分订阅和终身购买。
+    private func renewalIcon(for product: Product) -> String {
+        SynoMusicProduct(rawValue: product.id) == .lifetime
+            ? "checkmark.seal"
+            : "arrow.triangle.2.circlepath"
     }
 
     /// 从 StoreKit 订阅介绍优惠中读取试用周期。
     private func trialText(for product: Product) -> String? {
         guard let offer = product.subscription?.introductoryOffer,
               offer.paymentMode == .freeTrial else {
-            return SynoMusicProduct(rawValue: product.id) == .lifetime ? nil : "可配置 3 天免费试用".t
+            return SynoMusicProduct(rawValue: product.id) == .lifetime ? nil : "3 天免费试用".t
         }
         return String(format: "%@免费试用".t, periodText(offer.period))
     }
 
     /// 把订阅周期转换成本地化短文本。
     private func periodText(_ period: Product.SubscriptionPeriod) -> String {
+        if period.value == 1 {
+            switch period.unit {
+            case .day: return "1 天".t
+            case .week: return "1 周".t
+            case .month: return "1 个月".t
+            case .year: return "1 年".t
+            @unknown default: return "1 天".t
+            }
+        }
         switch period.unit {
         case .day: return String(format: "%d 天".t, period.value)
         case .week: return String(format: "%d 周".t, period.value)
