@@ -52,7 +52,7 @@ final class PlexMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 14
         config.timeoutIntervalForResource = 30
-        if profile.ignoreInvalidCertificate && profile.scheme == .https {
+        if Self.shouldUsePermissiveCertificateHandling(profile: profile) {
             self.session = URLSession(configuration: config, delegate: PlexPermissiveCertDelegate(), delegateQueue: nil)
         } else {
             self.session = URLSession(configuration: config)
@@ -502,12 +502,18 @@ final class PlexMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
     /// 设置 Plex 客户端识别与 token 请求头。
     private func applyHeaders(to request: inout URLRequest) {
         request.setValue("SynoMusic", forHTTPHeaderField: "X-Plex-Product")
-        request.setValue("1.5.2", forHTTPHeaderField: "X-Plex-Version")
+        request.setValue("1.5.4", forHTTPHeaderField: "X-Plex-Version")
         request.setValue(deviceID, forHTTPHeaderField: "X-Plex-Client-Identifier")
         request.setValue("iOS", forHTTPHeaderField: "X-Plex-Platform")
         if let token, !token.isEmpty {
             request.setValue(token, forHTTPHeaderField: "X-Plex-Token")
         }
+    }
+
+    /// 判断 Plex 是否需要宽松证书处理；Plex Media Server 的 HTTPS 地址常使用自签名或与当前地址不匹配的证书。
+    private static func shouldUsePermissiveCertificateHandling(profile: ServerProfile) -> Bool {
+        guard profile.providerType == .plex, profile.scheme == .https else { return false }
+        return true
     }
 
     /// 返回稳定设备 ID，避免每次启动都在 Plex 侧识别为新客户端。
