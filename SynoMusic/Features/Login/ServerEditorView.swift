@@ -982,13 +982,18 @@ struct ServerEditorView: View {
         )
         serverStore.upsert(selectedProfile)
 
+        let credential = PlexAccountService.makeCredential(
+            accountToken: account.authToken,
+            serverToken: option.server.token
+        )
         let client = PlexMusicLibraryClient(profile: selectedProfile)
-        try await client.authenticate(token: option.server.token)
+        try await client.authenticate(token: credential)
+        selectedProfile = client.profile
         selectedProfile.lastConnectedAt = Date()
         serverStore.upsert(selectedProfile)
         serverStore.setActive(selectedProfile)
         if rememberPassword {
-            try? serverStore.savePassword(option.server.token, for: selectedProfile)
+            try? serverStore.savePassword(credential, for: selectedProfile)
         }
         session.sign(in: client)
         Haptics.success()

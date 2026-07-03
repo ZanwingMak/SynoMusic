@@ -43,6 +43,12 @@ struct PlexAccountInfo: Sendable {
     let hasPlexPass: Bool
 }
 
+/// Plex 登录凭证包；账号 token 用于刷新服务器地址，服务器 token 用于访问选定的 Media Server。
+struct PlexCredential: Sendable {
+    let accountToken: String?
+    let serverToken: String
+}
+
 /// Plex PIN 授权信息。
 struct PlexAuthPin: Identifiable, Sendable {
     let id: Int
@@ -278,8 +284,53 @@ enum PlexAccountService {
             isQuickConnect: false,
             quickConnectID: "",
             musicLibraryID: library?.id,
-            musicLibraryName: library?.name
+            musicLibraryName: library?.name,
+            plexMachineIdentifier: server.id
         )
+    }
+
+    /// 把账号 token 和服务器 token 打包成 Keychain 字符串；旧版裸 token 仍会被兼容读取。
+    static func makeCredential(accountToken: String, serverToken: String) -> String {
+        let payload = PlexCredentialPayload(accountToken: accountToken, serverToken: serverToken)
+        guard let data = try? JSONEncoder().encode(payload) else { return serverToken }
+        return "\(PlexCredentialPayload.prefix)\(data.base64EncodedString())"
+    }
+
+    /// 解析 Keychain 中保存的 Plex 凭证；旧版裸 token 会同时当作账号 token 与服务器 token 尝试。
+    static func parseCredential(_ raw: String) -> PlexCredential {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.hasPrefix(PlexCredentialPayload.prefix) else {
+            return PlexCredential(accountToken: trimmed.nilIfBlank, serverToken: trimmed)
+        }
+        let encoded = String(trimmed.dropFirst(PlexCredentialPayload.prefix.count))
+        guard let data = Data(base64Encoded: encoded),
+              let payload = try? JSONDecoder().decode(PlexCredentialPayload.self, from: data) else {
+            return PlexCredential(accountToken: nil, serverToken: "")
+        }
+        let serverToken = payload.serverToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        let accountToken = payload.accountToken.trimmingCharacters(in: .whitespacesAndNewlines).nilIfBlank
+        return PlexCredential(accountToken: accountToken, serverToken: serverToken)
+    }
+
+    /// 根据保存的 profile 和账号 token 重新查找同一台 Plex 服务器，处理公网 IP 或 plex.direct 地址变化。
+    static func refreshedServer(for profile: ServerProfile, accountToken: String) async throws -> PlexDiscoveredServer {
+        let account = try await fetchAccountInfo(token: accountToken)
+        let servers = try await fetchServers(account: account)
+        if let machineID = profile.plexMachineIdentifier?.nilIfBlank,
+           let server = servers.first(where: { $0.id == machineID }) {
+            return server
+        }
+        if let server = servers.first(where: { server in
+            server.connections.contains { connection in
+                connection.host == profile.host && connection.port == profile.port
+            }
+        }) {
+            return server
+        }
+        if let server = servers.first(where: { $0.name == profile.name }) {
+            return server
+        }
+        throw PlexAccountError.noServer
     }
 
     /// 生成 Plex 浏览器授权地址。
@@ -423,6 +474,14 @@ private struct PlexPinResponse: Decodable {
         guard let expiresAt else { return nil }
         return ISO8601DateFormatter().date(from: expiresAt)
     }
+}
+
+/// Plex Keychain 凭证 JSON 载荷。
+private struct PlexCredentialPayload: Codable {
+    static let prefix = "plex-token-bundle:v1:"
+
+    let accountToken: String
+    let serverToken: String
 }
 
 /// Plex 登录 JSON 用户节点；兼容不同历史字段名。

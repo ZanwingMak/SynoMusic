@@ -42,6 +42,8 @@ struct ServerProfile: Identifiable, Hashable, Codable, Sendable {
     var musicLibraryID: String?
     /// 远端服务中选定的音乐库名称；用于 UI 显示和排查配置。
     var musicLibraryName: String?
+    /// Plex Media Server 的 machine identifier；用于远程连接地址变化后重新发现同一台服务器。
+    var plexMachineIdentifier: String?
 
     enum Scheme: String, Codable, CaseIterable, Identifiable, Sendable {
         case http, https
@@ -85,7 +87,8 @@ struct ServerProfile: Identifiable, Hashable, Codable, Sendable {
         isQuickConnect: Bool = false,
         quickConnectID: String = "",
         musicLibraryID: String? = nil,
-        musicLibraryName: String? = nil
+        musicLibraryName: String? = nil,
+        plexMachineIdentifier: String? = nil
     ) {
         self.id = id
         self.providerType = providerType
@@ -100,6 +103,7 @@ struct ServerProfile: Identifiable, Hashable, Codable, Sendable {
         self.quickConnectID = quickConnectID
         self.musicLibraryID = musicLibraryID
         self.musicLibraryName = musicLibraryName
+        self.plexMachineIdentifier = plexMachineIdentifier
     }
 
     // 旧版本档案兼容解码（没有 providerType / isQuickConnect / quickConnectID 字段）。
@@ -118,5 +122,6 @@ struct ServerProfile: Identifiable, Hashable, Codable, Sendable {
         self.quickConnectID = try c.decodeIfPresent(String.self, forKey: .quickConnectID) ?? ""
         self.musicLibraryID = try c.decodeIfPresent(String.self, forKey: .musicLibraryID)
         self.musicLibraryName = try c.decodeIfPresent(String.self, forKey: .musicLibraryName)
+        self.plexMachineIdentifier = try c.decodeIfPresent(String.self, forKey: .plexMachineIdentifier)
     }
 }

@@ -38,7 +38,7 @@ enum MusicProviderLoginHelper {
             if let report { await report("正在连接...") }
             let client = PlexMusicLibraryClient(profile: profile)
             try await client.authenticate(token: password)
-            return MusicProviderLoginResult(musicClient: client, profile: profile)
+            return MusicProviderLoginResult(musicClient: client, profile: client.profile)
         case .webDAV:
             if let report { await report("正在连接...") }
             let client = WebDAVMusicLibraryClient(profile: profile)

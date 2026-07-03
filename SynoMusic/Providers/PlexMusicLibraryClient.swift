@@ -33,20 +33,31 @@ enum PlexMusicError: LocalizedError {
     }
 }
 
-/// Plex 音乐库客户端；使用本地 Plex Media Server XML 接口并只映射音乐内容。
-final class PlexMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
+/// Plex 音乐库客户端；使用 Plex Media Server XML 接口并只映射音乐内容。
+final class PlexMusicLibraryClient: MusicLibraryClient, AsyncStreamResolvingMusicClient, @unchecked Sendable {
     let providerType: MusicProviderType = .plex
-    let profile: ServerProfile
+    private(set) var profile: ServerProfile
 
     private let session: URLSession
     private let deviceID: String
+    private var activeConnectionProfile: ServerProfile
+    private var accountToken: String?
     private var token: String?
+    private var lastConnectionRefreshAt: Date?
     private var partKeyByItemID: [String: String] = [:]
     private var thumbPathByItemID: [String: String] = [:]
 
     init(profile: ServerProfile, token: String? = nil) {
         self.profile = profile
-        self.token = token?.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.activeConnectionProfile = profile
+        if let token {
+            let credential = PlexAccountService.parseCredential(token)
+            self.accountToken = credential.accountToken
+            self.token = credential.serverToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        } else {
+            self.accountToken = nil
+            self.token = nil
+        }
         self.deviceID = Self.stableDeviceID()
 
         let config = URLSessionConfiguration.default
@@ -59,10 +70,12 @@ final class PlexMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         }
     }
 
-    /// 校验 token 是否可访问 Plex 音乐库。
+    /// 校验 token 是否可访问 Plex 音乐库，并解析账号 token 以便后续刷新远程连接地址。
     func authenticate(token: String) async throws {
-        let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        let credential = PlexAccountService.parseCredential(token)
+        let trimmed = credential.serverToken.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw PlexMusicError.missingToken }
+        self.accountToken = credential.accountToken
         self.token = trimmed
         _ = try await loadLibraries()
     }
@@ -190,6 +203,12 @@ final class PlexMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         let partKey = cachedPartKey(for: itemID) ?? song.path
         guard let partKey, !partKey.isEmpty else { return nil }
         return makeURL(path: partKey, query: [], includeTokenQuery: true)
+    }
+
+    /// 播放前轻量刷新 Plex 连接，避免公网 IP 或 plex.direct 地址变化后旧播放 URL 失效。
+    func preparedStreamURL(song: Song, quality: AudioQuality) async throws -> URL? {
+        try? await refreshConnectionIfStale()
+        return streamURL(song: song, quality: quality)
     }
 
     /// Plex 内置歌词差异较大，第一版交给现有在线歌词兜底。
@@ -449,11 +468,39 @@ final class PlexMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         start: Int? = nil,
         size: Int? = nil
     ) async throws -> PlexMediaContainer {
-        guard let url = makeURL(path: path, query: query, includeTokenQuery: true) else {
-            throw PlexMusicError.missingBaseURL
-        }
         guard token?.isEmpty == false else { throw PlexMusicError.missingToken }
 
+        do {
+            return try await performXMLRequest(
+                path: path,
+                query: query,
+                start: start,
+                size: size,
+                using: activeConnectionProfile
+            )
+        } catch {
+            guard shouldRetryAfterRefreshingConnection(error) else { throw error }
+            return try await refreshConnectionAndRetry(
+                path: path,
+                query: query,
+                start: start,
+                size: size,
+                originalError: error
+            )
+        }
+    }
+
+    /// 使用指定连接地址发起 Plex XML 请求并解析结果。
+    private func performXMLRequest(
+        path: String,
+        query: [URLQueryItem],
+        start: Int?,
+        size: Int?,
+        using requestProfile: ServerProfile
+    ) async throws -> PlexMediaContainer {
+        guard let url = makeURL(path: path, query: query, includeTokenQuery: true, profile: requestProfile) else {
+            throw PlexMusicError.missingBaseURL
+        }
         var request = URLRequest(url: url)
         request.timeoutInterval = 14
         applyHeaders(to: &request)
@@ -484,9 +531,125 @@ final class PlexMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
         }
     }
 
+    /// 判断当前错误是否适合通过刷新 Plex 连接地址后重试。
+    private func shouldRetryAfterRefreshingConnection(_ error: Error) -> Bool {
+        if error is CancellationError { return false }
+        guard accountToken?.isEmpty == false || token?.isEmpty == false else { return false }
+        guard profile.plexMachineIdentifier?.isEmpty == false || !profile.host.isEmpty else { return false }
+        if case PlexMusicError.network = error { return true }
+        if case PlexMusicError.http = error { return true }
+        return false
+    }
+
+    /// 拉取最新 Plex 服务器连接列表，并按当前连接类型优先重试。
+    private func refreshConnectionAndRetry(
+        path: String,
+        query: [URLQueryItem],
+        start: Int?,
+        size: Int?,
+        originalError: Error
+    ) async throws -> PlexMediaContainer {
+        let candidates: [ServerProfile]
+        do {
+            candidates = try await refreshedConnectionProfiles()
+        } catch {
+            throw originalError
+        }
+        var lastError: Error = originalError
+        for candidate in candidates {
+            do {
+                let container = try await performXMLRequest(
+                    path: path,
+                    query: query,
+                    start: start,
+                    size: size,
+                    using: candidate
+                )
+                applyActiveConnection(candidate)
+                return container
+            } catch {
+                if error is CancellationError { throw error }
+                lastError = error
+            }
+        }
+        throw lastError
+    }
+
+    /// 需要时刷新连接地址；播放前使用，避免长期缓存旧的 plex.direct 地址。
+    private func refreshConnectionIfStale() async throws {
+        if let lastConnectionRefreshAt,
+           Date().timeIntervalSince(lastConnectionRefreshAt) < 600 {
+            return
+        }
+        let candidates = try await refreshedConnectionProfiles()
+        guard let first = candidates.first else { return }
+        applyActiveConnection(first)
+    }
+
+    /// 从 Plex 账号资源列表中生成当前服务器的最新连接候选。
+    private func refreshedConnectionProfiles() async throws -> [ServerProfile] {
+        let refreshToken = accountToken?.nilIfBlank ?? token?.nilIfBlank
+        guard let refreshToken else { return [] }
+        let server = try await PlexAccountService.refreshedServer(for: profile, accountToken: refreshToken)
+        if !server.token.isEmpty {
+            token = server.token
+        }
+        return preferredConnections(server.connections).map { connection in
+            var updated = profile
+            updated.scheme = connection.scheme
+            updated.host = connection.host
+            updated.port = connection.port
+            updated.name = profile.name.isEmpty ? server.name : profile.name
+            updated.username = profile.username
+            updated.plexMachineIdentifier = server.id
+            return updated
+        }
+    }
+
+    /// 将已验证可用的连接设为当前连接，同时更新 profile 供外部保存。
+    private func applyActiveConnection(_ updated: ServerProfile) {
+        activeConnectionProfile = updated
+        profile = updated
+        lastConnectionRefreshAt = Date()
+    }
+
+    /// 按用户上次选择的连接类型排序：本地、远程直连和 Relay 各自尽量保持原选择。
+    private func preferredConnections(_ connections: [PlexServerConnection]) -> [PlexServerConnection] {
+        let current = activeConnectionProfile
+        return connections.sorted { lhs, rhs in
+            let left = connectionScore(lhs, current: current)
+            let right = connectionScore(rhs, current: current)
+            if left != right { return left < right }
+            return lhs.displayURL < rhs.displayURL
+        }
+    }
+
+    /// 计算连接候选与当前连接的接近程度，分数越低越优先。
+    private func connectionScore(_ connection: PlexServerConnection, current: ServerProfile) -> Int {
+        var score = 0
+        if connection.host != current.host { score += 20 }
+        if connection.port != current.port { score += 4 }
+        if connection.scheme != current.scheme { score += 2 }
+        if current.host.contains("plex.direct") && !connection.host.contains("plex.direct") { score += 8 }
+        if !current.host.contains("plex.direct") && connection.host.contains("plex.direct") { score += 3 }
+        if connection.isRelay { score += 6 }
+        if !connection.isLocal && !current.host.contains("plex.direct") { score += 2 }
+        return score
+    }
+
     /// 构造 Plex API 或资源 URL。
     private func makeURL(path: String, query: [URLQueryItem], includeTokenQuery: Bool) -> URL? {
-        guard var url = profile.baseURL else { return nil }
+        makeURL(path: path, query: query, includeTokenQuery: includeTokenQuery, profile: activeConnectionProfile)
+    }
+
+    /// 使用指定 profile 构造 Plex API 或资源 URL。
+    private func makeURL(
+        path: String,
+        query: [URLQueryItem],
+        includeTokenQuery: Bool,
+        profile requestProfile: ServerProfile
+    ) -> URL? {
+        guard var url = requestProfile.baseURL else { return nil }
         path
             .split(separator: "/", omittingEmptySubsequences: true)
             .forEach { url.appendPathComponent(String($0)) }
@@ -512,8 +675,7 @@ final class PlexMusicLibraryClient: MusicLibraryClient, @unchecked Sendable {
 
     /// 判断 Plex 是否需要宽松证书处理；Plex Media Server 的 HTTPS 地址常使用自签名或与当前地址不匹配的证书。
     private static func shouldUsePermissiveCertificateHandling(profile: ServerProfile) -> Bool {
-        guard profile.providerType == .plex, profile.scheme == .https else { return false }
-        return true
+        profile.providerType == .plex
     }
 
     /// 返回稳定设备 ID，避免每次启动都在 Plex 侧识别为新客户端。
@@ -630,5 +792,12 @@ private final class PlexPermissiveCertDelegate: NSObject, URLSessionDelegate, UR
         } else {
             completionHandler(.performDefaultHandling, nil)
         }
+    }
+}
+
+private extension String {
+    var nilIfBlank: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
