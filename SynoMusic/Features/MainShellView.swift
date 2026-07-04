@@ -68,7 +68,6 @@ struct MainShellView: View {
                             }
                         }
                 }
-                    .reserveMiniPlayer(visible: playback.currentSong != nil)
                     .tabItem { Label("设置".t, systemImage: "gearshape.fill") }
                     .tag(MainTab.settings)
             }

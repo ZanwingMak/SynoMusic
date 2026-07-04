@@ -53,6 +53,7 @@ struct SettingsView: View {
             aboutSection
         }
         .tint(theme.current.accent(in: colorScheme))
+        .reserveMiniPlayer(visible: playback.currentSong != nil)
         .id("settings-\(theme.currentID)-\(theme.appearance.rawValue)")
         .navigationTitle("设置".t)
         .onAppear { handleAddServerRequest() }
