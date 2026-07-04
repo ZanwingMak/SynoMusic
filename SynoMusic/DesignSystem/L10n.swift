@@ -3207,6 +3207,7 @@ enum L10n {
     /// 1.5.5 设置页、付费墙和服务器配置导入导出补丁。
     static let release155Additions: [String: [String: String]] = [
         "zh-Hant": [
+            "功能": "功能",
             "查看包含功能": "查看包含功能",
             "正在处理购买…": "正在處理購買…",
             "正在与 App Store 确认购买状态。": "正在與 App Store 確認購買狀態。",
@@ -3227,6 +3228,7 @@ enum L10n {
             "中国大陆": "中國大陸"
         ],
         "en": [
+            "功能": "Features",
             "查看包含功能": "View Included Features",
             "正在处理购买…": "Processing purchase…",
             "正在与 App Store 确认购买状态。": "Confirming purchase status with the App Store.",
@@ -3247,6 +3249,7 @@ enum L10n {
             "中国大陆": "Mainland China"
         ],
         "ja": [
+            "功能": "機能",
             "查看包含功能": "含まれる機能を見る",
             "正在处理购买…": "購入を処理中…",
             "正在与 App Store 确认购买状态。": "App Store で購入状態を確認しています。",
@@ -3267,6 +3270,7 @@ enum L10n {
             "中国大陆": "中国本土"
         ],
         "ko": [
+            "功能": "기능",
             "查看包含功能": "포함 기능 보기",
             "正在处理购买…": "구입 처리 중…",
             "正在与 App Store 确认购买状态。": "App Store에서 구입 상태를 확인하는 중입니다.",
@@ -3287,6 +3291,7 @@ enum L10n {
             "中国大陆": "중국 본토"
         ],
         "de": [
+            "功能": "Funktionen",
             "查看包含功能": "Enthaltene Funktionen anzeigen",
             "正在处理购买…": "Kauf wird verarbeitet…",
             "正在与 App Store 确认购买状态。": "Kaufstatus wird mit dem App Store bestätigt.",
@@ -3307,6 +3312,7 @@ enum L10n {
             "中国大陆": "Festlandchina"
         ],
         "fr": [
+            "功能": "Fonctions",
             "查看包含功能": "Voir les fonctions incluses",
             "正在处理购买…": "Traitement de l’achat…",
             "正在与 App Store 确认购买状态。": "Confirmation de l’achat avec l’App Store.",

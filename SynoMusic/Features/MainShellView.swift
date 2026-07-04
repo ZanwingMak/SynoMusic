@@ -16,7 +16,10 @@ struct MainShellView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $navigation.selectedTab) {
-                NavigationStack { LibraryHomeView().browseRoutes() }
+                NavigationStack {
+                    LibraryHomeView()
+                        .browseRoutes(reserveMiniPlayer: playback.currentSong != nil)
+                }
                     .reserveMiniPlayer(visible: playback.currentSong != nil)
                     .tabItem { Label("资料库".t, systemImage: "rectangle.stack.fill") }
                     .tag(MainTab.library)
@@ -28,7 +31,10 @@ struct MainShellView: View {
                     .tabItem { Label("浏览".t, systemImage: "square.grid.2x2.fill") }
                     .tag(MainTab.browse)
 
-                NavigationStack { SearchView().browseRoutes() }
+                NavigationStack {
+                    SearchView()
+                        .browseRoutes(reserveMiniPlayer: playback.currentSong != nil)
+                }
                     .reserveMiniPlayer(visible: playback.currentSong != nil)
                     .tabItem { Label("搜索".t, systemImage: "magnifyingglass") }
                     .tag(MainTab.search)
@@ -43,18 +49,22 @@ struct MainShellView: View {
                                         DownloadsListView()
                                     }
                                 }
+                                .reserveMiniPlayer(visible: playback.currentSong != nil)
                             case .login(let profile):
                                 LoginView(profile: profile)
+                                    .reserveMiniPlayer(visible: playback.currentSong != nil)
                             case .widgets:
                                 PremiumFeatureGate(feature: .systemIntegrations) {
                                     WidgetManagerView()
                                 }
+                                .reserveMiniPlayer(visible: playback.currentSong != nil)
                             case .localImports:
                                 serverDependentDestination {
                                     PremiumFeatureGate(feature: .localImport) {
                                         LocalImportView()
                                     }
                                 }
+                                .reserveMiniPlayer(visible: playback.currentSong != nil)
                             }
                         }
                 }
@@ -63,13 +73,9 @@ struct MainShellView: View {
                     .tag(MainTab.settings)
             }
             .tint(theme.current.accent(in: colorScheme))
-            .environment(\.miniPlayerReservationHandled, true)
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                miniPlayerContentReservation
-            }
 
             // 迷你播放器悬浮在 TabBar 之上：用 ZStack 浮，避免被 TabBar 覆盖；
-            // 内容让位由 TabView 统一处理，避免每个页面单独补间距时遗漏。
+            // 内容让位由页面级 safeAreaInset 处理，深层页面也会保留可滚动空间。
             if playback.currentSong != nil {
                 MiniPlayerBar(
                     onTap: { showFullPlayer = true },
@@ -105,16 +111,6 @@ struct MainShellView: View {
         .animation(.easeInOut(duration: 0.18), value: theme.currentID)
         .sheet(isPresented: $showQueueSheet) {
             QueueSheet().presentationDetents([.medium, .large])
-        }
-    }
-
-    /// 给 TabView 内所有页面统一预留迷你播放器高度。
-    @ViewBuilder
-    private var miniPlayerContentReservation: some View {
-        if playback.currentSong != nil {
-            Color.clear
-                .frame(height: Metrics.miniPlayerReservedHeight)
-                .allowsHitTesting(false)
         }
     }
 

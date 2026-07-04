@@ -98,7 +98,7 @@ struct PaywallView: View {
                     Haptics.tap()
                     scrollToFeatures()
                 } label: {
-                    Label("查看包含功能".t, systemImage: "list.bullet.rectangle")
+                    Label("功能".t, systemImage: "list.bullet.rectangle")
                         .font(.caption.weight(.semibold))
                         .lineLimit(1)
                 }

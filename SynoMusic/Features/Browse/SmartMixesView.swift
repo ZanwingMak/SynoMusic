@@ -9,7 +9,6 @@ struct SmartMixesView: View {
     @EnvironmentObject private var reviewMode: AppReviewMode
 
     @State private var loadingMixID: String?
-    @State private var errorMessage: String?
     @State private var showServerPrompt = false
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
@@ -66,14 +65,6 @@ struct SmartMixesView: View {
                 }
             }
             .padding(Metrics.l)
-
-            if let errorMessage {
-                Text(errorMessage)
-                    .font(.nocCaption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, Metrics.l)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
         }
         .background(Color(.systemBackground).ignoresSafeArea())
         .navigationTitle("智能歌单".t)
@@ -133,7 +124,6 @@ struct SmartMixesView: View {
     private func runMix(id: String, action: @escaping () async -> Void) async {
         guard loadingMixID == nil else { return }
         loadingMixID = id
-        errorMessage = nil
         Haptics.tap()
         await action()
         loadingMixID = nil
@@ -217,7 +207,7 @@ struct SmartMixesView: View {
     /// 使用统一上下文播放智能歌单。
     private func playSongs(_ songs: [Song], title: String) {
         guard !songs.isEmpty else {
-            errorMessage = "暂时没有可播放的歌曲。".t
+            showToast("暂时没有可播放的歌曲。".t)
             Haptics.warning()
             return
         }
@@ -227,14 +217,19 @@ struct SmartMixesView: View {
 
     /// 把错误转换为界面提示。
     private func showError(_ error: Error) {
-        errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        showToast((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
         Haptics.warning()
     }
 
     /// 当前音乐源无法执行对应智能歌单动作时展示统一提示。
     private func showUnsupportedFeature() {
-        errorMessage = "当前音乐源不支持该功能。".t
+        showToast("当前音乐源不支持该功能。".t)
         Haptics.warning()
+    }
+
+    /// 使用全局顶部 Toast 展示智能歌单反馈，避免错误信息占用页面底部空间。
+    private func showToast(_ message: String) {
+        playback.setStatus(message)
     }
 
     /// 没有服务器时弹出确认框；已连接时允许继续执行。
