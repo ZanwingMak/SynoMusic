@@ -172,6 +172,8 @@ enum PurchaseLimits {
 /// StoreKit 2 购买状态：加载商品、购买、恢复购买、兑换和监听交易更新。
 @MainActor
 final class PurchaseStore: ObservableObject {
+    private let appStoreID = "6784094020"
+
     @Published private(set) var products: [Product] = []
     @Published private(set) var purchasedProductIDs: Set<String> = []
     @Published private(set) var hasLoadedEntitlements = false
@@ -278,21 +280,20 @@ final class PurchaseStore: ObservableObject {
         }
     }
 
-    /// 打开 App Store 的兑换码面板。
+    /// 打开 App Store 的兑换码入口，避免 StoreKit 内嵌兑换面板在 iPad 审核环境停留在 Loading。
     func redeemOfferCode() async {
         guard !isRedeemingOfferCode else { return }
-        guard let scene = activeWindowScene else {
-            statusMessage = "当前无法打开兑换页面".t
-            return
-        }
         isRedeemingOfferCode = true
         statusMessage = nil
         defer { isRedeemingOfferCode = false }
-        do {
-            try await AppStore.presentOfferCodeRedeemSheet(in: scene)
-        } catch {
-            statusMessage = "打开兑换页面失败".t + "：\(error.localizedDescription)"
+
+        for url in offerCodeRedemptionURLs {
+            if await openExternalURL(url) {
+                return
+            }
         }
+
+        statusMessage = "当前无法打开兑换页面".t
     }
 
     /// 判断某个功能当前是否可使用。
@@ -367,10 +368,27 @@ final class PurchaseStore: ObservableObject {
         return false
     }
 
-    /// 当前前台窗口场景，用于展示兑换码系统面板。
+    /// 当前前台窗口场景，用于展示系统订阅管理面板。
     private var activeWindowScene: UIWindowScene? {
         UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .first { $0.activationState == .foregroundActive }
+    }
+
+    /// App Store 兑换入口 URL；优先走 App Store scheme，失败时回退到 HTTPS 通用链接。
+    private var offerCodeRedemptionURLs: [URL] {
+        [
+            URL(string: "itms-apps://apps.apple.com/redeem?ctx=offercodes&id=\(appStoreID)"),
+            URL(string: "https://apps.apple.com/redeem?ctx=offercodes&id=\(appStoreID)")
+        ].compactMap(\.self)
+    }
+
+    /// 打开外部链接并返回系统是否接受该跳转。
+    private func openExternalURL(_ url: URL) async -> Bool {
+        await withCheckedContinuation { continuation in
+            UIApplication.shared.open(url, options: [:]) { success in
+                continuation.resume(returning: success)
+            }
+        }
     }
 }
