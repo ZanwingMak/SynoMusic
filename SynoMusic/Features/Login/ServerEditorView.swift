@@ -8,8 +8,10 @@ struct ServerEditorView: View {
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var purchase: PurchaseStore
     @EnvironmentObject private var reviewMode: AppReviewMode
+    @EnvironmentObject private var theme: ThemeManager
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @Environment(\.colorScheme) private var colorScheme
 
     @State var profile: ServerProfile
     @State private var password: String = ""
@@ -91,6 +93,11 @@ struct ServerEditorView: View {
 
     private var isLockedQuickConnect: Bool {
         isEditingExisting && profile.isQuickConnect
+    }
+
+    /// 当前添加服务器页使用的主题强调色。
+    private var accentColor: Color {
+        theme.current.accent(in: colorScheme)
     }
 
     var body: some View {
@@ -227,7 +234,7 @@ struct ServerEditorView: View {
         Section {
             if isLockedQuickConnect {
                 Label("QuickConnect", systemImage: "bolt.horizontal.circle.fill")
-                    .foregroundStyle(Theme.accent)
+                    .foregroundStyle(accentColor)
             } else {
                 Picker("模式".t, selection: $mode) {
                     ForEach(Mode.allCases) { m in Text(m.titleKey.t).tag(m) }
@@ -1179,9 +1186,17 @@ private struct WebDAVDirectoryPickerSheet: View {
 
 /// Plex 服务器与远程访问地址选择页。
 private struct PlexServerPickerSheet: View {
+    @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
+
     let options: [PlexConnectionOption]
     let onCancel: () -> Void
     let onSelect: (PlexConnectionOption) -> Void
+
+    /// 当前 Plex 服务器选择页使用的主题强调色。
+    private var accentColor: Color {
+        theme.current.accent(in: colorScheme)
+    }
 
     var body: some View {
         NavigationStack {
@@ -1213,16 +1228,16 @@ private struct PlexServerPickerSheet: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
                     Image(systemName: iconName(for: option.connection))
-                        .foregroundStyle(Theme.accent)
+                        .foregroundStyle(accentColor)
                     Text(option.server.name)
                         .font(.nocBody.weight(.semibold))
                     if option.server.hasPlexPass {
                         Text("Plex Pass".t)
                             .font(.nocCaption.weight(.semibold))
-                            .foregroundStyle(Theme.accent)
+                            .foregroundStyle(accentColor)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
-                            .background(Theme.accent.opacity(0.14), in: Capsule())
+                            .background(accentColor.opacity(0.14), in: Capsule())
                     }
                 }
                 Text(option.connection.labelKey.t + " · " + option.connection.displayURL)
@@ -1246,9 +1261,17 @@ private struct PlexServerPickerSheet: View {
 
 /// Plex 音乐库选择页。
 private struct PlexLibraryPickerSheet: View {
+    @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
+
     let option: PlexConnectionOption
     let onCancel: () -> Void
     let onSelect: (MusicLibrary) -> Void
+
+    /// 当前 Plex 音乐库选择页使用的主题强调色。
+    private var accentColor: Color {
+        theme.current.accent(in: colorScheme)
+    }
 
     var body: some View {
         NavigationStack {
@@ -1260,7 +1283,7 @@ private struct PlexLibraryPickerSheet: View {
                         } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: library.isDefault ? "music.note.house.fill" : "music.note.list")
-                                    .foregroundStyle(Theme.accent)
+                                    .foregroundStyle(accentColor)
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(library.name)
                                         .font(.nocBody.weight(.semibold))
@@ -1289,17 +1312,25 @@ private struct PlexLibraryPickerSheet: View {
 
 /// Plex 浏览器授权页。
 private struct PlexPinAuthSheet: View {
+    @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
+
     let pin: PlexAuthPin
     let onOpen: () -> Void
     let onCancel: () -> Void
     let onContinue: () -> Void
+
+    /// 当前 Plex 授权页使用的主题强调色。
+    private var accentColor: Color {
+        theme.current.accent(in: colorScheme)
+    }
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 18) {
                 Image(systemName: "safari")
                     .font(.system(size: 38, weight: .semibold))
-                    .foregroundStyle(Theme.accent)
+                    .foregroundStyle(accentColor)
                 Text("使用浏览器完成 Plex 授权".t)
                     .font(.nocTitle)
                 Text("授权完成后回到 SynoMusic，点击「我已完成授权」。".t)

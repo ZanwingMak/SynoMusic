@@ -175,7 +175,7 @@ struct SettingsView: View {
             Button {
                 startAddingServer()
             } label: {
-                Label("添加服务器".t, systemImage: "plus")
+                themedLabel("添加服务器".t, systemImage: "plus")
             }
             serverConfigurationTransferRows
         } header: {
