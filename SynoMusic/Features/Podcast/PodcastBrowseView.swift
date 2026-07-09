@@ -3,7 +3,7 @@ import SwiftUI
 /// 播客入口：搜索 Apple Podcasts 在线资源并管理本地订阅。
 struct PodcastBrowseView: View {
     @EnvironmentObject private var playback: PlaybackEngine
-    @StateObject private var store = PodcastSubscriptionStore()
+    @StateObject private var store = PodcastSubscriptionStore.shared
     @State private var query = ""
     @State private var results: [PodcastShow] = []
     @State private var isSearching = false
@@ -328,7 +328,7 @@ private struct PodcastShowRow: View {
 /// 播客节目详情：加载 RSS 单集并播放。
 struct PodcastShowDetailView: View {
     @EnvironmentObject private var playback: PlaybackEngine
-    @StateObject private var store = PodcastSubscriptionStore()
+    @StateObject private var store = PodcastSubscriptionStore.shared
     let show: PodcastShow
 
     @State private var episodes: [PodcastEpisode] = []

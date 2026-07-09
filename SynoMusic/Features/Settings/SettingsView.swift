@@ -566,6 +566,9 @@ struct SettingsView: View {
                 themedLabel("iCloud 云同步配置".t, systemImage: "icloud")
             }
             if cloudSync.isEnabled {
+                Toggle(isOn: credentialsSyncBinding) {
+                    themedLabel("同步登录凭据".t, systemImage: "key.fill")
+                }
                 Button {
                     Task { await syncCloudNow() }
                 } label: {
@@ -590,7 +593,7 @@ struct SettingsView: View {
         } header: {
             Text("iCloud".t)
         } footer: {
-            Text("同步服务器地址、用户名、本地歌单、主题和外观偏好；密码仍保存在本机 Keychain。".t)
+            Text("同步服务器配置、歌单、播放偏好、播客订阅、歌曲资料和历史记录；登录凭据可选择通过 iCloud Keychain 同步。".t)
         }
     }
 
@@ -645,6 +648,16 @@ struct SettingsView: View {
                     return
                 }
                 cloudSync.setEnabled(enabled)
+            }
+        )
+    }
+
+    private var credentialsSyncBinding: Binding<Bool> {
+        Binding(
+            get: { cloudSync.credentialsSyncEnabled },
+            set: { enabled in
+                guard cloudSync.isEnabled else { return }
+                cloudSync.setCredentialsSyncEnabled(enabled)
             }
         )
     }
@@ -808,8 +821,7 @@ struct SettingsView: View {
     private func syncCloudNow() async {
         guard !isSyncingCloud else { return }
         isSyncingCloud = true
-        cloudSync.pushLocalSnapshotIfNeeded()
-        try? await Task.sleep(nanoseconds: 650_000_000)
+        await cloudSync.syncNow()
         isSyncingCloud = false
         Haptics.success()
     }

@@ -22,6 +22,10 @@ struct SynoMusicApp: App {
     @StateObject private var lm = LanguageManager.shared
     /// 播放偏好（后台播放 / 锁屏 / AirPlay 开关）。
     @StateObject private var playbackSettings = PlaybackSettings()
+    /// 播客订阅仓库，用于跨页面和 iCloud 同步共享订阅状态。
+    @StateObject private var podcastStore = PodcastSubscriptionStore.shared
+    /// 歌曲自定义资料仓库，用于备注和自定义标题等资料同步。
+    @StateObject private var songUserDataStore = SongUserDataStore.shared
     /// App 内部导航状态，用于播放器等浮层跳转主框架页面。
     @StateObject private var navigation = AppNavigationState()
     /// StoreKit 购买状态。
@@ -43,6 +47,8 @@ struct SynoMusicApp: App {
                 .environmentObject(theme)
                 .environmentObject(lm)
                 .environmentObject(playbackSettings)
+                .environmentObject(podcastStore)
+                .environmentObject(songUserDataStore)
                 .environmentObject(navigation)
                 .environmentObject(purchaseStore)
                 .environmentObject(cloudSync)
@@ -50,7 +56,15 @@ struct SynoMusicApp: App {
                 .onAppear {
                     playback.applyPlaybackSettings(playbackSettings)
                     playback.downloadManager = downloads
-                    cloudSync.configure(serverStore: serverStore, playlistStore: playlists, themeManager: theme)
+                    cloudSync.configure(
+                        serverStore: serverStore,
+                        playlistStore: playlists,
+                        themeManager: theme,
+                        playbackSettings: playbackSettings,
+                        podcastStore: podcastStore,
+                        songUserDataStore: songUserDataStore,
+                        playbackEngine: playback
+                    )
                     applyPurchaseLimits()
                 }
                 .task {
@@ -73,6 +87,21 @@ struct SynoMusicApp: App {
                     cloudSync.pushLocalSnapshotIfNeeded()
                 }
                 .onReceive(theme.$appearance.dropFirst()) { _ in
+                    cloudSync.pushLocalSnapshotIfNeeded()
+                }
+                .onReceive(playbackSettings.objectWillChange) { _ in
+                    cloudSync.pushLocalSnapshotIfNeeded()
+                }
+                .onReceive(podcastStore.$shows.dropFirst()) { _ in
+                    cloudSync.pushLocalSnapshotIfNeeded()
+                }
+                .onReceive(songUserDataStore.$entries.dropFirst()) { _ in
+                    cloudSync.pushLocalSnapshotIfNeeded()
+                }
+                .onReceive(playback.$playedHistory.dropFirst()) { _ in
+                    cloudSync.pushLocalSnapshotIfNeeded()
+                }
+                .onReceive(playback.$queueHistory.dropFirst()) { _ in
                     cloudSync.pushLocalSnapshotIfNeeded()
                 }
                 .tint(theme.current.accent(in: .dark))

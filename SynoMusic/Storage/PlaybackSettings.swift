@@ -40,6 +40,15 @@ enum EqualizerPreset: String, CaseIterable, Identifiable {
     }
 }
 
+/// 可同步的播放偏好快照；只保存用户偏好，不保存实时播放状态。
+struct PlaybackSettingsSnapshot: Codable, Hashable {
+    var backgroundPlaybackEnabled: Bool
+    var playerArtworkStyle: String
+    var crossfadeEnabled: Bool
+    var crossfadeDuration: Double
+    var equalizerPreset: String
+}
+
 /// 播放相关偏好开关：后台播放 / 锁屏控制 / AirPlay。
 /// 全部持久化到 UserDefaults，并对 AVAudioSession 实时生效。
 @MainActor
@@ -109,6 +118,26 @@ final class PlaybackSettings: ObservableObject {
         self.equalizerPreset = EqualizerPreset(rawValue: defaults.string(forKey: equalizerPresetKey) ?? "") ?? .flat
         defaults.set(true, forKey: lockKey)
         defaults.set(true, forKey: airKey)
+    }
+
+    /// 导出可同步的播放偏好。
+    func snapshot() -> PlaybackSettingsSnapshot {
+        PlaybackSettingsSnapshot(
+            backgroundPlaybackEnabled: backgroundPlaybackEnabled,
+            playerArtworkStyle: playerArtworkStyle.rawValue,
+            crossfadeEnabled: crossfadeEnabled,
+            crossfadeDuration: crossfadeDuration,
+            equalizerPreset: equalizerPreset.rawValue
+        )
+    }
+
+    /// 应用云端播放偏好，并通过既有 didSet 逻辑落盘。
+    func applySnapshot(_ snapshot: PlaybackSettingsSnapshot) {
+        backgroundPlaybackEnabled = snapshot.backgroundPlaybackEnabled
+        playerArtworkStyle = PlayerArtworkStyle(rawValue: snapshot.playerArtworkStyle) ?? .cover
+        crossfadeEnabled = snapshot.crossfadeEnabled
+        crossfadeDuration = snapshot.crossfadeDuration
+        equalizerPreset = EqualizerPreset(rawValue: snapshot.equalizerPreset) ?? .flat
     }
 
     /// 根据当前开关重新配置 AVAudioSession。

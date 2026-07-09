@@ -3225,7 +3225,11 @@ enum L10n {
             "服务器配置导出失败": "伺服器設定匯出失敗",
             "服务器配置导入失败": "伺服器設定匯入失敗",
             "已导入 %d 个服务器配置。": "已匯入 %d 個伺服器設定。",
-            "中国大陆": "中國大陸"
+            "中国大陆": "中國大陸",
+            "同步登录凭据": "同步登入憑據",
+            "登录凭据将通过 iCloud Keychain 同步": "登入憑據將透過 iCloud Keychain 同步",
+            "登录凭据仅保存在本机": "登入憑據僅保存在本機",
+            "同步服务器配置、歌单、播放偏好、播客订阅、歌曲资料和历史记录；登录凭据可选择通过 iCloud Keychain 同步。": "同步伺服器設定、歌單、播放偏好、Podcast 訂閱、歌曲資料與歷史記錄；登入憑據可選擇透過 iCloud Keychain 同步。"
         ],
         "en": [
             "功能": "Features",
@@ -3246,7 +3250,11 @@ enum L10n {
             "服务器配置导出失败": "Server profile export failed",
             "服务器配置导入失败": "Server profile import failed",
             "已导入 %d 个服务器配置。": "Imported %d server profiles.",
-            "中国大陆": "Mainland China"
+            "中国大陆": "Mainland China",
+            "同步登录凭据": "Sync Login Credentials",
+            "登录凭据将通过 iCloud Keychain 同步": "Login credentials will sync through iCloud Keychain",
+            "登录凭据仅保存在本机": "Login credentials stay on this device",
+            "同步服务器配置、歌单、播放偏好、播客订阅、歌曲资料和历史记录；登录凭据可选择通过 iCloud Keychain 同步。": "Sync server profiles, playlists, playback preferences, podcast subscriptions, song data, and history; login credentials can optionally sync through iCloud Keychain."
         ],
         "ja": [
             "功能": "機能",
@@ -3267,7 +3275,11 @@ enum L10n {
             "服务器配置导出失败": "サーバー設定の書き出しに失敗しました",
             "服务器配置导入失败": "サーバー設定の読み込みに失敗しました",
             "已导入 %d 个服务器配置。": "%d 件のサーバー設定を読み込みました。",
-            "中国大陆": "中国本土"
+            "中国大陆": "中国本土",
+            "同步登录凭据": "ログイン情報を同期",
+            "登录凭据将通过 iCloud Keychain 同步": "ログイン情報は iCloud キーチェーンで同期されます",
+            "登录凭据仅保存在本机": "ログイン情報はこのデバイスのみに保存されます",
+            "同步服务器配置、歌单、播放偏好、播客订阅、歌曲资料和历史记录；登录凭据可选择通过 iCloud Keychain 同步。": "サーバー設定、プレイリスト、再生設定、ポッドキャスト購読、曲データ、履歴を同期します。ログイン情報は任意で iCloud キーチェーン経由で同期できます。"
         ],
         "ko": [
             "功能": "기능",
@@ -3288,7 +3300,11 @@ enum L10n {
             "服务器配置导出失败": "서버 설정 내보내기 실패",
             "服务器配置导入失败": "서버 설정 가져오기 실패",
             "已导入 %d 个服务器配置。": "서버 설정 %d개를 가져왔습니다.",
-            "中国大陆": "중국 본토"
+            "中国大陆": "중국 본토",
+            "同步登录凭据": "로그인 자격 증명 동기화",
+            "登录凭据将通过 iCloud Keychain 同步": "로그인 자격 증명이 iCloud 키체인으로 동기화됩니다",
+            "登录凭据仅保存在本机": "로그인 자격 증명은 이 기기에만 저장됩니다",
+            "同步服务器配置、歌单、播放偏好、播客订阅、歌曲资料和历史记录；登录凭据可选择通过 iCloud Keychain 同步。": "서버 설정, 재생목록, 재생 환경설정, 팟캐스트 구독, 곡 데이터와 기록을 동기화합니다. 로그인 자격 증명은 선택적으로 iCloud 키체인으로 동기화할 수 있습니다."
         ],
         "de": [
             "功能": "Funktionen",
@@ -3309,7 +3325,11 @@ enum L10n {
             "服务器配置导出失败": "Export der Serverprofile fehlgeschlagen",
             "服务器配置导入失败": "Import der Serverprofile fehlgeschlagen",
             "已导入 %d 个服务器配置。": "%d Serverprofile importiert.",
-            "中国大陆": "Festlandchina"
+            "中国大陆": "Festlandchina",
+            "同步登录凭据": "Anmeldedaten synchronisieren",
+            "登录凭据将通过 iCloud Keychain 同步": "Anmeldedaten werden über iCloud-Schlüsselbund synchronisiert",
+            "登录凭据仅保存在本机": "Anmeldedaten bleiben auf diesem Gerät",
+            "同步服务器配置、歌单、播放偏好、播客订阅、歌曲资料和历史记录；登录凭据可选择通过 iCloud Keychain 同步。": "Synchronisiert Serverprofile, Playlists, Wiedergabeeinstellungen, Podcast-Abos, Songdaten und Verlauf; Anmeldedaten können optional über iCloud-Schlüsselbund synchronisiert werden."
         ],
         "fr": [
             "功能": "Fonctions",
@@ -3330,7 +3350,11 @@ enum L10n {
             "服务器配置导出失败": "Échec de l’exportation des profils de serveur",
             "服务器配置导入失败": "Échec de l’importation des profils de serveur",
             "已导入 %d 个服务器配置。": "%d profils de serveur importés.",
-            "中国大陆": "Chine continentale"
+            "中国大陆": "Chine continentale",
+            "同步登录凭据": "Synchroniser les identifiants",
+            "登录凭据将通过 iCloud Keychain 同步": "Les identifiants seront synchronisés via le trousseau iCloud",
+            "登录凭据仅保存在本机": "Les identifiants restent sur cet appareil",
+            "同步服务器配置、歌单、播放偏好、播客订阅、歌曲资料和历史记录；登录凭据可选择通过 iCloud Keychain 同步。": "Synchronise les profils de serveur, playlists, préférences de lecture, abonnements aux podcasts, données de morceaux et historique ; les identifiants peuvent aussi être synchronisés via le trousseau iCloud."
         ]
     ]
 

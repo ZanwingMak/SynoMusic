@@ -27,6 +27,12 @@ final class SongUserDataStore: ObservableObject {
         save()
     }
 
+    /// 用云端快照替换本地歌曲自定义资料。
+    func replaceEntries(_ newEntries: [String: SongUserData]) {
+        entries = newEntries
+        save()
+    }
+
     private func load() {
         guard let raw = UserDefaults.standard.data(forKey: key),
               let list = try? JSONDecoder().decode([String: SongUserData].self, from: raw) else { return }
