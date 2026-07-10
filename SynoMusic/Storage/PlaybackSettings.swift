@@ -87,8 +87,7 @@ final class PlaybackSettings: ObservableObject {
     }
     @Published var crossfadeDuration: Double {
         didSet {
-            crossfadeDuration = crossfadeDuration.clamped(to: 1...8, defaultValue: 3)
-            UserDefaults.standard.set(crossfadeDuration, forKey: crossfadeDurationKey)
+            UserDefaults.standard.set(crossfadeDuration.clamped(to: 1...8, defaultValue: 3), forKey: crossfadeDurationKey)
             UserDefaults.standard.synchronize()
         }
     }
@@ -136,7 +135,7 @@ final class PlaybackSettings: ObservableObject {
         backgroundPlaybackEnabled = snapshot.backgroundPlaybackEnabled
         playerArtworkStyle = PlayerArtworkStyle(rawValue: snapshot.playerArtworkStyle) ?? .cover
         crossfadeEnabled = snapshot.crossfadeEnabled
-        crossfadeDuration = snapshot.crossfadeDuration
+        crossfadeDuration = snapshot.crossfadeDuration.clamped(to: 1...8, defaultValue: 3)
         equalizerPreset = EqualizerPreset(rawValue: snapshot.equalizerPreset) ?? .flat
     }
 

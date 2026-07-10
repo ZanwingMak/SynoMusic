@@ -821,8 +821,8 @@ struct SettingsView: View {
     private func syncCloudNow() async {
         guard !isSyncingCloud else { return }
         isSyncingCloud = true
+        defer { isSyncingCloud = false }
         await cloudSync.syncNow()
-        isSyncingCloud = false
         Haptics.success()
     }
 
