@@ -3229,6 +3229,9 @@ enum L10n {
             "同步登录凭据": "同步登入憑據",
             "登录凭据将通过 iCloud Keychain 同步": "登入憑據將透過 iCloud Keychain 同步",
             "登录凭据仅保存在本机": "登入憑據僅保存在本機",
+            "自动登录超时，请稍后手动连接服务器。": "自動登入逾時，請稍後手動連接伺服器。",
+            "配置已同步到 iCloud；播放历史未同步": "設定已同步到 iCloud；播放歷史未同步",
+            "iCloud 云同步已开启，请手动同步配置": "iCloud 雲同步已開啟，請手動同步設定",
             "同步服务器配置、歌单、播放偏好、播客订阅、歌曲资料和历史记录；登录凭据可选择通过 iCloud Keychain 同步。": "同步伺服器設定、歌單、播放偏好、Podcast 訂閱、歌曲資料與歷史記錄；登入憑據可選擇透過 iCloud Keychain 同步。"
         ],
         "en": [
@@ -3254,6 +3257,9 @@ enum L10n {
             "同步登录凭据": "Sync Login Credentials",
             "登录凭据将通过 iCloud Keychain 同步": "Login credentials will sync through iCloud Keychain",
             "登录凭据仅保存在本机": "Login credentials stay on this device",
+            "自动登录超时，请稍后手动连接服务器。": "Auto sign-in timed out. Connect the server manually later.",
+            "配置已同步到 iCloud；播放历史未同步": "Configuration synced to iCloud; playback history was not synced",
+            "iCloud 云同步已开启，请手动同步配置": "iCloud sync is on. Sync configuration manually.",
             "同步服务器配置、歌单、播放偏好、播客订阅、歌曲资料和历史记录；登录凭据可选择通过 iCloud Keychain 同步。": "Sync server profiles, playlists, playback preferences, podcast subscriptions, song data, and history; login credentials can optionally sync through iCloud Keychain."
         ],
         "ja": [
@@ -3279,6 +3285,9 @@ enum L10n {
             "同步登录凭据": "ログイン情報を同期",
             "登录凭据将通过 iCloud Keychain 同步": "ログイン情報は iCloud キーチェーンで同期されます",
             "登录凭据仅保存在本机": "ログイン情報はこのデバイスのみに保存されます",
+            "自动登录超时，请稍后手动连接服务器。": "自動サインインがタイムアウトしました。後で手動でサーバーに接続してください。",
+            "配置已同步到 iCloud；播放历史未同步": "設定は iCloud に同期されましたが、再生履歴は同期されませんでした",
+            "iCloud 云同步已开启，请手动同步配置": "iCloud 同期がオンです。設定を手動で同期してください。",
             "同步服务器配置、歌单、播放偏好、播客订阅、歌曲资料和历史记录；登录凭据可选择通过 iCloud Keychain 同步。": "サーバー設定、プレイリスト、再生設定、ポッドキャスト購読、曲データ、履歴を同期します。ログイン情報は任意で iCloud キーチェーン経由で同期できます。"
         ],
         "ko": [
@@ -3304,6 +3313,9 @@ enum L10n {
             "同步登录凭据": "로그인 자격 증명 동기화",
             "登录凭据将通过 iCloud Keychain 同步": "로그인 자격 증명이 iCloud 키체인으로 동기화됩니다",
             "登录凭据仅保存在本机": "로그인 자격 증명은 이 기기에만 저장됩니다",
+            "自动登录超时，请稍后手动连接服务器。": "자동 로그인이 시간 초과되었습니다. 나중에 서버를 수동으로 연결하세요.",
+            "配置已同步到 iCloud；播放历史未同步": "설정은 iCloud에 동기화되었지만 재생 기록은 동기화되지 않았습니다",
+            "iCloud 云同步已开启，请手动同步配置": "iCloud 동기화가 켜져 있습니다. 설정을 수동으로 동기화하세요.",
             "同步服务器配置、歌单、播放偏好、播客订阅、歌曲资料和历史记录；登录凭据可选择通过 iCloud Keychain 同步。": "서버 설정, 재생목록, 재생 환경설정, 팟캐스트 구독, 곡 데이터와 기록을 동기화합니다. 로그인 자격 증명은 선택적으로 iCloud 키체인으로 동기화할 수 있습니다."
         ],
         "de": [
@@ -3329,6 +3341,9 @@ enum L10n {
             "同步登录凭据": "Anmeldedaten synchronisieren",
             "登录凭据将通过 iCloud Keychain 同步": "Anmeldedaten werden über iCloud-Schlüsselbund synchronisiert",
             "登录凭据仅保存在本机": "Anmeldedaten bleiben auf diesem Gerät",
+            "自动登录超时，请稍后手动连接服务器。": "Automatische Anmeldung abgelaufen. Verbinde den Server später manuell.",
+            "配置已同步到 iCloud；播放历史未同步": "Konfiguration mit iCloud synchronisiert; Wiedergabeverlauf wurde nicht synchronisiert",
+            "iCloud 云同步已开启，请手动同步配置": "iCloud-Sync ist aktiviert. Synchronisiere die Konfiguration manuell.",
             "同步服务器配置、歌单、播放偏好、播客订阅、歌曲资料和历史记录；登录凭据可选择通过 iCloud Keychain 同步。": "Synchronisiert Serverprofile, Playlists, Wiedergabeeinstellungen, Podcast-Abos, Songdaten und Verlauf; Anmeldedaten können optional über iCloud-Schlüsselbund synchronisiert werden."
         ],
         "fr": [
@@ -3354,6 +3369,9 @@ enum L10n {
             "同步登录凭据": "Synchroniser les identifiants",
             "登录凭据将通过 iCloud Keychain 同步": "Les identifiants seront synchronisés via le trousseau iCloud",
             "登录凭据仅保存在本机": "Les identifiants restent sur cet appareil",
+            "自动登录超时，请稍后手动连接服务器。": "La connexion automatique a expiré. Connectez le serveur manuellement plus tard.",
+            "配置已同步到 iCloud；播放历史未同步": "Configuration synchronisée avec iCloud ; l’historique de lecture n’a pas été synchronisé",
+            "iCloud 云同步已开启，请手动同步配置": "La synchronisation iCloud est activée. Synchronisez la configuration manuellement.",
             "同步服务器配置、歌单、播放偏好、播客订阅、歌曲资料和历史记录；登录凭据可选择通过 iCloud Keychain 同步。": "Synchronise les profils de serveur, playlists, préférences de lecture, abonnements aux podcasts, données de morceaux et historique ; les identifiants peuvent aussi être synchronisés via le trousseau iCloud."
         ]
     ]

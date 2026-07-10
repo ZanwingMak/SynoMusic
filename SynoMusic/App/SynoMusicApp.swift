@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 
 /// 应用入口：装配根环境对象并展示首屏。
@@ -73,36 +72,6 @@ struct SynoMusicApp: App {
                 }
                 .onChange(of: purchaseStore.hasFullAccess) { _, _ in
                     applyPurchaseLimits()
-                }
-                .onReceive(serverStore.$profiles.dropFirst()) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
-                }
-                .onReceive(serverStore.$activeProfileID.dropFirst()) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
-                }
-                .onReceive(playlists.$playlists.dropFirst()) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
-                }
-                .onReceive(theme.$currentID.dropFirst()) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
-                }
-                .onReceive(theme.$appearance.dropFirst()) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
-                }
-                .onReceive(playbackSettings.objectWillChange) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
-                }
-                .onReceive(podcastStore.$shows.dropFirst()) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
-                }
-                .onReceive(songUserDataStore.$entries.dropFirst()) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
-                }
-                .onReceive(playback.$playedHistory.dropFirst()) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
-                }
-                .onReceive(playback.$queueHistory.dropFirst()) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
                 }
                 .tint(theme.current.accent(in: .dark))
                 .preferredColorScheme(theme.appearance.colorScheme)

@@ -15,25 +15,32 @@ final class CloudSyncStore: ObservableObject {
     private weak var podcastStore: PodcastSubscriptionStore?
     private weak var songUserDataStore: SongUserDataStore?
     private weak var playbackEngine: PlaybackEngine?
-    private var changeObserver: NSObjectProtocol?
-    private var scheduledPushTask: Task<Void, Never>?
+    private var isApplyingCloudDocuments = false
 
     private let defaults: UserDefaults
     private let cloudStore = NSUbiquitousKeyValueStore.default
-    private let cloudKit = CloudKitDocumentStore()
+    private let cloudKit: CloudKitDocumentStore?
     private let enabledKey = "syno.icloud.sync.enabled"
     private let credentialsEnabledKey = "syno.icloud.credentials.sync.enabled"
     private let snapshotKey = "syno.icloud.config.snapshot"
     private let lastAppliedKey = "syno.icloud.config.lastAppliedAt"
     private let cloudDocumentLastAppliedPrefix = "syno.icloud.database.lastApplied."
+    private let maxCloudPlayedHistoryCount = 40
+    private let maxCloudQueueHistoryCount = 5
+    private let maxCloudQueueSongCount = 25
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.isEnabled = defaults.bool(forKey: enabledKey)
         self.credentialsSyncEnabled = defaults.bool(forKey: credentialsEnabledKey)
+        #if targetEnvironment(simulator)
+        self.cloudKit = nil
+        #else
+        self.cloudKit = CloudKitDocumentStore()
+        #endif
     }
 
-    /// 绑定本地仓库，并开始监听 iCloud 外部变更。
+    /// 绑定本地仓库，供用户手动触发 iCloud 同步时读取和写入。
     func configure(
         serverStore: ServerStore,
         playlistStore: PlaylistStore,
@@ -50,20 +57,6 @@ final class CloudSyncStore: ObservableObject {
         self.podcastStore = podcastStore
         self.songUserDataStore = songUserDataStore
         self.playbackEngine = playbackEngine
-        guard changeObserver == nil else { return }
-        changeObserver = NotificationCenter.default.addObserver(
-            forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: cloudStore,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                self?.pullKeyValueSnapshotIfNewer()
-            }
-        }
-        cloudStore.synchronize()
-        if isEnabled {
-            mergeCloudStateOnStart()
-        }
     }
 
     /// 开启或关闭 iCloud 资料同步。
@@ -72,9 +65,8 @@ final class CloudSyncStore: ObservableObject {
         defaults.set(enabled, forKey: enabledKey)
         defaults.synchronize()
         if enabled {
-            mergeCloudStateOnStart()
+            statusMessage = "iCloud 云同步已开启，请手动同步配置".t
         } else {
-            scheduledPushTask?.cancel()
             if credentialsSyncEnabled {
                 setCredentialsSyncEnabled(false)
             }
@@ -98,49 +90,22 @@ final class CloudSyncStore: ObservableObject {
         }
     }
 
-    /// 本地配置变化后推送到 iCloud。
-    func pushLocalSnapshotIfNeeded() {
-        guard isEnabled else { return }
-        pushKeyValueSnapshot()
-        scheduleCloudKitPush()
-    }
-
     /// 立即执行一次双向同步：先拉远端，再推本机最新状态。
     func syncNow() async {
         guard isEnabled else { return }
         statusMessage = "正在同步 iCloud".t
-        let didPull = await pullCloudKitDocuments()
+        let pullResult = await pullCloudKitDocuments()
+        guard !pullResult.didFail else { return }
+        let didPullKeyValue = pullResult.didApply ? false : pullKeyValueSnapshotIfNewer()
         pushKeyValueSnapshot()
-        await pushCloudKitDocuments()
-        statusMessage = didPull ? "已从 iCloud 更新配置".t : "配置已同步到 iCloud".t
+        let didPushDatabase = await pushCloudKitDocuments()
+        guard didPushDatabase else { return }
+        statusMessage = (pullResult.didApply || didPullKeyValue) ? "已从 iCloud 更新配置".t : "配置已同步到 iCloud".t
     }
 
     /// 清除一次性同步状态提示。
     func clearStatusMessage() {
         statusMessage = nil
-    }
-
-    /// 启动或开启同步时，优先应用 CloudKit；无数据库资料时回退到旧 KVS 快照。
-    private func mergeCloudStateOnStart() {
-        cloudStore.synchronize()
-        Task { [weak self] in
-            guard let self else { return }
-            let didPullDatabase = await self.pullCloudKitDocuments()
-            if !didPullDatabase, !self.pullKeyValueSnapshotIfNewer() {
-                self.pushKeyValueSnapshot()
-            }
-            await self.pushCloudKitDocuments()
-        }
-    }
-
-    /// 延迟推送 CloudKit，合并短时间内多次设置变化。
-    private func scheduleCloudKitPush() {
-        scheduledPushTask?.cancel()
-        scheduledPushTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 650_000_000)
-            guard !Task.isCancelled else { return }
-            await self?.pushCloudKitDocuments()
-        }
     }
 
     /// 将基础配置写入旧版 iCloud KVS，用于旧版本迁移和轻量兜底。
@@ -183,8 +148,9 @@ final class CloudSyncStore: ObservableObject {
     }
 
     /// 把本机各类资料推送为 CloudKit 私有数据库文档。
-    private func pushCloudKitDocuments() async {
-        guard isEnabled else { return }
+    @discardableResult
+    private func pushCloudKitDocuments() async -> Bool {
+        guard isEnabled, let cloudKit else { return true }
         do {
             let now = Date()
             if let serverStore {
@@ -220,20 +186,40 @@ final class CloudSyncStore: ObservableObject {
                 rememberCloudDocumentAppliedDate(now, for: .podcastSubscriptions)
             }
             if let playbackEngine {
-                try await cloudKit.save(PlaybackHistoryPayload(snapshot: playbackEngine.historySnapshot()), for: .playbackHistory, updatedAt: now)
-                rememberCloudDocumentAppliedDate(now, for: .playbackHistory)
+                do {
+                    try await cloudKit.save(
+                        PlaybackHistoryPayload(
+                            snapshot: playbackEngine.cloudHistorySnapshot(
+                                maxPlayedCount: maxCloudPlayedHistoryCount,
+                                maxQueueCount: maxCloudQueueHistoryCount,
+                                maxQueueSongs: maxCloudQueueSongCount
+                            )
+                        ),
+                        for: .playbackHistory,
+                        updatedAt: now
+                    )
+                    rememberCloudDocumentAppliedDate(now, for: .playbackHistory)
+                } catch {
+                    statusMessage = "配置已同步到 iCloud；播放历史未同步".t + "：\(error.localizedDescription)"
+                    return true
+                }
             }
             statusMessage = "配置已同步到 iCloud".t
+            return true
         } catch {
             statusMessage = "iCloud 同步失败：\(error.localizedDescription)"
+            return false
         }
     }
 
     /// 从 CloudKit 私有数据库拉取各类资料，并按文档更新时间应用。
     @discardableResult
-    private func pullCloudKitDocuments() async -> Bool {
-        guard isEnabled else { return false }
+    private func pullCloudKitDocuments() async -> (didApply: Bool, didFail: Bool) {
+        guard isEnabled, let cloudKit else { return (false, false) }
         var didApply = false
+        var didFail = false
+        isApplyingCloudDocuments = true
+        defer { isApplyingCloudDocuments = false }
         do {
             if let envelope: CloudDocumentEnvelope<ServerProfilesPayload> = try await cloudKit.fetch(.serverProfiles),
                shouldApplyCloudDocument(envelope.updatedAt, for: .serverProfiles),
@@ -279,11 +265,12 @@ final class CloudSyncStore: ObservableObject {
             }
         } catch {
             statusMessage = "iCloud 同步失败：\(error.localizedDescription)"
+            didFail = true
         }
         if didApply {
             statusMessage = "已从 iCloud 更新配置".t
         }
-        return didApply
+        return (didApply, didFail)
     }
 
     /// 将云端主题配置应用到本机。

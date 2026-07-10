@@ -73,12 +73,14 @@ struct RootView: View {
                 playback.play(queue: DemoMode.songs, startAt: 0)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                     playback.pause()
+                    playback.dismissStatus()
                     showFullPlayer = true
                 }
             } else if args.contains("-miniplayer") {
                 playback.play(queue: DemoMode.songs, startAt: 0)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                     playback.pause()
+                    playback.dismissStatus()
                 }
             }
         }
@@ -125,7 +127,7 @@ struct RootView: View {
             return
         }
         isAutoLogging = true
-        session.setRestoringStartupSession(true)
+        session.setRestoringStartupSession(false)
         // 暴露给 LoginFlowView：让用户在多档案列表里看到「正在自动登录…」高亮哪一行
         session.autoLoginProfileID = p.id
         defer {
@@ -146,7 +148,8 @@ struct RootView: View {
             Haptics.success()
         } catch {
             // 静默失败：用户进入 LoginFlowView 手动处理
-            playback.setStatus("自动登录失败：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
+            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            playback.setStatus("自动登录失败".t + "：\(message)")
         }
     }
 

@@ -173,7 +173,7 @@
 		<string>_https._tcp</string>
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>SynoMusic 需要访问局域网以连接你授权的音乐服务器。</string>
+	<string>SynoMusic 需要访问局域网以连接你的群晖 NAS 上的 Audio Station。</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
