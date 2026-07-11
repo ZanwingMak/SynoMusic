@@ -6,7 +6,7 @@ import Foundation
 final class AppSession: ObservableObject {
     @Published private(set) var client: SynologyClient?
     @Published private(set) var musicClient: (any MusicLibraryClient)?
-    @Published private(set) var isRestoringStartupSession: Bool = false
+    @Published private(set) var isRestoringStartupSession: Bool = true
     /// 正在自动登录的档案 ID；启动 silent login 期间由 RootView 设置，
     /// LoginFlowView 据此高亮该行并显示 ProgressView。
     @Published var autoLoginProfileID: UUID?

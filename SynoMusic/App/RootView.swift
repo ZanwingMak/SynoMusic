@@ -127,7 +127,7 @@ struct RootView: View {
             return
         }
         isAutoLogging = true
-        session.setRestoringStartupSession(false)
+        session.setRestoringStartupSession(true)
         // 暴露给 LoginFlowView：让用户在多档案列表里看到「正在自动登录…」高亮哪一行
         session.autoLoginProfileID = p.id
         defer {
@@ -223,7 +223,7 @@ private struct StatusToast: View {
             .padding(.vertical, Metrics.s + 2)
             .background(Color.black.opacity(0.78), in: Capsule())
             .padding(.horizontal, Metrics.m)
-            .padding(.top, Metrics.s)
+            .padding(.top, Metrics.xxl + Metrics.m)
             Spacer()
         }
     }

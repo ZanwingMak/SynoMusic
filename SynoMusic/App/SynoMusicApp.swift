@@ -3,6 +3,7 @@ import SwiftUI
 /// 应用入口：装配根环境对象并展示首屏。
 @main
 struct SynoMusicApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     /// 服务器仓库：管理已配置的群晖服务器列表与凭证。
     @StateObject private var serverStore = ServerStore()
     /// 播放引擎：全局共享，保证迷你播放器在跨页面时状态一致。
@@ -65,10 +66,36 @@ struct SynoMusicApp: App {
                         playbackEngine: playback
                     )
                     applyPurchaseLimits()
+                    cloudSync.scheduleAutomaticPull()
+                    cloudSync.scheduleOccasionalSync()
                 }
                 .task {
                     await purchaseStore.start()
                     applyPurchaseLimits()
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active {
+                        cloudSync.scheduleAutomaticPull()
+                        cloudSync.scheduleOccasionalSync()
+                    }
+                }
+                .onReceive(serverStore.objectWillChange) { _ in
+                    cloudSync.scheduleAutomaticPush()
+                }
+                .onReceive(playlists.objectWillChange) { _ in
+                    cloudSync.scheduleAutomaticPush()
+                }
+                .onReceive(theme.objectWillChange) { _ in
+                    cloudSync.scheduleAutomaticPush()
+                }
+                .onReceive(playbackSettings.objectWillChange) { _ in
+                    cloudSync.scheduleAutomaticPush()
+                }
+                .onReceive(podcastStore.objectWillChange) { _ in
+                    cloudSync.scheduleAutomaticPush()
+                }
+                .onReceive(songUserDataStore.objectWillChange) { _ in
+                    cloudSync.scheduleAutomaticPush()
                 }
                 .onChange(of: purchaseStore.hasFullAccess) { _, _ in
                     applyPurchaseLimits()

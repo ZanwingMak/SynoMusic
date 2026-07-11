@@ -7,6 +7,9 @@ final class CloudSyncStore: ObservableObject {
     @Published private(set) var isEnabled: Bool
     @Published private(set) var credentialsSyncEnabled: Bool
     @Published private(set) var statusMessage: String?
+    @Published private(set) var lastSyncAt: Date?
+    @Published private(set) var cloudDataUpdatedAt: Date?
+    @Published private(set) var hasCloudData: Bool = false
 
     private weak var serverStore: ServerStore?
     private weak var playlistStore: PlaylistStore?
@@ -16,6 +19,11 @@ final class CloudSyncStore: ObservableObject {
     private weak var songUserDataStore: SongUserDataStore?
     private weak var playbackEngine: PlaybackEngine?
     private var isApplyingCloudDocuments = false
+    private var isSyncing = false
+    private var automaticPullTask: Task<Void, Never>?
+    private var automaticPushTask: Task<Void, Never>?
+    private var occasionalSyncTask: Task<Void, Never>?
+    private var lastAutomaticPullAt: Date = .distantPast
 
     private let defaults: UserDefaults
     private let cloudStore = NSUbiquitousKeyValueStore.default
@@ -24,7 +32,11 @@ final class CloudSyncStore: ObservableObject {
     private let credentialsEnabledKey = "syno.icloud.credentials.sync.enabled"
     private let snapshotKey = "syno.icloud.config.snapshot"
     private let lastAppliedKey = "syno.icloud.config.lastAppliedAt"
+    private let lastSyncAtKey = "syno.icloud.sync.lastSyncAt"
+    private let cloudDataUpdatedAtKey = "syno.icloud.sync.cloudUpdatedAt"
     private let cloudDocumentLastAppliedPrefix = "syno.icloud.database.lastApplied."
+    private let automaticPullInterval: TimeInterval = 60
+    private let occasionalSyncInterval: ClosedRange<TimeInterval> = 180...420
     private let maxCloudPlayedHistoryCount = 40
     private let maxCloudQueueHistoryCount = 5
     private let maxCloudQueueSongCount = 25
@@ -33,6 +45,10 @@ final class CloudSyncStore: ObservableObject {
         self.defaults = defaults
         self.isEnabled = defaults.bool(forKey: enabledKey)
         self.credentialsSyncEnabled = defaults.bool(forKey: credentialsEnabledKey)
+        self.lastSyncAt = Self.date(from: defaults.double(forKey: lastSyncAtKey))
+        let savedCloudDataDate = Self.date(from: defaults.double(forKey: cloudDataUpdatedAtKey))
+        self.cloudDataUpdatedAt = savedCloudDataDate
+        self.hasCloudData = savedCloudDataDate != nil
         #if targetEnvironment(simulator)
         self.cloudKit = nil
         #else
@@ -65,12 +81,62 @@ final class CloudSyncStore: ObservableObject {
         defaults.set(enabled, forKey: enabledKey)
         defaults.synchronize()
         if enabled {
-            statusMessage = "iCloud 云同步已开启，请手动同步配置".t
+            statusMessage = "iCloud 云同步已开启，将自动同步配置".t
+            scheduleAutomaticPull()
+            scheduleOccasionalSync()
         } else {
+            automaticPullTask?.cancel()
+            automaticPushTask?.cancel()
+            occasionalSyncTask?.cancel()
             if credentialsSyncEnabled {
                 setCredentialsSyncEnabled(false)
             }
             statusMessage = "iCloud 云同步已关闭".t
+        }
+    }
+
+    /// 前台或启动时安排一次轻量自动拉取；不阻塞首页。
+    func scheduleAutomaticPull() {
+        guard isEnabled else { return }
+        automaticPullTask?.cancel()
+        automaticPullTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            guard !Task.isCancelled else { return }
+            await self?.runAutomaticPull()
+        }
+    }
+
+    /// 本地配置变化后安排一次防抖上传；云端应用期间不会反向触发。
+    func scheduleAutomaticPush() {
+        guard isEnabled, !isApplyingCloudDocuments else { return }
+        automaticPushTask?.cancel()
+        automaticPushTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard !Task.isCancelled else { return }
+            await self?.runAutomaticPush()
+        }
+    }
+
+    /// 安排一次不定时轻量同步；前台期间会在随机间隔后再次安排。
+    func scheduleOccasionalSync() {
+        guard isEnabled else { return }
+        occasionalSyncTask?.cancel()
+        let delay = TimeInterval.random(in: occasionalSyncInterval)
+        occasionalSyncTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            await self?.runOccasionalSync()
+        }
+    }
+
+    /// 检查 iCloud 私有数据库里是否已有可同步数据。
+    func refreshCloudAvailability() async {
+        guard isEnabled, let cloudKit, !isSyncing else { return }
+        do {
+            let dates = try await cloudKit.fetchAvailableDocumentDates()
+            updateCloudAvailability(with: dates.max())
+        } catch {
+            statusMessage = "iCloud 同步失败：\(error.localizedDescription)"
         }
     }
 
@@ -90,9 +156,21 @@ final class CloudSyncStore: ObservableObject {
         }
     }
 
-    /// 立即执行一次双向同步：先拉远端，再推本机最新状态。
+    /// 立即执行一次双向同步：先安全拉远端，再推本机最新状态。
     func syncNow() async {
         guard isEnabled else { return }
+        guard !isSyncing else {
+            statusMessage = "正在同步 iCloud".t
+            return
+        }
+        automaticPullTask?.cancel()
+        automaticPushTask?.cancel()
+        occasionalSyncTask?.cancel()
+        isSyncing = true
+        defer {
+            isSyncing = false
+            scheduleOccasionalSync()
+        }
         statusMessage = "正在同步 iCloud".t
         let pullResult = await pullCloudKitDocuments()
         guard !pullResult.didFail else { return }
@@ -100,7 +178,8 @@ final class CloudSyncStore: ObservableObject {
         pushKeyValueSnapshot()
         let didPushDatabase = await pushCloudKitDocuments()
         guard didPushDatabase else { return }
-        statusMessage = (pullResult.didApply || didPullKeyValue) ? "已从 iCloud 更新配置".t : "配置已同步到 iCloud".t
+        rememberSyncCompletedAt(Date())
+        statusMessage = (pullResult.didApply || didPullKeyValue) ? "已从 iCloud 更新同步配置".t : "已同步到 iCloud".t
     }
 
     /// 清除一次性同步状态提示。
@@ -138,12 +217,13 @@ final class CloudSyncStore: ObservableObject {
               let snapshot = try? JSONDecoder().decode(CloudConfigSnapshot.self, from: data) else {
             return false
         }
-        guard snapshot.updatedAt > lastKeyValueAppliedDate else { return false }
-        serverStore.replaceProfiles(snapshot.serverProfiles, activeProfileID: snapshot.activeProfileID)
+        guard snapshot.updatedAt > lastKeyValueAppliedDate,
+              !hasUnsyncedServerProfileChanges() else { return false }
+        serverStore.replaceProfiles(snapshot.serverProfiles, activeProfileID: snapshot.activeProfileID, modifiedAt: snapshot.updatedAt)
         playlistStore.replacePlaylists(snapshot.playlists)
         applyTheme(themeID: snapshot.themeID, appearance: snapshot.appearance)
         rememberKeyValueAppliedDate(snapshot.updatedAt)
-        statusMessage = "已从 iCloud 更新配置".t
+        statusMessage = "已从 iCloud 更新同步配置".t
         return true
     }
 
@@ -160,10 +240,12 @@ final class CloudSyncStore: ObservableObject {
                     updatedAt: now
                 )
                 rememberCloudDocumentAppliedDate(now, for: .serverProfiles)
+                updateCloudAvailability(with: now)
             }
             if let playlistStore {
                 try await cloudKit.save(PlaylistsPayload(playlists: playlistStore.playlists), for: .playlists, updatedAt: now)
                 rememberCloudDocumentAppliedDate(now, for: .playlists)
+                updateCloudAvailability(with: now)
             }
             if let themeManager, let playbackSettings {
                 try await cloudKit.save(
@@ -176,14 +258,17 @@ final class CloudSyncStore: ObservableObject {
                     updatedAt: now
                 )
                 rememberCloudDocumentAppliedDate(now, for: .preferences)
+                updateCloudAvailability(with: now)
             }
             if let songUserDataStore {
                 try await cloudKit.save(SongUserDataPayload(entries: songUserDataStore.entries), for: .songUserData, updatedAt: now)
                 rememberCloudDocumentAppliedDate(now, for: .songUserData)
+                updateCloudAvailability(with: now)
             }
             if let podcastStore {
                 try await cloudKit.save(PodcastSubscriptionsPayload(shows: podcastStore.shows), for: .podcastSubscriptions, updatedAt: now)
                 rememberCloudDocumentAppliedDate(now, for: .podcastSubscriptions)
+                updateCloudAvailability(with: now)
             }
             if let playbackEngine {
                 do {
@@ -199,12 +284,15 @@ final class CloudSyncStore: ObservableObject {
                         updatedAt: now
                     )
                     rememberCloudDocumentAppliedDate(now, for: .playbackHistory)
+                    updateCloudAvailability(with: now)
                 } catch {
+                    rememberSyncCompletedAt(now)
                     statusMessage = "配置已同步到 iCloud；播放历史未同步".t + "：\(error.localizedDescription)"
                     return true
                 }
             }
-            statusMessage = "配置已同步到 iCloud".t
+            rememberSyncCompletedAt(now)
+            statusMessage = "已同步到 iCloud".t
             return true
         } catch {
             statusMessage = "iCloud 同步失败：\(error.localizedDescription)"
@@ -222,21 +310,30 @@ final class CloudSyncStore: ObservableObject {
         defer { isApplyingCloudDocuments = false }
         do {
             if let envelope: CloudDocumentEnvelope<ServerProfilesPayload> = try await cloudKit.fetch(.serverProfiles),
-               shouldApplyCloudDocument(envelope.updatedAt, for: .serverProfiles),
                let serverStore {
-                serverStore.replaceProfiles(envelope.payload.profiles, activeProfileID: envelope.payload.activeProfileID)
-                rememberCloudDocumentAppliedDate(envelope.updatedAt, for: .serverProfiles)
-                didApply = true
+                updateCloudAvailability(with: envelope.updatedAt)
+                if shouldApplyCloudDocument(envelope.updatedAt, for: .serverProfiles),
+                   !hasUnsyncedServerProfileChanges() {
+                    serverStore.replaceProfiles(
+                        envelope.payload.profiles,
+                        activeProfileID: envelope.payload.activeProfileID,
+                        modifiedAt: envelope.updatedAt
+                    )
+                    rememberCloudDocumentAppliedDate(envelope.updatedAt, for: .serverProfiles)
+                    didApply = true
+                }
             }
             if let envelope: CloudDocumentEnvelope<PlaylistsPayload> = try await cloudKit.fetch(.playlists),
                shouldApplyCloudDocument(envelope.updatedAt, for: .playlists),
                let playlistStore {
+                updateCloudAvailability(with: envelope.updatedAt)
                 playlistStore.replacePlaylists(envelope.payload.playlists)
                 rememberCloudDocumentAppliedDate(envelope.updatedAt, for: .playlists)
                 didApply = true
             }
             if let envelope: CloudDocumentEnvelope<PreferencesPayload> = try await cloudKit.fetch(.preferences),
                shouldApplyCloudDocument(envelope.updatedAt, for: .preferences) {
+                updateCloudAvailability(with: envelope.updatedAt)
                 applyTheme(themeID: envelope.payload.themeID, appearance: envelope.payload.appearance)
                 playbackSettings?.applySnapshot(envelope.payload.playbackSettings)
                 rememberCloudDocumentAppliedDate(envelope.updatedAt, for: .preferences)
@@ -245,6 +342,7 @@ final class CloudSyncStore: ObservableObject {
             if let envelope: CloudDocumentEnvelope<SongUserDataPayload> = try await cloudKit.fetch(.songUserData),
                shouldApplyCloudDocument(envelope.updatedAt, for: .songUserData),
                let songUserDataStore {
+                updateCloudAvailability(with: envelope.updatedAt)
                 songUserDataStore.replaceEntries(envelope.payload.entries)
                 rememberCloudDocumentAppliedDate(envelope.updatedAt, for: .songUserData)
                 didApply = true
@@ -252,6 +350,7 @@ final class CloudSyncStore: ObservableObject {
             if let envelope: CloudDocumentEnvelope<PodcastSubscriptionsPayload> = try await cloudKit.fetch(.podcastSubscriptions),
                shouldApplyCloudDocument(envelope.updatedAt, for: .podcastSubscriptions),
                let podcastStore {
+                updateCloudAvailability(with: envelope.updatedAt)
                 podcastStore.replaceShows(envelope.payload.shows)
                 rememberCloudDocumentAppliedDate(envelope.updatedAt, for: .podcastSubscriptions)
                 didApply = true
@@ -259,6 +358,7 @@ final class CloudSyncStore: ObservableObject {
             if let envelope: CloudDocumentEnvelope<PlaybackHistoryPayload> = try await cloudKit.fetch(.playbackHistory),
                shouldApplyCloudDocument(envelope.updatedAt, for: .playbackHistory),
                let playbackEngine {
+                updateCloudAvailability(with: envelope.updatedAt)
                 playbackEngine.applyHistorySnapshot(envelope.payload.snapshot)
                 rememberCloudDocumentAppliedDate(envelope.updatedAt, for: .playbackHistory)
                 didApply = true
@@ -268,9 +368,49 @@ final class CloudSyncStore: ObservableObject {
             didFail = true
         }
         if didApply {
-            statusMessage = "已从 iCloud 更新配置".t
+            rememberSyncCompletedAt(Date())
+            statusMessage = "已从 iCloud 更新同步配置".t
         }
         return (didApply, didFail)
+    }
+
+    /// 自动从 iCloud 拉取较新的配置；成功无变化时保持安静。
+    private func runAutomaticPull() async {
+        guard isEnabled, !isSyncing else { return }
+        guard Date().timeIntervalSince(lastAutomaticPullAt) >= automaticPullInterval else { return }
+        isSyncing = true
+        lastAutomaticPullAt = Date()
+        defer { isSyncing = false }
+        let result = await pullCloudKitDocuments()
+        if !result.didFail {
+            rememberSyncCompletedAt(Date())
+        }
+    }
+
+    /// 自动把本机最新配置推送到 iCloud。
+    private func runAutomaticPush() async {
+        guard isEnabled, !isSyncing else { return }
+        isSyncing = true
+        defer { isSyncing = false }
+        pushKeyValueSnapshot()
+        _ = await pushCloudKitDocuments()
+    }
+
+    /// 不定时同步：先拉取云端更新，再把本机状态补推到 CloudKit。
+    private func runOccasionalSync() async {
+        guard isEnabled, !isSyncing else {
+            scheduleOccasionalSync()
+            return
+        }
+        isSyncing = true
+        defer {
+            isSyncing = false
+            scheduleOccasionalSync()
+        }
+        let pullResult = await pullCloudKitDocuments()
+        guard !pullResult.didFail else { return }
+        _ = await pushCloudKitDocuments()
+        rememberSyncCompletedAt(Date())
     }
 
     /// 将云端主题配置应用到本机。
@@ -291,6 +431,13 @@ final class CloudSyncStore: ObservableObject {
         date > lastCloudDocumentAppliedDate(for: document)
     }
 
+    /// 判断本机服务器配置是否比最近一次已应用云端版本更新。
+    private func hasUnsyncedServerProfileChanges() -> Bool {
+        guard let serverStore else { return false }
+        let localDelta = serverStore.updatedAt.timeIntervalSince(lastCloudDocumentAppliedDate(for: .serverProfiles))
+        return localDelta > 0.5
+    }
+
     /// 记录已应用的 KVS 快照时间，避免重复覆盖本地。
     private func rememberKeyValueAppliedDate(_ date: Date) {
         defaults.set(date.timeIntervalSince1970, forKey: lastAppliedKey)
@@ -301,6 +448,30 @@ final class CloudSyncStore: ObservableObject {
     private func rememberCloudDocumentAppliedDate(_ date: Date, for document: CloudSyncDocument) {
         defaults.set(date.timeIntervalSince1970, forKey: cloudDocumentAppliedKey(for: document))
         defaults.synchronize()
+    }
+
+    /// 记录最近一次成功同步时间。
+    private func rememberSyncCompletedAt(_ date: Date) {
+        lastSyncAt = date
+        defaults.set(date.timeIntervalSince1970, forKey: lastSyncAtKey)
+        defaults.synchronize()
+    }
+
+    /// 更新云端是否存在同步数据的状态。
+    private func updateCloudAvailability(with date: Date?) {
+        guard let date else { return }
+        hasCloudData = true
+        if cloudDataUpdatedAt == nil || date > (cloudDataUpdatedAt ?? .distantPast) {
+            cloudDataUpdatedAt = date
+            defaults.set(date.timeIntervalSince1970, forKey: cloudDataUpdatedAtKey)
+            defaults.synchronize()
+        }
+    }
+
+    /// 从持久化时间戳恢复日期。
+    private static func date(from timestamp: TimeInterval) -> Date? {
+        guard timestamp > 0 else { return nil }
+        return Date(timeIntervalSince1970: timestamp)
     }
 
     /// 读取最近一次应用的 CloudKit 文档时间。
@@ -379,6 +550,20 @@ private struct CloudKitDocumentStore {
             return nil
         }
         return try JSONDecoder().decode(CloudDocumentEnvelope<Payload>.self, from: data)
+    }
+
+    /// 读取所有已存在同步文档的更新时间，用于判断云端是否有数据。
+    func fetchAvailableDocumentDates() async throws -> [Date] {
+        var dates: [Date] = []
+        for document in CloudSyncDocument.allCases {
+            guard let record = try await existingRecord(for: document) else { continue }
+            if let updatedAt = record[updatedAtKey] as? Date {
+                dates.append(updatedAt)
+            } else if let updatedAt = record[updatedAtKey] as? NSDate {
+                dates.append(updatedAt as Date)
+            }
+        }
+        return dates
     }
 
     /// 读取已存在的 CloudKit 记录；不存在时返回 nil。

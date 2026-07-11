@@ -59,6 +59,11 @@ struct SettingsView: View {
         .onAppear { handleAddServerRequest() }
         .onChange(of: navigation.addServerRequestID) { _, _ in handleAddServerRequest() }
         .task { await loadServerInfo() }
+        .task(id: cloudSync.isEnabled) {
+            if cloudSync.isEnabled {
+                await cloudSync.refreshCloudAvailability()
+            }
+        }
         .sheet(item: $editingProfile) { profile in
             ServerEditorView(profile: profile)
                 .presentationDetents([.large])
@@ -566,21 +571,25 @@ struct SettingsView: View {
                 themedLabel("iCloud 云同步配置".t, systemImage: "icloud")
             }
             if cloudSync.isEnabled {
+                cloudSyncStatusRows
                 Toggle(isOn: credentialsSyncBinding) {
                     themedLabel("同步登录凭据".t, systemImage: "key.fill")
                 }
                 Button {
                     Task { await syncCloudNow() }
                 } label: {
-                    HStack {
+                    Label {
+                        Text(isSyncingCloud ? "正在同步 iCloud".t : "立即同步配置".t)
+                            .foregroundStyle(accentColor)
+                    } icon: {
                         if isSyncingCloud {
                             ProgressView()
+                                .controlSize(.small)
+                                .tint(accentColor)
                         } else {
                             Image(systemName: "arrow.triangle.2.circlepath")
                                 .foregroundStyle(accentColor)
                         }
-                        Text(isSyncingCloud ? "正在同步 iCloud".t : "立即同步配置".t)
-                            .foregroundStyle(accentColor)
                     }
                 }
                 .disabled(isSyncingCloud)
@@ -595,6 +604,53 @@ struct SettingsView: View {
         } footer: {
             Text("同步服务器配置、歌单、播放偏好、播客订阅、歌曲资料和历史记录；登录凭据可选择通过 iCloud Keychain 同步。".t)
         }
+    }
+
+    /// iCloud 同步状态行：最近同步时间与云端是否已有可同步数据。
+    private var cloudSyncStatusRows: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            syncStatusLine(
+                title: "最近同步".t,
+                value: cloudSync.lastSyncAt.map(formatSyncDate) ?? "尚未同步".t,
+                systemImage: "clock"
+            )
+            syncStatusLine(
+                title: "云端数据".t,
+                value: cloudDataStatusText,
+                systemImage: cloudSync.hasCloudData ? "checkmark.icloud" : "icloud.slash"
+            )
+        }
+        .padding(.vertical, 4)
+    }
+
+    /// 云端数据状态文案。
+    private var cloudDataStatusText: String {
+        guard cloudSync.hasCloudData else { return "暂无可同步数据".t }
+        if let date = cloudSync.cloudDataUpdatedAt {
+            return String(format: "可同步，更新于 %@".t, formatSyncDate(date))
+        }
+        return "有可同步数据".t
+    }
+
+    /// 设置页状态行样式。
+    private func syncStatusLine(title: String, value: String, systemImage: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .frame(width: 18)
+                .foregroundStyle(accentColor)
+            Text(title)
+                .foregroundStyle(.primary)
+            Spacer(minLength: 12)
+            Text(value)
+                .font(.nocCaption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.trailing)
+        }
+    }
+
+    /// 按用户当前区域格式化同步时间。
+    private func formatSyncDate(_ date: Date) -> String {
+        date.formatted(date: .abbreviated, time: .shortened)
     }
 
     private var aboutSection: some View {
