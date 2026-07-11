@@ -60,6 +60,13 @@ struct PlaybackQueueSnapshot: Identifiable, Hashable, Codable {
     }
 }
 
+/// 可同步的播放历史快照；按当前服务器作用域保存最近播放和队列历史。
+struct PlaybackHistorySnapshot: Codable, Hashable {
+    let scopeID: String
+    let playedHistory: [Song]
+    let queueHistory: [PlaybackQueueSnapshot]
+}
+
 /// 全局播放引擎：单例式注入到 SwiftUI 环境，掌管队列、时间、Now Playing、远程命令。
 @MainActor
 final class PlaybackEngine: ObservableObject {
@@ -416,6 +423,41 @@ final class PlaybackEngine: ObservableObject {
     /// 删除一条队列历史记录。
     func removeQueueHistory(id: UUID) {
         queueHistory.removeAll { $0.id == id }
+        persistHistories()
+    }
+
+    /// 导出当前服务器作用域的播放历史。
+    func historySnapshot() -> PlaybackHistorySnapshot {
+        PlaybackHistorySnapshot(
+            scopeID: historyScopeKey,
+            playedHistory: playedHistory,
+            queueHistory: queueHistory
+        )
+    }
+
+    /// 导出精简版播放历史给 iCloud，避免完整队列历史占用过多 CloudKit 配额。
+    func cloudHistorySnapshot(maxPlayedCount: Int, maxQueueCount: Int, maxQueueSongs: Int) -> PlaybackHistorySnapshot {
+        let compactQueues = queueHistory.prefix(maxQueueCount).map { snapshot in
+            PlaybackQueueSnapshot(
+                id: snapshot.id,
+                createdAt: snapshot.createdAt,
+                title: snapshot.title,
+                songs: Array(snapshot.songs.prefix(maxQueueSongs)),
+                currentSongID: snapshot.currentSongID
+            )
+        }
+        return PlaybackHistorySnapshot(
+            scopeID: historyScopeKey,
+            playedHistory: Array(playedHistory.prefix(maxPlayedCount)),
+            queueHistory: compactQueues
+        )
+    }
+
+    /// 应用云端播放历史；只覆盖当前作用域，避免不同服务器历史串台。
+    func applyHistorySnapshot(_ snapshot: PlaybackHistorySnapshot) {
+        guard snapshot.scopeID == historyScopeKey else { return }
+        playedHistory = Array(snapshot.playedHistory.prefix(maxPlayedHistoryCount))
+        queueHistory = Array(snapshot.queueHistory.prefix(maxQueueHistoryCount))
         persistHistories()
     }
 

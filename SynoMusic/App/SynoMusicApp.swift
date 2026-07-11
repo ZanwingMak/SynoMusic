@@ -1,9 +1,9 @@
-import Combine
 import SwiftUI
 
 /// 应用入口：装配根环境对象并展示首屏。
 @main
 struct SynoMusicApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     /// 服务器仓库：管理已配置的群晖服务器列表与凭证。
     @StateObject private var serverStore = ServerStore()
     /// 播放引擎：全局共享，保证迷你播放器在跨页面时状态一致。
@@ -22,6 +22,10 @@ struct SynoMusicApp: App {
     @StateObject private var lm = LanguageManager.shared
     /// 播放偏好（后台播放 / 锁屏 / AirPlay 开关）。
     @StateObject private var playbackSettings = PlaybackSettings()
+    /// 播客订阅仓库，用于跨页面和 iCloud 同步共享订阅状态。
+    @StateObject private var podcastStore = PodcastSubscriptionStore.shared
+    /// 歌曲自定义资料仓库，用于备注和自定义标题等资料同步。
+    @StateObject private var songUserDataStore = SongUserDataStore.shared
     /// App 内部导航状态，用于播放器等浮层跳转主框架页面。
     @StateObject private var navigation = AppNavigationState()
     /// StoreKit 购买状态。
@@ -43,6 +47,8 @@ struct SynoMusicApp: App {
                 .environmentObject(theme)
                 .environmentObject(lm)
                 .environmentObject(playbackSettings)
+                .environmentObject(podcastStore)
+                .environmentObject(songUserDataStore)
                 .environmentObject(navigation)
                 .environmentObject(purchaseStore)
                 .environmentObject(cloudSync)
@@ -50,30 +56,49 @@ struct SynoMusicApp: App {
                 .onAppear {
                     playback.applyPlaybackSettings(playbackSettings)
                     playback.downloadManager = downloads
-                    cloudSync.configure(serverStore: serverStore, playlistStore: playlists, themeManager: theme)
+                    cloudSync.configure(
+                        serverStore: serverStore,
+                        playlistStore: playlists,
+                        themeManager: theme,
+                        playbackSettings: playbackSettings,
+                        podcastStore: podcastStore,
+                        songUserDataStore: songUserDataStore,
+                        playbackEngine: playback
+                    )
                     applyPurchaseLimits()
+                    cloudSync.scheduleAutomaticPull()
+                    cloudSync.scheduleOccasionalSync()
                 }
                 .task {
                     await purchaseStore.start()
                     applyPurchaseLimits()
                 }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active {
+                        cloudSync.scheduleAutomaticPull()
+                        cloudSync.scheduleOccasionalSync()
+                    }
+                }
+                .onReceive(serverStore.objectWillChange) { _ in
+                    cloudSync.scheduleAutomaticPush()
+                }
+                .onReceive(playlists.objectWillChange) { _ in
+                    cloudSync.scheduleAutomaticPush()
+                }
+                .onReceive(theme.objectWillChange) { _ in
+                    cloudSync.scheduleAutomaticPush()
+                }
+                .onReceive(playbackSettings.objectWillChange) { _ in
+                    cloudSync.scheduleAutomaticPush()
+                }
+                .onReceive(podcastStore.objectWillChange) { _ in
+                    cloudSync.scheduleAutomaticPush()
+                }
+                .onReceive(songUserDataStore.objectWillChange) { _ in
+                    cloudSync.scheduleAutomaticPush()
+                }
                 .onChange(of: purchaseStore.hasFullAccess) { _, _ in
                     applyPurchaseLimits()
-                }
-                .onReceive(serverStore.$profiles.dropFirst()) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
-                }
-                .onReceive(serverStore.$activeProfileID.dropFirst()) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
-                }
-                .onReceive(playlists.$playlists.dropFirst()) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
-                }
-                .onReceive(theme.$currentID.dropFirst()) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
-                }
-                .onReceive(theme.$appearance.dropFirst()) { _ in
-                    cloudSync.pushLocalSnapshotIfNeeded()
                 }
                 .tint(theme.current.accent(in: .dark))
                 .preferredColorScheme(theme.appearance.colorScheme)

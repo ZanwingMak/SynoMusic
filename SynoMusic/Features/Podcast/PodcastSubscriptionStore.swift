@@ -3,6 +3,8 @@ import SwiftUI
 /// 本地播客订阅存储，使用 UserDefaults 持久化 feed 列表。
 @MainActor
 final class PodcastSubscriptionStore: ObservableObject {
+    static let shared = PodcastSubscriptionStore()
+
     @Published private(set) var shows: [PodcastShow] = []
 
     private let key = "syno.podcast.subscriptions"
@@ -23,6 +25,12 @@ final class PodcastSubscriptionStore: ObservableObject {
         } else {
             shows.insert(show, at: 0)
         }
+        persist()
+    }
+
+    /// 用云端快照替换本地播客订阅列表。
+    func replaceShows(_ newShows: [PodcastShow]) {
+        shows = newShows
         persist()
     }
 

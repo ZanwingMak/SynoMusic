@@ -7,8 +7,12 @@ struct LibraryHomeView: View {
     @EnvironmentObject private var purchase: PurchaseStore
     @EnvironmentObject private var reviewMode: AppReviewMode
     @EnvironmentObject private var navigation: AppNavigationState
+    @EnvironmentObject private var cloudSync: CloudSyncStore
+    @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
     @StateObject private var vm = LibraryHomeViewModel()
     @State private var paywallFeature: PremiumFeature?
+    @State private var isSyncingCloud = false
 
     var body: some View {
         ScrollView {
@@ -16,8 +20,7 @@ struct LibraryHomeView: View {
                 Header()
                 QuickActions()
                 if session.isRestoringStartupSession && !reviewMode.isEnabled {
-                    LoadingState()
-                        .frame(minHeight: 300)
+                    LibraryHomeSkeleton()
                 } else if session.musicClient == nil && !reviewMode.isEnabled {
                     ServerRequiredEmptyState {
                         navigation.openAddServer()
@@ -54,7 +57,7 @@ struct LibraryHomeView: View {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 purchaseButton
                 toolbarLink(value: BrowseRoute.localPlaylists, systemImage: "music.note.list", label: "我的歌单".t)
-                toolbarLink(value: BrowseRoute.settings, systemImage: "gearshape", label: "设置".t)
+                cloudSyncButton
             }
         }
         .sheet(item: $paywallFeature) { feature in
@@ -79,6 +82,27 @@ struct LibraryHomeView: View {
         ].joined(separator: ":")
     }
 
+    /// 首页右上角的 iCloud 同步入口。
+    private var cloudSyncButton: some View {
+        Button {
+            Task { await syncCloudFromHome() }
+        } label: {
+            if isSyncingCloud {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(theme.current.accent(in: colorScheme))
+            } else {
+                Image(systemName: "arrow.triangle.2.circlepath.icloud")
+                    .font(.system(size: 19, weight: .semibold))
+                    .frame(width: 24, height: 24)
+                    .foregroundStyle(theme.current.accent(in: colorScheme))
+            }
+        }
+        .disabled(isSyncingCloud)
+        .accessibilityLabel("iCloud 云同步".t)
+        .buttonStyle(.plain)
+    }
+
     /// 首页右上角的购买与订阅入口。
     private var purchaseButton: some View {
         Button {
@@ -95,6 +119,23 @@ struct LibraryHomeView: View {
         .buttonStyle(.plain)
     }
 
+    /// 从首页手动触发一次 iCloud 双向同步，并展示明确结果。
+    private func syncCloudFromHome() async {
+        guard !isSyncingCloud else { return }
+        guard cloudSync.isEnabled else {
+            playback.setStatus("请先在设置中开启 iCloud 云同步".t)
+            Haptics.warning()
+            return
+        }
+        Haptics.tap()
+        isSyncingCloud = true
+        defer { isSyncingCloud = false }
+        await cloudSync.syncNow()
+        if let message = cloudSync.statusMessage {
+            playback.setStatus(message)
+        }
+    }
+
     /// 带轻触反馈的导航栏图标入口。
     private func toolbarLink(value: BrowseRoute, systemImage: String, label: String) -> some View {
         NavigationLink(value: value) {
@@ -106,6 +147,76 @@ struct LibraryHomeView: View {
 }
 
 // MARK: 子组件
+
+/// 首页启动恢复骨架屏：展示即将出现的专辑结构，避免闪出空态。
+private struct LibraryHomeSkeleton: View {
+    private let columns = [
+        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: Metrics.m),
+        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: Metrics.m)
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Metrics.l) {
+            SkeletonLine(width: 96, height: 20)
+                .padding(.top, Metrics.s)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Metrics.m) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        VStack(alignment: .leading, spacing: Metrics.s) {
+                            SkeletonBlock(cornerRadius: 14)
+                                .frame(width: 220, height: 220)
+                            SkeletonLine(width: 168, height: 18)
+                            SkeletonLine(width: 112, height: 14)
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            .scrollClipDisabled()
+
+            SkeletonLine(width: 88, height: 20)
+
+            LazyVGrid(columns: columns, spacing: Metrics.l) {
+                ForEach(0..<4, id: \.self) { _ in
+                    VStack(alignment: .leading, spacing: 6) {
+                        SkeletonBlock(cornerRadius: 10)
+                            .aspectRatio(1, contentMode: .fit)
+                        SkeletonLine(width: 124, height: 18)
+                        SkeletonLine(width: 84, height: 14)
+                    }
+                }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityLabel("正在加载".t)
+    }
+}
+
+/// 骨架屏的矩形占位块。
+private struct SkeletonBlock: View {
+    var cornerRadius: CGFloat
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(Color(.secondarySystemFill))
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Color(.separator).opacity(0.16), lineWidth: 1)
+            }
+    }
+}
+
+/// 骨架屏的文本行占位块。
+private struct SkeletonLine: View {
+    var width: CGFloat
+    var height: CGFloat
+
+    var body: some View {
+        SkeletonBlock(cornerRadius: height / 2)
+            .frame(width: width, height: height)
+    }
+}
 
 private struct Header: View {
     var body: some View {

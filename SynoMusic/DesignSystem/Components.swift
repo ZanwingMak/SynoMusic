@@ -338,6 +338,12 @@ struct CoverLookupQuery: Hashable, Sendable {
     var searchTerm: String {
         [title, artist, album].filter { !$0.isEmpty }.joined(separator: " ")
     }
+
+    /// 是否为审核截图或 mock 数据的占位内容。
+    var isDemoPlaceholder: Bool {
+        let values = [title, artist, album].filter { !$0.isEmpty }
+        return !values.isEmpty && values.allSatisfy { $0.lowercased() == "demo" }
+    }
 }
 
 /// 在线封面查询缓存，避免列表和播放器重复请求同一首歌。
@@ -348,7 +354,7 @@ actor OnlineCoverLookupCache {
 
     /// 查询封面 URL；命中缓存时直接返回。
     func url(for query: CoverLookupQuery?) async -> URL? {
-        guard let query, !query.searchTerm.isEmpty else { return nil }
+        guard let query, !query.searchTerm.isEmpty, !query.isDemoPlaceholder else { return nil }
         if let cached = cache[query] { return cached }
         let result = await Self.fetchArtworkURL(for: query)
         cache[query] = result

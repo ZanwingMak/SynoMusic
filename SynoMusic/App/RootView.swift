@@ -73,12 +73,14 @@ struct RootView: View {
                 playback.play(queue: DemoMode.songs, startAt: 0)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                     playback.pause()
+                    playback.dismissStatus()
                     showFullPlayer = true
                 }
             } else if args.contains("-miniplayer") {
                 playback.play(queue: DemoMode.songs, startAt: 0)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                     playback.pause()
+                    playback.dismissStatus()
                 }
             }
         }
@@ -146,7 +148,8 @@ struct RootView: View {
             Haptics.success()
         } catch {
             // 静默失败：用户进入 LoginFlowView 手动处理
-            playback.setStatus("自动登录失败：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
+            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            playback.setStatus("自动登录失败".t + "：\(message)")
         }
     }
 
@@ -220,7 +223,7 @@ private struct StatusToast: View {
             .padding(.vertical, Metrics.s + 2)
             .background(Color.black.opacity(0.78), in: Capsule())
             .padding(.horizontal, Metrics.m)
-            .padding(.top, Metrics.s)
+            .padding(.top, Metrics.xxl + Metrics.m)
             Spacer()
         }
     }
