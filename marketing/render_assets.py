@@ -196,6 +196,26 @@ def render_store(source: Path, locale: str, metadata: dict, kind: str,
     return target
 
 
+# 生成符合 Mac 商店尺寸的截图，完整保留真实客户端画面及本地化标题。
+def render_mac_store(source: Path, locale: str, metadata: dict, output: Path) -> Path:
+    width, height = 2880, 1800
+    margin = 144
+    image = Image.new("RGBA", (width, height), PAPER)
+    draw_brand(image, margin, 74, 1.5)
+    draw_record(image, (width - 140, 194), 245)
+    title = headline_layer(metadata["headlines"][0], locale, 120,
+                           width - margin * 2, INK, output)
+    image.alpha_composite(title, (margin, 205))
+    top = max(490, 205 + title.height + 60)
+    paste_screen(image, source, (margin, top, width - margin * 2, height - top - 100),
+                 radius=22, frame=8)
+    ImageDraw.Draw(image).text((margin, height - 60), "SynoMusic / Mac",
+                              font=font("en-US", 25), fill=MUTED)
+    target = output / "AppStore" / locale / "mac-01.png"
+    save_png(image, target)
+    return target
+
+
 # 生成多端宣传图，Mac 与手机均来自真实界面截图。
 def render_promo(phone: Path, mac: Path, locale: str, metadata: dict,
                  output: Path, social: bool = False, desktop_name: str = "Mac") -> Path:
@@ -301,6 +321,8 @@ def main() -> None:
         row = metadata[locale]
         phone = find_raw(args.raw_root, locale, row, "iphone-library.png")
         mac = find_raw(args.raw_root, locale, row, "mac-library.png")
+        if mac:
+            paths.append(render_mac_store(mac, locale, row, args.output))
         if phone and mac:
             paths.append(render_promo(phone, mac, locale, row, args.output))
             paths.append(render_promo(phone, mac, locale, row, args.output, social=True))
