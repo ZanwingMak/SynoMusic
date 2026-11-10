@@ -47,3 +47,5 @@ button:active:not(:disabled),summary:active{transform:scale(.96)}
 
 .play-button.is-loading svg{animation:player-loading 900ms linear infinite}
 @keyframes player-loading{to{transform:rotate(360deg)}}
+
+@media(max-width:1150px){[data-platform=windows] .brand .mac-label{display:none}}
