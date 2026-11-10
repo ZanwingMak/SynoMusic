@@ -330,7 +330,7 @@ async function play(index: number, position=0, sequence=false): Promise<void> {
  if(demo){render();return;}
  loadingTrack=song.id;render();
  try{
- audio.pause();
+ audio.pause();audio.removeAttribute("src");audio.load();resumePosition=position;
  await ensureSong(song);if(generation!==playGeneration)return;
  if(song.duration>0&&position>=song.duration-1)position=0;
  if(position>0)audio.addEventListener("loadedmetadata",()=>{if(generation===playGeneration)audio.currentTime=position;},{once:true});
@@ -512,7 +512,7 @@ async function crossfadeTick(): Promise<void> {
   const started=performance.now();const volume=Number(state.settings.volume??"0.7");
   await new Promise<void>(resolve=>{const tick=()=>{if(generation!==playGeneration){resolve();return;}const ratio=Math.min((performance.now()-started)/(seconds*1000),1);audio.volume=volume*(1-ratio);otherAudio.volume=volume*ratio;if(ratio<1&&!audio.paused)requestAnimationFrame(tick);else resolve();};tick();});
   if(generation!==playGeneration)return;
-  audio.pause();[audio,otherAudio]=[otherAudio,audio];current++;attachAudio();lyrics="";if(Number.isFinite(audio.duration)&&audio.duration>0)nextSong.duration=audio.duration;await Service.recordPlay(nextSong);syncNowPlaying();render();
+  audio.pause();[audio,otherAudio]=[otherAudio,audio];current++;attachAudio();lyrics="";if(Number.isFinite(audio.duration)&&audio.duration>0)nextSong.duration=audio.duration;await Service.recordPlay(nextSong);state.history=[nextSong,...state.history.filter(song=>song.id!==nextSong.id)].slice(0,500);syncNowPlaying();render();
   void Service.lyrics(nextSong.id).then(text=>{if(generation===playGeneration){lyrics=text;if(panel==="lyrics"||nowPlaying)refreshLyrics();}}).catch(()=>{});
  }catch(e){if(generation===playGeneration)toast(String(e));}finally{if(generation===playGeneration)crossfading=false;}
 }
