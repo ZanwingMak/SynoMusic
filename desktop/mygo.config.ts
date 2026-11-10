@@ -2,7 +2,7 @@ import { defineConfig } from "mygo-cli";
 
 // 按目标平台配置桌面构建、签名与商店必需的应用分类。
 export default defineConfig(() => ({
-  name: "SynoMusic", identifier: "app.synomusic.SynoMusic", version: "1.6.2",
+  name: "SynoMusic", identifier: "app.synomusic.SynoMusic", version: "1.6.3",
   devUrl: "http://localhost:5173", devCommand: "npm run dev:web", buildCommand: "npm run build:web",
   urlSchemes: ["synomusic-desktop", "synomusic-mac"],
   icon: "resources/icon.png", resources: ["../LICENSE"], license: "GPL-3.0-only", publisher: "ZHENYING MAI",
@@ -16,6 +16,6 @@ export default defineConfig(() => ({
       entitlements: "resources/SynoMusic-Mac.entitlements",
       provisioningProfile: process.env.SYNOMUSIC_MAC_PROFILE,
     } : {}),
-    infoPlist: { CFBundleVersion: "55", LSApplicationCategoryType: "public.app-category.music", NSLocalNetworkUsageDescription: "Connect to your authorized music servers on your local network.", ITSAppUsesNonExemptEncryption: false },
+    infoPlist: { CFBundleVersion: "56", LSApplicationCategoryType: "public.app-category.music", NSLocalNetworkUsageDescription: "Connect to your authorized music servers on your local network.", ITSAppUsesNonExemptEncryption: false },
   },
 }));

@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -32,6 +33,7 @@ type Profile struct {
 	IsQuickConnect           bool   `json:"isQuickConnect"`
 	IgnoreInvalidCertificate bool   `json:"ignoreInvalidCertificate"`
 	Folder                   string `json:"folder,omitempty"`
+	BasePath                 string `json:"basePath,omitempty"`
 }
 
 // Song 统一服务器、本地文件、电台及播客的可播放条目。
@@ -77,11 +79,12 @@ type State struct {
 
 // Service 向桌面前端提供类型安全的音乐能力。
 type Service struct {
-	mu      sync.Mutex
-	state   State
-	dir     string
-	clients map[string]*libraryClient
-	songs   map[string]Song
+	mu         sync.Mutex
+	downloadMu sync.Mutex
+	state      State
+	dir        string
+	clients    map[string]*libraryClient
+	songs      map[string]Song
 }
 
 var seekCommand = mygo.NewEvent[float64]("seekCommand")
@@ -115,6 +118,27 @@ func newService() (*Service, error) {
 	}
 	if s.state.Lyrics == nil {
 		s.state.Lyrics = map[string]string{}
+	}
+	if s.state.Cached == nil {
+		s.state.Cached = []Song{}
+	}
+	if s.state.Imports == nil {
+		s.state.Imports = []Song{}
+	}
+	if s.state.History == nil {
+		s.state.History = []Song{}
+	}
+	if s.state.Profiles == nil {
+		s.state.Profiles = []Profile{}
+	}
+	if s.state.Playlists == nil {
+		s.state.Playlists = []Playlist{}
+	}
+	if s.state.Favorites == nil {
+		s.state.Favorites = []string{}
+	}
+	if s.state.Podcasts == nil {
+		s.state.Podcasts = []Podcast{}
 	}
 	for _, song := range append(append([]Song{}, s.state.Imports...), append(append([]Song{}, s.state.Cached...), s.state.History...)...) {
 		s.songs[song.ID] = song
@@ -277,7 +301,46 @@ func (s *Service) Songs(profileID string) ([]Song, error) {
 	for _, song := range songs {
 		s.songs[song.ID] = song
 	}
+	if data, err := json.Marshal(songs); err == nil {
+		path := s.libraryCachePath(profileID)
+		if os.MkdirAll(filepath.Dir(path), 0700) == nil && os.WriteFile(path+".tmp", data, 0600) == nil {
+			_ = os.Rename(path+".tmp", path)
+		}
+	}
 	return songs, nil
+}
+
+// libraryCachePath 使用固定摘要保存资料库快照，避免配置标识符成为文件路径。
+func (s *Service) libraryCachePath(profileID string) string {
+	sum := sha256.Sum256([]byte(profileID))
+	return filepath.Join(s.dir, "Libraries", hex.EncodeToString(sum[:])+".json")
+}
+
+// CachedLibrary 恢复最近成功读取的资料库，让网络异常时仍可浏览与播放已下载歌曲。
+func (s *Service) CachedLibrary(profileID string) []Song {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if profileID == "local" {
+		return append([]Song{}, s.state.Imports...)
+	}
+	songs := []Song{}
+	if data, err := os.ReadFile(s.libraryCachePath(profileID)); err == nil {
+		if json.Unmarshal(data, &songs) != nil {
+			songs = []Song{}
+		}
+	}
+	seen := map[string]bool{}
+	for _, song := range songs {
+		seen[song.ID] = true
+		s.songs[song.ID] = song
+	}
+	for _, song := range append(append([]Song{}, s.state.Cached...), s.state.History...) {
+		if song.ProfileID == profileID && !seen[song.ID] {
+			songs = append(songs, song)
+			seen[song.ID] = true
+		}
+	}
+	return songs
 }
 
 // CreatePlaylist 创建本地歌单，名称不能为空。
@@ -353,6 +416,14 @@ func (s *Service) RecordPlay(song Song) error {
 	}
 	s.state.History = history
 	s.songs[song.ID] = song
+	if song.Duration > 0 {
+		for index, item := range s.state.Imports {
+			if item.ID == song.ID {
+				s.state.Imports[index] = song
+				break
+			}
+		}
+	}
 	return s.saveLocked()
 }
 
@@ -445,7 +516,13 @@ func (s *Service) ImportProfiles() (int, error) {
 // sortedSongs 按唱片序号和标题排序，保持专辑播放顺序稳定。
 func sortedSongs(songs []Song) {
 	sort.SliceStable(songs, func(i, j int) bool {
-		if songs[i].Album == songs[j].Album && songs[i].Track != songs[j].Track {
+		if a, b := strings.ToLower(songs[i].Album), strings.ToLower(songs[j].Album); a != b {
+			return a < b
+		}
+		if songs[i].Disc != songs[j].Disc {
+			return songs[i].Disc < songs[j].Disc
+		}
+		if songs[i].Track != songs[j].Track {
 			return songs[i].Track < songs[j].Track
 		}
 		return strings.ToLower(songs[i].Title) < strings.ToLower(songs[j].Title)

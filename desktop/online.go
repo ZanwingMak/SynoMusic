@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -32,7 +33,7 @@ func publicJSON(address string, target any) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", "SynoMusic/1.6.0 (macOS)")
+	req.Header.Set("User-Agent", "SynoMusic/1.6.3 (Desktop)")
 	resp, err := client.Do(req)
 	if err != nil {
 		return errors.New("online service unavailable")
@@ -143,7 +144,12 @@ func (s *Service) PodcastEpisodes(show Podcast) ([]Song, error) {
 		if err != nil || (audioURL.Scheme != "https" && audioURL.Scheme != "http") {
 			continue
 		}
-		songs = append(songs, Song{ID: fileID("podcast", audioURL.String()), ProfileID: "podcast", Title: item.Title, Artist: show.Author, Album: show.Title, Path: audioURL.String(), Artwork: show.ArtworkURL})
+		duration := 0.0
+		for _, component := range strings.Split(strings.TrimSpace(item.Duration), ":") {
+			seconds, _ := strconv.ParseFloat(component, 64)
+			duration = duration*60 + seconds
+		}
+		songs = append(songs, Song{ID: fileID("podcast", audioURL.String()), ProfileID: "podcast", Title: item.Title, Artist: show.Author, Album: show.Title, Path: audioURL.String(), Artwork: show.ArtworkURL, Duration: duration})
 	}
 	s.mu.Lock()
 	for _, song := range songs {
@@ -198,7 +204,7 @@ func (s *Service) Lyrics(id string) (string, error) {
 		return "", err
 	}
 	if c.profile.Provider == "synologyAudioStation" {
-		data, err := c.jsonRequest("GET", "/webapi/AudioStation/lyrics.cgi", url.Values{"api": {"SYNO.AudioStation.Lyrics"}, "version": {"2"}, "method": {"getlyrics"}, "id": {song.Path}, "_sid": {c.token}}, nil)
+		data, err := c.jsonRequest("GET", "/webapi/AudioStation/lyrics.cgi", url.Values{"api": {"SYNO.AudioStation.Lyrics"}, "version": {"2"}, "method": {"getlyrics"}, "id": {song.Path}, "_sid": {c.sessionToken()}}, nil)
 		if err != nil {
 			return "", err
 		}

@@ -2,21 +2,25 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 // libraryClient 封装音乐源会话；所有凭证仅存在 Go 层。
 type libraryClient struct {
+	mu       sync.Mutex
 	profile  Profile
 	http     *http.Client
 	token    string
@@ -41,6 +45,9 @@ func connectLibrary(p Profile, password, otp string) (*libraryClient, error) {
 		p.Port, _ = strconv.Atoi(u.Port())
 	}
 	host := strings.TrimSpace(p.Host)
+	if net.ParseIP(host) != nil {
+		host = "[" + host + "]"
+	}
 	if !strings.Contains(host, "://") {
 		scheme := p.Scheme
 		if scheme == "" {
@@ -53,7 +60,12 @@ func connectLibrary(p Profile, password, otp string) (*libraryClient, error) {
 		return nil, errors.New("invalid HTTP(S) server address")
 	}
 	if p.Port > 0 && u.Port() == "" {
-		u.Host = u.Hostname() + ":" + strconv.Itoa(p.Port)
+		u.Host = net.JoinHostPort(u.Hostname(), strconv.Itoa(p.Port))
+	}
+	if u.Path != "" && u.Path != "/" {
+		p.BasePath = strings.TrimRight(u.Path, "/")
+	} else if p.BasePath != "" {
+		u.Path = p.BasePath
 	}
 	p.Scheme = u.Scheme
 	p.Host = u.Hostname()
@@ -78,6 +90,7 @@ func connectLibrary(p Profile, password, otp string) (*libraryClient, error) {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	} // 用户明确选择信任自签名证书。
 	c := &libraryClient{profile: p, http: &http.Client{Timeout: 45 * time.Second, Transport: transport}, password: password, base: strings.TrimRight(u.String(), "/")}
+	transport.ResponseHeaderTimeout = 25 * time.Second
 	c.http.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		if len(via) > 0 && via[0].URL.Scheme == "https" && req.URL.Scheme == "http" {
 			return errors.New("HTTPS downgrade is not allowed")
@@ -142,7 +155,7 @@ func (c *libraryClient) request(method, address string, body io.Reader) (*http.R
 	if req.URL.Host == base.Host && req.URL.Scheme == base.Scheme {
 		switch c.profile.Provider {
 		case "jellyfin", "emby":
-			req.Header.Set("X-Emby-Authorization", `MediaBrowser Client="SynoMusic", Device="Desktop", DeviceId="synomusic-desktop", Version="1.6.0"`)
+			req.Header.Set("X-Emby-Authorization", `MediaBrowser Client="SynoMusic", Device="Desktop", DeviceId="synomusic-desktop", Version="1.6.3"`)
 			if c.token != "" {
 				req.Header.Set("X-Emby-Token", c.token)
 			}
@@ -157,8 +170,48 @@ func (c *libraryClient) request(method, address string, body io.Reader) (*http.R
 	return req, nil
 }
 
-// jsonRequest 执行有大小限制的 JSON 或表单请求并检查 HTTP 状态。
+// sessionToken 安全读取会话令牌，避免并发封面请求与重新认证互相覆盖。
+func (c *libraryClient) sessionToken() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.token
+}
+
+// renewSession 仅刷新仍然过期的 Audio Station 会话，避免并发请求重复登录。
+func (c *libraryClient) renewSession(expired string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.token != expired {
+		return nil
+	}
+	updated, err := connectLibrary(c.profile, c.password, "")
+	if err != nil {
+		return err
+	}
+	c.token = updated.token
+	return nil
+}
+
+// jsonRequest 在 Audio Station 会话过期时透明重试一次，其余错误保留原响应。
 func (c *libraryClient) jsonRequest(method, path string, params url.Values, payload any) (map[string]any, error) {
+	result, err := c.doJSONRequest(method, path, params, payload)
+	code := int(number(obj(result["error"])["code"]))
+	if err == nil && c.profile.Provider == "synologyAudioStation" && params.Get("_sid") != "" && (code == 106 || code == 107) {
+		if err = c.renewSession(params.Get("_sid")); err != nil {
+			return nil, err
+		}
+		retry := url.Values{}
+		for key, values := range params {
+			retry[key] = append([]string{}, values...)
+		}
+		retry.Set("_sid", c.sessionToken())
+		return c.doJSONRequest(method, path, retry, payload)
+	}
+	return result, err
+}
+
+// doJSONRequest 执行有大小限制的 JSON 或表单请求并检查 HTTP 状态。
+func (c *libraryClient) doJSONRequest(method, path string, params url.Values, payload any) (map[string]any, error) {
 	address := c.base + path
 	if len(params) > 0 {
 		address += "?" + params.Encode()
@@ -193,6 +246,42 @@ func (c *libraryClient) jsonRequest(method, path string, params url.Values, payl
 	return result, err
 }
 
+// openMedia 保留流式传输与 Range，遇到过期的 Audio Station 会话时重新认证一次。
+func (c *libraryClient) openMedia(ctx context.Context, song Song, artwork bool, byteRange string) (*http.Response, error) {
+	client := *c.http
+	client.Timeout = 0
+	for attempt := 0; attempt < 2; attempt++ {
+		token := c.sessionToken()
+		req, err := c.request("GET", c.mediaAddress(song, artwork), nil)
+		if err != nil {
+			return nil, err
+		}
+		req = req.WithContext(ctx)
+		if byteRange != "" {
+			req.Header.Set("Range", byteRange)
+		}
+		response, err := client.Do(req)
+		if err != nil {
+			return nil, errors.New("media connection failed")
+		}
+		if c.profile.Provider != "synologyAudioStation" || !strings.Contains(response.Header.Get("Content-Type"), "application/json") {
+			return response, nil
+		}
+		var payload map[string]any
+		_ = json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(&payload)
+		response.Body.Close()
+		code := int(number(obj(payload["error"])["code"]))
+		if attempt == 0 && (code == 106 || code == 107) {
+			if err = c.renewSession(token); err != nil {
+				return nil, err
+			}
+			continue
+		}
+		return nil, fmt.Errorf("Audio Station media error %d", code)
+	}
+	return nil, errors.New("media session expired")
+}
+
 // loadSongs 分页拉取完整音乐库，避免只显示首批歌曲。
 func (c *libraryClient) loadSongs() ([]Song, error) {
 	switch c.profile.Provider {
@@ -208,7 +297,7 @@ func (c *libraryClient) loadSongs() ([]Song, error) {
 		var items []any
 		switch c.profile.Provider {
 		case "synologyAudioStation":
-			q := url.Values{"api": {"SYNO.AudioStation.Song"}, "version": {"3"}, "method": {"list"}, "library": {"shared"}, "limit": {strconv.Itoa(pageSize)}, "offset": {strconv.Itoa(offset)}, "sort_by": {"title"}, "sort_direction": {"ASC"}, "additional": {"song_tag,song_audio,song_rating"}, "_sid": {c.token}}
+			q := url.Values{"api": {"SYNO.AudioStation.Song"}, "version": {"3"}, "method": {"list"}, "library": {"shared"}, "limit": {strconv.Itoa(pageSize)}, "offset": {strconv.Itoa(offset)}, "sort_by": {"title"}, "sort_direction": {"ASC"}, "additional": {"song_tag,song_audio,song_rating"}, "_sid": {c.sessionToken()}}
 			data, err := c.jsonRequest("GET", "/webapi/AudioStation/song.cgi", q, nil)
 			if err != nil {
 				return nil, err
@@ -344,9 +433,9 @@ func (c *libraryClient) mediaAddress(song Song, artwork bool) string {
 	switch c.profile.Provider {
 	case "synologyAudioStation":
 		if artwork {
-			return c.base + "/webapi/AudioStation/cover.cgi?" + url.Values{"api": {"SYNO.AudioStation.Cover"}, "method": {"getsongcover"}, "version": {"3"}, "id": {song.Path}, "_sid": {c.token}}.Encode()
+			return c.base + "/webapi/AudioStation/cover.cgi?" + url.Values{"api": {"SYNO.AudioStation.Cover"}, "method": {"getsongcover"}, "version": {"3"}, "id": {song.Path}, "_sid": {c.sessionToken()}}.Encode()
 		}
-		return c.base + "/webapi/AudioStation/stream.cgi?" + url.Values{"api": {"SYNO.AudioStation.Stream"}, "method": {"stream"}, "version": {"2"}, "id": {song.Path}, "_sid": {c.token}}.Encode()
+		return c.base + "/webapi/AudioStation/stream.cgi?" + url.Values{"api": {"SYNO.AudioStation.Stream"}, "method": {"stream"}, "version": {"2"}, "id": {song.Path}, "_sid": {c.sessionToken()}}.Encode()
 	case "jellyfin", "emby":
 		if artwork {
 			return c.base + "/Items/" + url.PathEscape(song.Path) + "/Images/Primary?maxWidth=600"

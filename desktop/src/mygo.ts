@@ -34,6 +34,7 @@ export interface Profile {
   isQuickConnect: boolean;
   ignoreInvalidCertificate: boolean;
   folder?: string;
+  basePath?: string;
 }
 
 /** RemotePlaylist 表示音乐服务器上的只读歌单，不修改用户的远端收藏。 */
@@ -81,6 +82,10 @@ export interface State {
 
 /** Service 向桌面前端提供类型安全的音乐能力。 */
 export const Service = {
+  /** CachedLibrary 恢复最近成功读取的资料库，让网络异常时仍可浏览与播放已下载歌曲。 */
+  cachedLibrary(profileID: string): Promise<Song[]> {
+    return call("Service.CachedLibrary", profileID);
+  },
   /** CloudSupported 仅在带有 Apple 配置描述文件的 Mac 应用中展示 iCloud 能力。 */
   cloudSupported(): Promise<boolean> {
     return call("Service.CloudSupported");

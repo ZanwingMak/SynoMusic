@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/xml"
 	"errors"
@@ -61,8 +62,69 @@ func localSong(path string) Song {
 		song.Genre = metadata.Genre()
 		song.Track, _ = metadata.Track()
 	}
+	readLocalAudioInfo(f, &song)
 	song.Artwork = "music://localhost/artwork/" + url.PathEscape(song.ID)
 	return song
+}
+
+// readLocalAudioInfo 从 WAV 与 FLAC 文件头读取时长和采样率，不解码整首音频。
+func readLocalAudioInfo(file *os.File, song *Song) {
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return
+	}
+	header := make([]byte, 12)
+	if _, err := io.ReadFull(file, header); err != nil {
+		return
+	}
+	if string(header[:4]) == "fLaC" {
+		if _, err := file.Seek(8, io.SeekStart); err != nil {
+			return
+		}
+		info := make([]byte, 34)
+		if _, err := io.ReadFull(file, info); err != nil {
+			return
+		}
+		value := binary.BigEndian.Uint64(info[10:18])
+		song.SampleRate = int(value >> 44)
+		if song.SampleRate > 0 {
+			song.Duration = float64(value&((1<<36)-1)) / float64(song.SampleRate)
+		}
+		if stat, err := file.Stat(); err == nil && song.Duration > 0 {
+			song.Bitrate = int(float64(stat.Size()*8) / song.Duration)
+		}
+		return
+	}
+	if string(header[:4]) != "RIFF" || string(header[8:]) != "WAVE" {
+		return
+	}
+	byteRate := uint32(0)
+	for count := 0; count < 64; count++ {
+		chunk := make([]byte, 8)
+		if _, err := io.ReadFull(file, chunk); err != nil {
+			return
+		}
+		size := binary.LittleEndian.Uint32(chunk[4:])
+		position, err := file.Seek(0, io.SeekCurrent)
+		if err != nil {
+			return
+		}
+		if string(chunk[:4]) == "fmt " && size >= 16 {
+			format := make([]byte, 16)
+			if _, err = io.ReadFull(file, format); err != nil {
+				return
+			}
+			song.SampleRate = int(binary.LittleEndian.Uint32(format[4:8]))
+			byteRate = binary.LittleEndian.Uint32(format[8:12])
+			song.Bitrate = int(byteRate) * 8
+		}
+		if string(chunk[:4]) == "data" && byteRate > 0 {
+			song.Duration = float64(size) / float64(byteRate)
+			return
+		}
+		if _, err = file.Seek(position+int64(size)+int64(size%2), io.SeekStart); err != nil {
+			return
+		}
+	}
 }
 
 // ImportMusic 通过原生文件选择器导入音频目录，并保留原文件位置。
@@ -107,6 +169,13 @@ func (s *Service) ImportMusic() (int, error) {
 			s.state.Imports = append(s.state.Imports, song)
 			seen[song.ID] = true
 			count++
+		} else {
+			for index, existing := range s.state.Imports {
+				if existing.ID == song.ID {
+					s.state.Imports[index] = song
+					break
+				}
+			}
 		}
 		s.songs[song.ID] = song
 	}
@@ -300,6 +369,8 @@ func (s *Service) downloadPath(song Song) string {
 
 // Download 将授权音乐保存到应用缓存，使用临时文件防止中断后留下损坏文件。
 func (s *Service) Download(id string) error {
+	s.downloadMu.Lock()
+	defer s.downloadMu.Unlock()
 	s.mu.Lock()
 	song, ok := s.songs[id]
 	s.mu.Unlock()
@@ -310,8 +381,8 @@ func (s *Service) Download(id string) error {
 		return errors.New("this item cannot be downloaded")
 	}
 	target := s.downloadPath(song)
-	if _, err := os.Stat(target); err == nil {
-		return nil
+	if info, err := os.Stat(target); err == nil && info.Size() > 0 {
+		return s.rememberDownload(song)
 	}
 	if err := os.MkdirAll(filepath.Dir(target), 0700); err != nil {
 		return err
@@ -323,7 +394,8 @@ func (s *Service) Download(id string) error {
 	defer os.Remove(temp.Name())
 	var reader io.ReadCloser
 	if song.ProfileID == "podcast" {
-		resp, err := http.Get(song.Path)
+		client := &http.Client{Timeout: 10 * time.Minute}
+		resp, err := client.Get(song.Path)
 		if err != nil {
 			temp.Close()
 			return err
@@ -359,12 +431,9 @@ func (s *Service) Download(id string) error {
 			}
 			return s.rememberDownload(song)
 		}
-		req, err := c.request("GET", c.mediaAddress(song, false), nil)
-		if err != nil {
-			temp.Close()
-			return err
-		}
-		resp, err := c.http.Do(req)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancel()
+		resp, err := c.openMedia(ctx, song, false, "")
 		if err != nil {
 			temp.Close()
 			return errors.New("download connection failed")
@@ -374,10 +443,15 @@ func (s *Service) Download(id string) error {
 			temp.Close()
 			return fmt.Errorf("HTTP %d", resp.StatusCode)
 		}
+		if strings.Contains(resp.Header.Get("Content-Type"), "application/json") || strings.Contains(resp.Header.Get("Content-Type"), "text/html") {
+			resp.Body.Close()
+			temp.Close()
+			return errors.New("server returned an error instead of audio")
+		}
 		reader = resp.Body
 	}
 	defer reader.Close()
-	_, err = io.Copy(temp, reader)
+	written, err := io.Copy(temp, reader)
 	closeErr := temp.Close()
 	if err != nil {
 		return err
@@ -385,10 +459,52 @@ func (s *Service) Download(id string) error {
 	if closeErr != nil {
 		return closeErr
 	}
+	if written == 0 {
+		return errors.New("download was empty")
+	}
 	if err := os.Rename(temp.Name(), target); err != nil {
 		return err
 	}
+	s.cacheArtwork(song)
 	return s.rememberDownload(song)
+}
+
+// cacheArtwork 尽力保存下载曲目的封面，失败不会回滚已完成的音频下载。
+func (s *Service) cacheArtwork(song Song) {
+	if song.ProfileID == "local" {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	var response *http.Response
+	var err error
+	if song.ProfileID == "podcast" {
+		if song.Artwork == "" {
+			return
+		}
+		request, requestErr := http.NewRequestWithContext(ctx, "GET", song.Artwork, nil)
+		if requestErr != nil {
+			return
+		}
+		response, err = http.DefaultClient.Do(request)
+	} else {
+		client, clientErr := s.client(song.ProfileID)
+		if clientErr != nil {
+			return
+		}
+		response, err = client.openMedia(ctx, song, true, "")
+	}
+	if err != nil {
+		return
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK || !strings.HasPrefix(response.Header.Get("Content-Type"), "image/") {
+		return
+	}
+	data, err := io.ReadAll(io.LimitReader(response.Body, 8<<20+1))
+	if err == nil && len(data) > 0 && len(data) <= 8<<20 {
+		_ = os.WriteFile(s.downloadPath(song)+".cover", data, 0600)
+	}
 }
 
 // Downloads 列出已完整缓存的歌曲。
@@ -407,13 +523,26 @@ func (s *Service) Downloads() []Song {
 
 // RemoveDownload 仅移除应用自己的缓存，不删除原始文件。
 func (s *Service) RemoveDownload(id string) error {
+	s.downloadMu.Lock()
+	defer s.downloadMu.Unlock()
 	s.mu.Lock()
+	defer s.mu.Unlock()
 	song, ok := s.songs[id]
-	s.mu.Unlock()
 	if !ok {
 		return errors.New("song not found")
 	}
-	return os.Remove(s.downloadPath(song))
+	if err := os.Remove(s.downloadPath(song)); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	_ = os.Remove(s.downloadPath(song) + ".cover")
+	result := []Song{}
+	for _, cached := range s.state.Cached {
+		if cached.ID != id {
+			result = append(result, cached)
+		}
+	}
+	s.state.Cached = result
+	return s.saveLocked()
 }
 
 // serveMedia 为系统 WebView 提供已登记条目的媒体与封面，支持 Range 请求。
@@ -449,6 +578,12 @@ func (s *Service) serveMedia(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Vary", "Origin")
 	}
+	if artwork {
+		if _, err := os.Stat(s.downloadPath(song) + ".cover"); err == nil {
+			http.ServeFile(w, r, s.downloadPath(song)+".cover")
+			return
+		}
+	}
 	if song.ProfileID == "local" {
 		if artwork {
 			f, err := os.Open(song.Path)
@@ -481,6 +616,7 @@ func (s *Service) serveMedia(w http.ResponseWriter, r *http.Request) {
 	streamTransport.ResponseHeaderTimeout = 20 * time.Second
 	client := &http.Client{Transport: streamTransport}
 	var req *http.Request
+	var remoteClient *libraryClient
 	if song.ProfileID == "radio" || song.ProfileID == "podcast" {
 		if artwork {
 			address = song.Artwork
@@ -504,6 +640,7 @@ func (s *Service) serveMedia(w http.ResponseWriter, r *http.Request) {
 			http.ServeFile(w, r, s.downloadPath(song))
 			return
 		}
+		remoteClient = c
 		address = c.mediaAddress(song, artwork)
 		if address == "" {
 			http.NotFound(w, r)
@@ -524,7 +661,12 @@ func (s *Service) serveMedia(w http.ResponseWriter, r *http.Request) {
 	if rangeHeader := r.Header.Get("Range"); rangeHeader != "" {
 		req.Header.Set("Range", rangeHeader)
 	}
-	resp, err := client.Do(req)
+	var resp *http.Response
+	if remoteClient != nil {
+		resp, err = remoteClient.openMedia(r.Context(), song, artwork, r.Header.Get("Range"))
+	} else {
+		resp, err = client.Do(req)
+	}
 	if err != nil {
 		http.Error(w, "media unavailable", 502)
 		return

@@ -29,7 +29,7 @@ func (s *Service) ServerPlaylists(profileID string) ([]RemotePlaylist, error) {
 		var items []any
 		switch c.profile.Provider {
 		case "synologyAudioStation":
-			data, err = c.jsonRequest("GET", "/webapi/AudioStation/playlist.cgi", url.Values{"api": {"SYNO.AudioStation.Playlist"}, "version": {"3"}, "method": {"list"}, "library": {"all"}, "limit": {"200"}, "offset": {strconv.Itoa(offset)}, "additional": {"songs_total"}, "_sid": {c.token}}, nil)
+			data, err = c.jsonRequest("GET", "/webapi/AudioStation/playlist.cgi", url.Values{"api": {"SYNO.AudioStation.Playlist"}, "version": {"3"}, "method": {"list"}, "library": {"all"}, "limit": {"200"}, "offset": {strconv.Itoa(offset)}, "additional": {"songs_total"}, "_sid": {c.sessionToken()}}, nil)
 			if err == nil && !boolean(data["success"]) {
 				err = errors.New("server playlist request failed")
 			}
@@ -83,7 +83,7 @@ func (s *Service) ServerPlaylistSongs(profileID, playlistID string) ([]Song, err
 		var items []any
 		switch c.profile.Provider {
 		case "synologyAudioStation":
-			data, err = c.jsonRequest("GET", "/webapi/AudioStation/playlist.cgi", url.Values{"api": {"SYNO.AudioStation.Playlist"}, "version": {"3"}, "method": {"getinfo"}, "id": {playlistID}, "library": {"all"}, "songs_offset": {strconv.Itoa(offset)}, "songs_limit": {"200"}, "additional": {"songs,songs_song_tag,songs_song_audio"}, "_sid": {c.token}}, nil)
+			data, err = c.jsonRequest("GET", "/webapi/AudioStation/playlist.cgi", url.Values{"api": {"SYNO.AudioStation.Playlist"}, "version": {"3"}, "method": {"getinfo"}, "id": {playlistID}, "library": {"all"}, "songs_offset": {strconv.Itoa(offset)}, "songs_limit": {"200"}, "additional": {"songs,songs_song_tag,songs_song_audio"}, "_sid": {c.sessionToken()}}, nil)
 			if err == nil && !boolean(data["success"]) {
 				err = errors.New("server playlist request failed")
 			}

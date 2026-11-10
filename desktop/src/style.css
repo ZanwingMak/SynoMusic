@@ -38,9 +38,12 @@ button:active:not(:disabled),summary:active{transform:scale(.96)}
 #app[data-playing=true] .song-row.playing .track-number svg path{transform-box:fill-box;transform-origin:center;animation:audio-meter 950ms ease-in-out infinite alternate}
 #app[data-playing=true] .song-row.playing .track-number svg path:nth-child(2n){animation-delay:-350ms}
 #app[data-playing=true] .song-row.playing .track-number svg path:nth-child(3n){animation-delay:-650ms}
-@keyframes surface-fade{from{opacity:0}to{opacity:1}}
-@keyframes dialog-enter{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes toast-enter{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
-@keyframes menu-enter{from{opacity:0;transform:translateY(-4px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes surface-fade{from{opacity:.01}to{opacity:1}}
+@keyframes dialog-enter{from{opacity:.01;transform:translateY(12px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes toast-enter{from{opacity:.01;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes menu-enter{from{opacity:.01;transform:translateY(-4px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes audio-meter{from{transform:scaleY(.45)}to{transform:scaleY(1)}}
 @media(prefers-reduced-motion:reduce){button:active:not(:disabled),summary:active,.play-button:hover,.cover-expand:hover .now-cover,.lyric-line.current{transform:none}}
+
+.play-button.is-loading svg{animation:player-loading 900ms linear infinite}
+@keyframes player-loading{to{transform:rotate(360deg)}}

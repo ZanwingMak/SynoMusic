@@ -17,6 +17,27 @@ let current = new URLSearchParams(location.search).get("lang") || localStorage.g
 export function setLanguage(lang: string): void { current = entries[lang] ? lang : "en"; localStorage.setItem("synomusic.language",current); document.documentElement.lang=current; }
 
 const featureLabels: Record<string, string[]> = {
+  "Live": ["直播","直播","ライブ","라이브","Live","En direct"],
+  "Using saved library. Server unavailable.": ["服务器暂不可用，正在使用已保存的资料库。", "伺服器暫不可用，正在使用已儲存的資料庫。", "サーバーに接続できないため保存済みライブラリを表示しています。", "서버에 연결할 수 없어 저장된 보관함을 표시합니다.", "Server nicht verfügbar. Gespeicherte Mediathek wird verwendet.", "Serveur indisponible. La bibliothèque enregistrée est utilisée."],
+  "Downloaded": ["已下载", "已下載", "ダウンロード済み", "다운로드됨", "Heruntergeladen", "Téléchargé"],
+  "Downloading…": ["正在下载…", "正在下載…", "ダウンロード中…", "다운로드 중…", "Wird heruntergeladen…", "Téléchargement…"],
+  "Remove download": ["移除下载", "移除下載", "ダウンロードを削除", "다운로드 제거", "Download entfernen", "Retirer le téléchargement"],
+  "Download removed": ["下载已移除", "下載已移除", "ダウンロードを削除しました", "다운로드를 제거했습니다", "Download entfernt", "Téléchargement retiré"],
+  "No downloads yet": ["还没有下载音乐，可从歌曲的更多菜单下载。", "尚未下載音樂，可從歌曲的更多選單下載。", "曲のメニューから音楽をダウンロードできます。", "곡의 더 보기 메뉴에서 음악을 다운로드하세요.", "Lade Musik über das Titelmenü herunter.", "Téléchargez de la musique depuis le menu d’un titre."],
+  "No favorites yet": ["点击歌曲旁的爱心，即可收藏喜欢的音乐。", "點擊歌曲旁的愛心，即可收藏喜愛的音樂。", "曲のハートを押してお気に入りに追加できます。", "곡 옆의 하트를 눌러 좋아요에 추가하세요.", "Markiere Titel mit dem Herz als Favoriten.", "Ajoutez des favoris avec le cœur à côté d’un titre."],
+  "No listening history yet": ["播放过的歌曲会出现在这里。", "播放過的歌曲會顯示在這裡。", "再生した曲がここに表示されます。", "재생한 곡이 여기에 표시됩니다.", "Abgespielte Titel erscheinen hier.", "Les titres écoutés apparaîtront ici."],
+  "This playlist is empty": ["这张歌单暂时没有歌曲。", "這張歌單暫時沒有歌曲。", "このプレイリストには曲がありません。", "이 재생목록은 비어 있습니다.", "Diese Playlist ist leer.", "Cette playlist est vide."],
+  "Playback position": ["播放进度", "播放進度", "再生位置", "재생 위치", "Wiedergabeposition", "Position de lecture"],
+  "Volume": ["音量", "音量", "音量", "음량", "Lautstärke", "Volume"],
+  "Edit server": ["编辑服务器", "編輯伺服器", "サーバーを編集", "서버 편집", "Server bearbeiten", "Modifier le serveur"],
+  "Remove server": ["移除服务器", "移除伺服器", "サーバーを削除", "서버 제거", "Server entfernen", "Retirer le serveur"],
+  "Sleep timer finished": ["睡眠定时已结束，播放已暂停。", "睡眠計時已結束，播放已暫停。", "スリープタイマーで再生を停止しました。", "수면 타이머가 끝나 재생을 일시 정지했습니다.", "Der Einschlaftimer hat die Wiedergabe pausiert.", "Le minuteur a mis la lecture en pause."],
+  "Unknown artist": ["未知艺术家", "未知藝人", "不明なアーティスト", "알 수 없는 아티스트", "Unbekannter Künstler", "Artiste inconnu"],
+  "Search": ["搜索", "搜尋", "検索", "검색", "Suchen", "Rechercher"],
+  "Episodes": ["查看单集", "查看單集", "エピソード", "에피소드", "Folgen", "Épisodes"],
+  "Search for a podcast to get started.": ["搜索节目，或订阅你喜欢的播客。", "搜尋節目，或訂閱喜歡的 Podcast。", "番組を検索してポッドキャストを登録できます。", "프로그램을 검색하거나 팟캐스트를 구독하세요.", "Suche einen Podcast und abonniere deine Favoriten.", "Recherchez un podcast et abonnez-vous à vos favoris."],
+  "Playback unavailable. Check the source and audio format.": ["无法播放，请检查音乐源和音频格式。", "無法播放，請檢查音樂來源和音訊格式。", "再生できません。ソースと音声形式を確認してください。", "재생할 수 없습니다. 소스와 오디오 형식을 확인하세요.", "Wiedergabe nicht verfügbar. Quelle und Audioformat prüfen.", "Lecture indisponible. Vérifiez la source et le format audio."],
+  "Loading episodes…": ["正在加载单集…", "正在載入單集…", "エピソードを読み込み中…", "에피소드 불러오는 중…", "Folgen werden geladen…", "Chargement des épisodes…"],
   "Reorder": ["拖动排序", "拖動排序", "ドラッグして並べ替え", "드래그하여 재정렬", "Ziehen zum Sortieren", "Glisser pour réorganiser"],
   "Now playing": ["正在播放","正在播放","再生中","지금 재생 중","Jetzt läuft","À l’écoute"],
   "hours": [
