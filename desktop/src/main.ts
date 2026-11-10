@@ -30,6 +30,7 @@ let radioSongs: Song[] = [], cachedSongs: Song[] = [], episodeSongs: Song[] = []
 let lastUpdate = 0;
 const downloadJobs: string[] = [];
 let downloading = false;
+let rendered = { content: "", panel: "", expanded: false, song: "", playing: false };
 const nav = [["library","Library","library"],["albums","Albums","disc-3"],["artists","Artists","mic-2"],["songs","All songs","music-2"],["mixes","Smart mixes","sparkles"],["favorites","Favorites","heart"],["playlists","Playlists","list-music"],["server-playlists","Server playlists","server"],["folders","Folders","folders"],["genres","Genres","tags"],["local","Local music","folder-open"],["downloads","Downloads","download"],["history","History","history"],["radio","Radio","radio"],["podcasts","Podcasts","podcast"]];
 
 /** 转义用户与服务器内容，禁止音乐标签被解释为 HTML。 */
@@ -183,12 +184,51 @@ function searchResults(): string {
 
 /** 绘制完整桌面布局，播放器媒体对象独立于 DOM 保存。 */
 function render(): void {
+ const previous=rendered;
+ const closingPlayer=previous.expanded&&!nowPlaying?document.querySelector<HTMLElement>(".expanded-player"):null;
+ const closingPanel=previous.panel&&previous.panel!==panel?document.querySelector<HTMLElement>(".detail-panel"):null;
+ if(closingPanel)closingPanel.style.width=`${closingPanel.offsetWidth}px`;
+ const scroll=document.querySelector(".content")?.scrollTop||0;
+ rendered={content:JSON.stringify([source,view,page,busy,Boolean(search),searchScope]),panel,expanded:nowPlaying&&!!queue[current],song:queue[current]?.id||"",playing:!audio.paused};
  shownSongs=visibleSongs();
  app.innerHTML=`<aside class="sidebar"><div class="traffic-space"></div><a class="brand" data-view="library"><span class="brand-mark">${icon("audio-lines")}</span>SynoMusic<span class="mac-label">${platform==="windows"?"WINDOWS":"MAC"}</span></a><div class="source-select">${icon("server")}<select id="source" aria-label="${h(t("Music source"))}"><option value="local" ${source==="local"?"selected":""}>${t("Local music")}</option>${state.profiles.map(p=>`<option value="${h(p.id)}" ${source===p.id?"selected":""}>${h(p.name)}</option>`).join("")}</select>${icon("chevrons-up-down")}</div><p class="nav-label">${t("Your sources")}</p><nav>${nav.map(([id,label,name],i)=>`${i===6?`<div class="nav-divider"></div>`:""}<button class="nav-item ${view===id?"selected":""}" data-view="${id}">${icon(name)}<span>${t(label)}</span>${id==="favorites"&&state.favorites.length?`<small>${state.favorites.length}</small>`:""}</button>`).join("")}</nav><button class="add-playlist" data-action="new-playlist">${icon("plus")} ${t("Create playlist")}</button><div class="sidebar-bottom"><span class="free-dot"></span><span>${t("All features. Always free.")}</span></div><button class="nav-item ${view==="settings"?"selected":""}" data-view="settings">${icon("settings-2")} ${t("Settings")}</button></aside><div class="workspace"><header class="toolbar"><div class="navigation-controls"><button class="icon-button" data-action="back" ${backStack.length?"":"disabled"} aria-label="${h(t("Back"))}">${icon("chevron-left")}</button><button class="icon-button" data-action="forward" ${forwardStack.length?"":"disabled"} aria-label="${h(t("Forward"))}">${icon("chevron-right")}</button></div><div class="breadcrumbs">${icon("panel-left")}<span>SynoMusic</span><span class="slash">/</span><strong>${h(title())}</strong></div><label class="search-field">${icon("search")}<input id="search" type="search" value="${h(search)}" placeholder="${h(t("Search your library"))}" autocomplete="off"><kbd>${platform==="windows"?"Ctrl":"⌘"} K</kbd></label><select id="search-scope" aria-label="${h(t("Search scope"))}"><option value="library" ${searchScope==="library"?"selected":""}>${t("Entire library")}</option><option value="page" ${searchScope==="page"?"selected":""}>${t("Current view")}</option></select>${tool("refresh","refresh-cw","Refresh")}${tool("server","plus","Add server")}</header><div class="content-split"><main class="content">${content()}</main>${panel?sidePanel():""}</div></div>${player()}<div id="modal-root"></div>`;
+ app.classList.toggle("player-expanded",rendered.expanded);
+ app.dataset.playing=String(rendered.playing);
+ app.querySelectorAll<HTMLElement>(".sidebar,.workspace").forEach(node=>node.inert=rendered.expanded);
  createIcons({icons});bind();
+ if(previous.content===rendered.content)document.querySelector(".content")?.scrollTo(0,scroll);
+ animateRender(previous,closingPlayer,closingPanel);
  document.querySelectorAll<HTMLImageElement>("img[data-cover]").forEach(img=>img.addEventListener("error",()=>{img.src=artwork(img.dataset.cover||"SynoMusic");},{once:true}));
  updateProgress();
 }
+/** 使用局部过渡表现导航和播放器状态变化，普通数据刷新不重播整页动画。 */
+function animateRender(previous:typeof rendered,closingPlayer:HTMLElement|null,closingPanel:HTMLElement|null): void {
+ if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+ const easing="cubic-bezier(0.16, 1, 0.3, 1)";
+ /** 播放短暂的合成层动画，完成后由浏览器释放效果。 */
+ const enter=(selector:string,frames:Keyframe[],duration=280,delay=0):void=>{document.querySelector(selector)?.animate(frames,{duration,delay,easing,fill:"backwards"});};
+ /** 保留正在退出的可视层，禁用交互并在动画结束后移除。 */
+ const leave=(node:HTMLElement,host:Element,transform:string):void=>{
+  node.inert=true;node.setAttribute("aria-hidden","true");node.classList.add("motion-exit");host.append(node);
+  const animation=node.animate([{opacity:1,transform:"translateY(0)"},{opacity:0,transform}],{duration:220,easing:"cubic-bezier(0.4, 0, 1, 1)",fill:"forwards"});
+  void animation.finished.finally(()=>node.remove()).catch(()=>{});
+ };
+ if(previous.content!==rendered.content&&!rendered.expanded)enter(".content",[{opacity:0,transform:"translateY(10px)"},{opacity:1,transform:"translateY(0)"}]);
+ if(rendered.panel&&previous.panel!==rendered.panel)enter(".detail-panel",[{opacity:0,transform:"translateX(24px)"},{opacity:1,transform:"translateX(0)"}],320);
+ if(closingPanel)leave(closingPanel,document.querySelector(".content-split")!,"translateX(24px)");
+ if(rendered.expanded&&!previous.expanded){
+  enter(".expanded-player",[{opacity:0,transform:"translateY(36px)"},{opacity:1,transform:"translateY(0)"}],380);
+  enter(".expanded-art",[{opacity:0,transform:"translateY(22px) scale(.96)"},{opacity:1,transform:"translateY(0) scale(1)"}],440,30);
+  enter(".expanded-lyrics",[{opacity:0,transform:"translateY(16px)"},{opacity:1,transform:"translateY(0)"}],380,90);
+ }
+ if(closingPlayer)leave(closingPlayer,app,"translateY(32px)");
+ if(previous.song&&previous.song!==rendered.song){
+  enter(".now-playing>div",[{opacity:0,transform:"translateY(5px)"},{opacity:1,transform:"translateY(0)"}]);
+  if(rendered.expanded&&previous.expanded)enter(".expanded-art",[{opacity:.2,transform:"scale(.98)"},{opacity:1,transform:"scale(1)"}],360);
+ }
+ if(previous.playing!==rendered.playing)enter(".play-button svg",[{opacity:.3,transform:"scale(.7)"},{opacity:1,transform:"scale(1)"}],200);
+}
+
 /** 绘制资料库、网格、歌单或设置内容。 */
 function content(): string {
  if(search&&searchScope==="library")return searchResults();
@@ -224,12 +264,21 @@ function sidePanel(): string {
 }
 /** 解析带多时间标签的 LRC，保留没有时间标签的纯文本。 */
 function lyricLines(): {time:number;text:string}[] { return lyrics.split("\n").flatMap(line=>{const tags=[...line.matchAll(/\[(\d+):(\d+(?:\.\d+)?)\]/g)];const text=line.replace(/\[[^\]]*\]/g,"").trim();return text?(tags.length?tags.map(m=>({time:Number(m[1])*60+Number(m[2]),text})):[{time:-1,text}]):[];}).sort((a,b)=>a.time-b.time); }
+/** 歌词请求完成时只更新歌词区，保留正在进行的播放器展开动画。 */
+function refreshLyrics(): void {
+ const lines=lyricLines();
+ document.querySelectorAll<HTMLElement>(".lyrics-content").forEach(container=>{
+  container.innerHTML=lines.length?lines.map(line=>`<button class="lyric-line" data-seek="${line.time}">${h(line.text)}</button>`).join(""):`<p class="muted">${t("No lyrics available")}</p>`;
+  container.querySelectorAll<HTMLElement>("[data-seek]").forEach(node=>node.onclick=()=>{const time=Number(node.dataset.seek);if(time>=0)seekPosition(time);});
+ });
+ updateProgress();
+}
 /** 绘制常驻播放器，切页时保持播放位置与队列。 */
 function player(): string { const song=queue[current];return `${nowPlaying?expandedPlayer():""}<footer class="player-bar"><div class="now-playing">${song?`<button class="cover-expand" data-action="now-playing" aria-label="${h(t("Now playing"))}"><img class="now-cover" src="${h(cover(song))}" data-cover="${h(song.album)}" alt=""></button><div><strong>${h(song.title)}</strong><span>${h(song.artist)}</span></div><button class="icon-button ${state.favorites.includes(song.id)?"hearted":""}" data-favorite="${h(song.id)}" aria-label="${h(t("Favorites"))}">${icon("heart")}</button>`:`<div class="now-placeholder">${icon("music-2")}</div><div><strong>SynoMusic</strong><span>${t("Ready to listen")}</span></div>`}</div><div class="transport"><div class="transport-buttons">${tool("shuffle","shuffle","Shuffle",shuffle)}${tool("previous","skip-back","Previous track")}<button class="play-button" data-action="toggle" aria-label="${h(t(audio.paused?"Play":"Pause"))}">${icon(audio.paused?"play":"pause")}</button>${tool("next","skip-forward","Next track")}${tool("repeat",repeat==="one"?"repeat-1":"repeat",repeat==="one"?"Repeat one":repeat==="all"?"Repeat all":"Repeat off",repeat!=="off")}</div><div class="timeline"><span id="position">0:00</span><input id="progress" type="range" min="0" max="${Number.isFinite(audio.duration)?audio.duration:song?.duration||1}" step="0.1" value="${audio.currentTime}" aria-label="Playback position"><span id="duration">${duration(audio.duration||song?.duration||0)}</span></div></div><div class="player-tools">${platform==="darwin"?tool("airplay","airplay","Playback"):""}${icon("volume-2")}<input id="volume" type="range" min="0" max="1" step="0.01" value="${audio.volume}" aria-label="Volume">${tool("lyrics","captions","Lyrics",panel==="lyrics")}${tool("queue","list-music","Queue",panel==="queue")}${tool("now-playing",nowPlaying?"minimize-2":"maximize-2","Now playing",nowPlaying)}</div></footer>`; }
 /** 绘制所有免费设置以及隐私与官方链接。 */
 function settings(): string {
  const setting=(label:string,control:string)=>`<label class="setting-row"><span>${t(label)}</span>${control}</label>`;
- return `<div class="page-heading"><p class="eyebrow">MAKE YOURSELF AT HOME</p><h1>${t("Settings")}</h1></div><div class="settings-body"><h2>${t("General")}</h2>${setting("Language",`<select id="language">${languages.map(([code,name])=>`<option value="${code}" ${getLanguage()===code?"selected":""}>${name}</option>`).join("")}</select>`)}${setting("Appearance",`<select data-setting="appearance">${["system","light","dark"].map(v=>`<option value="${v}" ${state.settings.appearance===v?"selected":""}>${t(v[0].toUpperCase()+v.slice(1))}</option>`).join("")}</select>`)}<h2>${t("Playback")}</h2>${setting("Crossfade",`<select data-setting="crossfade"><option value="0">${t("Off")}</option>${[2,4,6,8].map(n=>`<option value="${n}" ${Number(state.settings.crossfade)===n?"selected":""}>${n} s</option>`).join("")}</select>`)}${setting("Equalizer",`<select data-setting="equalizer">${["Flat","Bass","Acoustic","Vocal","Electronic"].map(v=>`<option ${state.settings.equalizer===v?"selected":""}>${v}</option>`).join("")}</select>`)}${setting("Sleep timer",`<select id="sleep"><option value="0">${t("Off")}</option>${[15,30,45,60,90].map(n=>`<option value="${n}">${n} ${t("minutes")}</option>`).join("")}</select>`)}${setting("Lyric offset",`<input data-setting="lyricOffset" type="number" min="-60" max="60" step="0.5" value="${Number(state.settings.lyricOffset)||0}">`)}${setting("Text size",`<input data-setting="lyricSize" type="number" min="14" max="42" value="${Number(state.settings.lyricSize)||24}">`)}${platform==="darwin"&&cloudSupported?`<h2>iCloud</h2>${setting("iCloud sync",`<input data-setting="icloud" type="checkbox" ${state.settings.icloud==="true"?"checked":""}>`)}<div class="actions"><button class="button" data-action="sync-cloud">${icon("cloud")}${t("Sync now")}</button></div>${state.settings.lastCloudSync?`<p class="version-label">${h(new Date(state.settings.lastCloudSync).toLocaleString())}</p>`:""}`:""}<h2>${t("Server profiles")}</h2>${state.profiles.map(p=>`<div class="setting-row"><span><strong>${h(p.name)}</strong><small>${h(p.providerType)} · ${h(p.host)}</small></span><button class="button subtle" data-edit-server="${h(p.id)}">${icon("pencil")}</button><button class="button subtle" data-remove-server="${h(p.id)}">${icon("trash-2")}</button></div>`).join("")}<div class="actions"><button class="button" data-action="server">${icon("plus")}${t("Add server")}</button><button class="button" data-action="export">${icon("upload")}${t("Export servers")}</button><button class="button" data-action="import-profiles">${icon("download")}${t("Import servers")}</button></div><div class="support-callout">${icon("heart")}<div><h3>${t("All features. Always free.")}</h3><p>${t("Support is optional. Music is for everyone.")}</p></div><button class="button" data-action="support">${t("View on iPhone")}${icon("arrow-up-right")}</button></div><div class="legal-links">${[["Website","https://zanwingmak.github.io/SynoMusic/"],["Source code","https://github.com/ZanwingMak/SynoMusic"],["Privacy policy","https://zanwingmak.github.io/SynoMusic/privacy.html"],["Terms of use","https://zanwingmak.github.io/SynoMusic/terms.html"]].map(([text,url])=>`<button data-link="${url}">${t(text)}${icon("arrow-up-right")}</button>`).join("")}</div><p class="version-label">SynoMusic for ${platform==="windows"?"Windows":"Mac"} · 1.6.1 · MyGo</p></div>`;
+ return `<div class="page-heading"><p class="eyebrow">MAKE YOURSELF AT HOME</p><h1>${t("Settings")}</h1></div><div class="settings-body"><h2>${t("General")}</h2>${setting("Language",`<select id="language">${languages.map(([code,name])=>`<option value="${code}" ${getLanguage()===code?"selected":""}>${name}</option>`).join("")}</select>`)}${setting("Appearance",`<select data-setting="appearance">${["system","light","dark"].map(v=>`<option value="${v}" ${state.settings.appearance===v?"selected":""}>${t(v[0].toUpperCase()+v.slice(1))}</option>`).join("")}</select>`)}<h2>${t("Playback")}</h2>${setting("Crossfade",`<select data-setting="crossfade"><option value="0">${t("Off")}</option>${[2,4,6,8].map(n=>`<option value="${n}" ${Number(state.settings.crossfade)===n?"selected":""}>${n} s</option>`).join("")}</select>`)}${setting("Equalizer",`<select data-setting="equalizer">${["Flat","Bass","Acoustic","Vocal","Electronic"].map(v=>`<option ${state.settings.equalizer===v?"selected":""}>${v}</option>`).join("")}</select>`)}${setting("Sleep timer",`<select id="sleep"><option value="0">${t("Off")}</option>${[15,30,45,60,90].map(n=>`<option value="${n}">${n} ${t("minutes")}</option>`).join("")}</select>`)}${setting("Lyric offset",`<input data-setting="lyricOffset" type="number" min="-60" max="60" step="0.5" value="${Number(state.settings.lyricOffset)||0}">`)}${setting("Text size",`<input data-setting="lyricSize" type="number" min="14" max="42" value="${Number(state.settings.lyricSize)||24}">`)}${platform==="darwin"&&cloudSupported?`<h2>iCloud</h2>${setting("iCloud sync",`<input data-setting="icloud" type="checkbox" ${state.settings.icloud==="true"?"checked":""}>`)}<div class="actions"><button class="button" data-action="sync-cloud">${icon("cloud")}${t("Sync now")}</button></div>${state.settings.lastCloudSync?`<p class="version-label">${h(new Date(state.settings.lastCloudSync).toLocaleString())}</p>`:""}`:""}<h2>${t("Server profiles")}</h2>${state.profiles.map(p=>`<div class="setting-row"><span><strong>${h(p.name)}</strong><small>${h(p.providerType)} · ${h(p.host)}</small></span><button class="button subtle" data-edit-server="${h(p.id)}">${icon("pencil")}</button><button class="button subtle" data-remove-server="${h(p.id)}">${icon("trash-2")}</button></div>`).join("")}<div class="actions"><button class="button" data-action="server">${icon("plus")}${t("Add server")}</button><button class="button" data-action="export">${icon("upload")}${t("Export servers")}</button><button class="button" data-action="import-profiles">${icon("download")}${t("Import servers")}</button></div><div class="support-callout">${icon("heart")}<div><h3>${t("All features. Always free.")}</h3><p>${t("Support is optional. Music is for everyone.")}</p></div><button class="button" data-action="support">${t("View on iPhone")}${icon("arrow-up-right")}</button></div><div class="legal-links">${[["Website","https://zanwingmak.github.io/SynoMusic/"],["Source code","https://github.com/ZanwingMak/SynoMusic"],["Privacy policy","https://zanwingmak.github.io/SynoMusic/privacy.html"],["Terms of use","https://zanwingmak.github.io/SynoMusic/terms.html"]].map(([text,url])=>`<button data-link="${url}">${t(text)}${icon("arrow-up-right")}</button>`).join("")}</div><p class="version-label">SynoMusic for ${platform==="windows"?"Windows":"Mac"} · 1.6.2 · MyGo</p></div>`;
 }
 /** 播放登记过的歌曲，避免多个异步播放请求交错覆盖状态。 */
 async function play(index: number, position=0): Promise<void> {
@@ -245,7 +294,7 @@ async function play(index: number, position=0): Promise<void> {
  await audioContext?.resume();
  await audio.play();if(generation!==playGeneration)return;
  await Service.recordPlay(song);state.history=[song,...state.history.filter(s=>s.id!==song.id)].slice(0,500);syncNowPlaying();render();
- void Service.lyrics(song.id).then(text=>{if(generation!==playGeneration)return;lyrics=text;if(panel==="lyrics"||nowPlaying)render();}).catch(()=>{});
+ void Service.lyrics(song.id).then(text=>{if(generation!==playGeneration)return;lyrics=text;if(panel==="lyrics"||nowPlaying)refreshLyrics();}).catch(()=>{});
 }
 /** 按当前列表开始顺序或随机播放。 */
 async function playList(list: Song[],random=false): Promise<void> { queue=[...list];if(random){for(let i=queue.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[queue[i],queue[j]]=[queue[j],queue[i]];}}await play(0);savePlayback(); }
@@ -268,7 +317,7 @@ function updateProgress(): void {
  if(!audio.paused&&performance.now()-lastPlaybackSave>5000){lastPlaybackSave=performance.now();savePlayback();}
  const progress=document.querySelector<HTMLInputElement>("#progress");if(progress){progress.max=String(Number.isFinite(audio.duration)?audio.duration:queue[current]?.duration||1);progress.value=String(audio.src?audio.currentTime:resumePosition);progress.style.setProperty("--progress",`${audio.currentTime/Number(progress.max)*100||0}%`);}
  const position=document.querySelector("#position");if(position)position.textContent=duration(audio.src?audio.currentTime:resumePosition);const end=document.querySelector("#duration");if(end)end.textContent=duration(audio.duration||queue[current]?.duration||0);
- if(panel==="lyrics"||nowPlaying){const lines=lyricLines();const position=audio.currentTime+Number(state.settings.lyricOffset||0);let active=-1;lines.forEach((line,i)=>{if(line.time>=0&&line.time<=position)active=i;});document.querySelectorAll<HTMLElement>(".lyric-line").forEach((line,i)=>{const was=line.classList.contains("current");line.classList.toggle("current",i===active);if(i===active&&!was)line.scrollIntoView({block:"center",behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});});}
+ if(panel==="lyrics"||nowPlaying){const lines=lyricLines();const position=audio.currentTime+Number(state.settings.lyricOffset||0);let active=-1;lines.forEach((line,i)=>{if(line.time>=0&&line.time<=position)active=i;});document.querySelectorAll<HTMLElement>(".lyric-line").forEach((line,i)=>{const was=line.classList.contains("current");line.classList.toggle("current",i===active);if(i===active&&!was){const container=line.closest<HTMLElement>(".expanded-lyrics,.detail-panel");if(container){const offset=line.getBoundingClientRect().top-container.getBoundingClientRect().top;container.scrollTo({top:container.scrollTop+offset-container.clientHeight/2+line.clientHeight/2,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth"});}}});}
 }
 /** 将单首或批量选择的歌曲加入用户选定的歌单。 */
 function playlistModal(items: Song[]): void {
@@ -276,7 +325,15 @@ function playlistModal(items: Song[]): void {
  document.querySelector<HTMLFormElement>("#add-to-playlist")!.onsubmit=e=>{e.preventDefault();void run(async()=>{const data=new FormData(e.currentTarget as HTMLFormElement);let playlist=state.playlists.find(p=>p.id===data.get("playlist"));const name=String(data.get("newName")||"").trim();if(name){playlist=demo?{id:crypto.randomUUID(),name,songs:[]}:await Service.createPlaylist(name);state.playlists.push(playlist);}if(!playlist)throw new Error(t("Create playlist"));const seen=new Set(playlist.songs.map(s=>s.id));playlist.songs.push(...items.filter(s=>!seen.has(s.id)));if(!demo)await Service.savePlaylist(playlist);selected.clear();render();toast(t("Save"));});};
 }
 /** 显示原生窗口中的可关闭表单弹层。 */
-function modal(content: string): void { const root=document.querySelector("#modal-root")!;root.innerHTML=`<div class="modal-backdrop"><section role="dialog" aria-modal="true" aria-label="SynoMusic" class="modal">${content}</section></div>`;createIcons({icons});root.querySelector<HTMLElement>("input,textarea,button")?.focus();root.querySelectorAll<HTMLElement>('[data-action="close-modal"]').forEach(node=>node.onclick=()=>root.replaceChildren()); }
+function modal(content: string): void { const root=document.querySelector("#modal-root")!;root.innerHTML=`<div class="modal-backdrop"><section role="dialog" aria-modal="true" aria-label="SynoMusic" class="modal">${content}</section></div>`;createIcons({icons});root.querySelector<HTMLElement>("input,textarea,button")?.focus();root.querySelectorAll<HTMLElement>('[data-action="close-modal"]').forEach(node=>node.onclick=closeModal); }
+/** 收起弹窗时完成退出动画，再释放表单和遮罩。 */
+function closeModal(): void {
+ const backdrop=document.querySelector<HTMLElement>(".modal-backdrop");if(!backdrop)return;
+ if(matchMedia("(prefers-reduced-motion: reduce)").matches){backdrop.remove();return;}
+ backdrop.inert=true;
+ backdrop.querySelector(".modal")?.animate([{opacity:1,transform:"scale(1)"},{opacity:0,transform:"translateY(8px) scale(.98)"}],{duration:160,fill:"forwards"});
+ void backdrop.animate([{opacity:1},{opacity:0}],{duration:180,fill:"forwards"}).finished.finally(()=>backdrop.remove()).catch(()=>{});
+}
 /** 显示服务器配置表单，敏感凭证不预填或保存到网页。 */
 function serverModal(profile?: Profile): void {
  const p=profile||{id:"",providerType:"synologyAudioStation",name:"",host:"",port:0,scheme:"https",username:"",ignoreInvalidCertificate:false,isQuickConnect:false};
@@ -291,7 +348,7 @@ function setupEQ(): void { if(audioContext)return;audioContext=new AudioContext(
 function applyEQ(): void { const presets:Record<string,number[]>={Flat:[0,0,0,0,0],Bass:[6,4,0,-1,-2],Acoustic:[2,1,1,3,2],Vocal:[-2,-1,3,4,1],Electronic:[4,2,-2,1,4]};const gains=presets[state.settings.equalizer||"Flat"]||presets.Flat;filters.forEach((filter,i)=>filter.gain.value=gains[i]); }
 /** 执行工具栏、菜单和快捷键共享的动作。 */
 async function action(name: string): Promise<void> {
- if(name==="now-playing"){nowPlaying=!nowPlaying;if(nowPlaying)panel="";if(nowPlaying&&queue[current]&&!demo&&!lyrics)void Service.lyrics(queue[current].id).then(text=>{lyrics=text;if(nowPlaying)render();}).catch(()=>{});render();return;}
+ if(name==="now-playing"){nowPlaying=!nowPlaying;if(nowPlaying)panel="";if(nowPlaying&&queue[current]&&!demo&&!lyrics)void Service.lyrics(queue[current].id).then(text=>{lyrics=text;if(nowPlaying)refreshLyrics();}).catch(()=>{});render();return;}
  if(name==="back"||name==="forward"){const from=name==="back"?backStack:forwardStack;const to=name==="back"?forwardStack:backStack;const target=from.pop();if(target){to.push({view,search});await navigate(target.view,false);search=target.search;render();}return;}
  if(name==="sort-direction"){state.settings.sortDescending=String(state.settings.sortDescending!=="true");page=0;if(!demo)await Service.saveSettings(state.settings);render();return;}
  if(name==="queue-selected"){enqueue(shownSongs.filter(song=>selected.has(song.id)));return;}
@@ -301,7 +358,7 @@ async function action(name: string): Promise<void> {
  if(name==="save-queue"){playlistModal(queue);return;}
  if(name==="clear-queue"){cancelTransition();audio.pause();audio.removeAttribute("src");audio.load();queue=[];current=-1;resumePosition=0;lyrics="";savePlayback();render();return;}
  if(name==="sync-cloud"){if(!demo){toast(t("Syncing…"));await Service.syncCloud();await refreshState();}render();toast(t("Sync now"));return;}
- if(name==="server"){serverModal();return;}if(name==="close-modal"){document.querySelector("#modal-root")?.replaceChildren();return;}
+ if(name==="server"){serverModal();return;}if(name==="close-modal"){closeModal();return;}
  if(name==="play"){if(audio.paused)await toggle();return;}if(name==="pause"){cancelTransition();audio.pause();syncNowPlaying();render();return;}
  if(name==="toggle"){await toggle();return;}if(name==="next"){await next();return;}if(name==="previous"){if(audio.currentTime>3){audio.currentTime=0;}else await play(current-1);return;}
  if(name==="shuffle"){shuffle=!shuffle;savePlayback();render();return;}if(name==="repeat"){repeat=repeat==="off"?"all":repeat==="all"?"one":"off";savePlayback();render();return;}
@@ -367,7 +424,7 @@ async function crossfadeTick(): Promise<void> {
   await new Promise<void>(resolve=>{const tick=()=>{if(generation!==playGeneration){resolve();return;}const ratio=Math.min((performance.now()-started)/(seconds*1000),1);audio.volume=volume*(1-ratio);otherAudio.volume=volume*ratio;if(ratio<1&&!audio.paused)requestAnimationFrame(tick);else resolve();};tick();});
   if(generation!==playGeneration)return;
   audio.pause();[audio,otherAudio]=[otherAudio,audio];current++;attachAudio();lyrics="";await Service.recordPlay(nextSong);syncNowPlaying();render();
-  void Service.lyrics(nextSong.id).then(text=>{if(generation===playGeneration){lyrics=text;if(panel==="lyrics"||nowPlaying)render();}}).catch(()=>{});
+  void Service.lyrics(nextSong.id).then(text=>{if(generation===playGeneration){lyrics=text;if(panel==="lyrics"||nowPlaying)refreshLyrics();}}).catch(()=>{});
  }catch(e){if(generation===playGeneration)toast(String(e));}finally{if(generation===playGeneration)crossfading=false;}
 }
 /** 给当前音频对象挂载播放事件，切换音频实例后重新绑定。 */
@@ -378,6 +435,6 @@ async function start(): Promise<void> {
  if(!demo&&platform==="darwin"&&cloudSupported&&state.settings.icloud==="true"){void run(async()=>{await Service.syncCloud();await refreshState();render();});setInterval(()=>{if(document.visibilityState==="visible")void run(async()=>{await Service.syncCloud();await refreshState();});},300000);}
  events.playbackCommand.on(command=>void run(()=>action(command)));events.navigationCommand.on(destination=>void run(()=>navigate(destination)));
  window.addEventListener("pagehide",savePlayback);events.seekCommand.on(position=>seekPosition(position));
- document.addEventListener("keydown",e=>{const editing=(e.target as HTMLElement).matches("input,textarea,select,[contenteditable]");if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();document.querySelector<HTMLInputElement>("#search")?.focus();}else if((e.altKey&&["ArrowLeft","ArrowRight"].includes(e.key))&&!editing){e.preventDefault();void run(()=>action(e.key==="ArrowLeft"?"back":"forward"));}else if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="a"&&!editing){e.preventDefault();void run(()=>action("select-all"));}else if(e.key==="Escape"){document.querySelector("#modal-root")?.replaceChildren();if(nowPlaying){nowPlaying=false;render();}}else if(e.code==="Space"&&!editing){e.preventDefault();void run(()=>toggle());}});
+ document.addEventListener("keydown",e=>{const editing=(e.target as HTMLElement).matches("input,textarea,select,[contenteditable]");if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();document.querySelector<HTMLInputElement>("#search")?.focus();}else if((e.altKey&&["ArrowLeft","ArrowRight"].includes(e.key))&&!editing){e.preventDefault();void run(()=>action(e.key==="ArrowLeft"?"back":"forward"));}else if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="a"&&!editing){e.preventDefault();void run(()=>action("select-all"));}else if(e.key==="Escape"){if(document.querySelector(".modal-backdrop")){closeModal();return;}if(nowPlaying){nowPlaying=false;render();}}else if(e.code==="Space"&&!editing){e.preventDefault();void run(()=>toggle());}});
 }
 void start();
