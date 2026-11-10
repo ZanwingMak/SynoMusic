@@ -17,6 +17,7 @@ let current = new URLSearchParams(location.search).get("lang") || localStorage.g
 export function setLanguage(lang: string): void { current = entries[lang] ? lang : "en"; localStorage.setItem("synomusic.language",current); document.documentElement.lang=current; }
 
 const featureLabels: Record<string, string[]> = {
+  "Reorder": ["拖动排序", "拖動排序", "ドラッグして並べ替え", "드래그하여 재정렬", "Ziehen zum Sortieren", "Glisser pour réorganiser"],
   "Now playing": ["正在播放","正在播放","再生中","지금 재생 중","Jetzt läuft","À l’écoute"],
   "hours": [
     "小时",
