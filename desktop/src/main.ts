@@ -220,6 +220,7 @@ async function play(index: number, position=0): Promise<void> {
  if(demo){render();return;}
  audio.pause();
  if(!loadedSources.has(song.profileID)&&!["local","radio","podcast"].includes(song.profileID)){await Service.songs(song.profileID);loadedSources.add(song.profileID);if(generation!==playGeneration)return;}
+ if(song.duration>0&&position>=song.duration-1)position=0;
  if(position>0)audio.addEventListener("loadedmetadata",()=>{if(generation===playGeneration)audio.currentTime=position;},{once:true});
  resumePosition=0;audio.src=mediaURL(`music://localhost/stream/${encodeURIComponent(song.id)}`);audio.volume=Math.min(1,Math.max(0,Number(state.settings.volume??"0.7")||0));
  lyrics="";
