@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -434,6 +435,9 @@ func (s *Service) serveMedia(w http.ResponseWriter, r *http.Request) {
 	artwork := parts[0] == "artwork"
 	origin := r.Header.Get("Origin")
 	allowed := map[string]bool{"mygo://localhost": true, "http://localhost:5173": true, "http://127.0.0.1:5173": true}
+	if runtime.GOOS == "windows" {
+		allowed["http://mygo.localhost"] = true
+	}
 	if origin != "" && !allowed[origin] {
 		http.Error(w, "origin not allowed", http.StatusForbidden)
 		return

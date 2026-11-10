@@ -31,8 +31,10 @@ const nav = [["library","Library","library"],["albums","Albums","disc-3"],["arti
 function h(value: unknown): string { return String(value ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!)); }
 /** 创建统一图标标记。 */
 function icon(name: string): string { return `<i data-lucide="${h(name)}" aria-hidden="true"></i>`; }
+/** 将媒体地址转换为 Windows WebView2 支持的本机协议映射。 */
+function mediaURL(address: string): string { return platform === "windows" ? address.replace(/^music:\/\/localhost\//, "http://music.localhost/") : address; }
 /** 返回本地原创封面或后端代理的真实封面。 */
-function cover(song: Song): string { return song.artwork || artwork(song.album || song.title); }
+function cover(song: Song): string { return song.artwork ? mediaURL(song.artwork) : artwork(song.album || song.title); }
 /** 将时长转换为播放器显示格式。 */
 function duration(seconds: number): string { if (!Number.isFinite(seconds)||seconds<0) return "0:00";return `${Math.floor(seconds/60)}:${Math.floor(seconds%60).toString().padStart(2,"0")}`; }
 /** 返回原生窗口或浏览器演示状态。 */
@@ -123,7 +125,7 @@ function settings(): string {
 async function play(index: number): Promise<void> {
  if(!queue.length)return;cancelTransition();current=(index+queue.length)%queue.length;const song=queue[current];const generation=playGeneration;
  if(demo){render();return;}
- audio.pause();audio.src=`music://localhost/stream/${encodeURIComponent(song.id)}`;audio.volume=Math.min(1,Math.max(0,Number(state.settings.volume??"0.7")||0));
+ audio.pause();audio.src=mediaURL(`music://localhost/stream/${encodeURIComponent(song.id)}`);audio.volume=Math.min(1,Math.max(0,Number(state.settings.volume??"0.7")||0));
  lyrics="";
  if(state.settings.equalizer&&state.settings.equalizer!=="Flat")setupEQ();
  await audioContext?.resume();
@@ -213,7 +215,7 @@ function cancelTransition(): void { playGeneration++;crossfading=false;otherAudi
 /** 在同一播放代次内进行淡入淡出；用户选曲时立即停止旧动画。 */
 async function crossfadeTick(): Promise<void> {
  const seconds=Number(state.settings.crossfade||0);if(!seconds||crossfading||audio.paused||!Number.isFinite(audio.duration)||audio.duration-audio.currentTime>seconds||current+1>=queue.length||demo)return;
- const generation=playGeneration;crossfading=true;const nextSong=queue[current+1];otherAudio.onended=null;otherAudio.ontimeupdate=null;otherAudio.src=`music://localhost/stream/${encodeURIComponent(nextSong.id)}`;otherAudio.volume=0;
+ const generation=playGeneration;crossfading=true;const nextSong=queue[current+1];otherAudio.onended=null;otherAudio.ontimeupdate=null;otherAudio.src=mediaURL(`music://localhost/stream/${encodeURIComponent(nextSong.id)}`);otherAudio.volume=0;
  try {
   await otherAudio.play();if(generation!==playGeneration)return;
   const started=performance.now();const volume=Number(state.settings.volume??"0.7");
