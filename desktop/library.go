@@ -281,6 +281,11 @@ func (c *libraryClient) mapSong(v map[string]any) Song {
 		song.Path = str(v["id"])
 		song.Title = str(v["title"])
 		song.Artist = str(tag["artist"])
+		song.AlbumArtist = str(tag["album_artist"])
+		song.Year = int(number(tag["year"]))
+		song.Disc = int(number(tag["disc"]))
+		song.Bitrate = int(number(audio["bitrate"]))
+		song.SampleRate = int(number(audio["frequency"]))
 		song.Album = str(tag["album"])
 		song.Genre = str(tag["genre"])
 		song.Track = int(number(tag["track"]))
@@ -295,6 +300,9 @@ func (c *libraryClient) mapSong(v map[string]any) Song {
 			song.Artist = str(artists[0])
 		}
 		song.Album = str(v["Album"])
+		song.AlbumArtist = str(v["AlbumArtist"])
+		song.Year = int(number(v["ProductionYear"]))
+		song.Disc = int(number(v["ParentIndexNumber"]))
 		song.Duration = number(v["RunTimeTicks"]) / 1e7
 		song.Track = int(number(v["IndexNumber"]))
 		genres := arr(v["Genres"])
@@ -310,6 +318,9 @@ func (c *libraryClient) mapSong(v map[string]any) Song {
 		song.ID = c.profile.ID + ":" + song.Path
 		song.Title = str(v["title"])
 		song.Artist = str(v["grandparentTitle"])
+		song.AlbumArtist = song.Artist
+		song.Year = int(number(v["year"]))
+		song.Disc = int(number(v["parentIndex"]))
 		song.Album = str(v["parentTitle"])
 		song.Duration = number(v["duration"]) / 1000
 		song.Track = int(number(v["index"]))

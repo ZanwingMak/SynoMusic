@@ -52,6 +52,9 @@ func localSong(path string) Song {
 			song.Title = metadata.Title()
 		}
 		song.Artist = metadata.Artist()
+		song.AlbumArtist = metadata.AlbumArtist()
+		song.Year = metadata.Year()
+		song.Disc, _ = metadata.Disc()
 		if metadata.Album() != "" {
 			song.Album = metadata.Album()
 		}

@@ -15,7 +15,405 @@ export const languages = [["en","English"],["zh-Hans","简体中文"],["zh-Hant"
 let current = new URLSearchParams(location.search).get("lang") || localStorage.getItem("synomusic.language") || (navigator.language.startsWith("zh")?"zh-Hans":navigator.language.split("-")[0]);
 /** 设置界面语言并保留本机偏好。 */
 export function setLanguage(lang: string): void { current = entries[lang] ? lang : "en"; localStorage.setItem("synomusic.language",current); document.documentElement.lang=current; }
+
+const featureLabels: Record<string, string[]> = {
+  "Now playing": ["正在播放","正在播放","再生中","지금 재생 중","Jetzt läuft","À l’écoute"],
+  "hours": [
+    "小时",
+    "小時",
+    "時間",
+    "시간",
+    "Std.",
+    "heures"
+  ],
+  "Sort by": [
+    "排序",
+    "排序",
+    "並べ替え",
+    "정렬",
+    "Sortieren",
+    "Trier"
+  ],
+  "Default order": [
+    "默认顺序",
+    "預設順序",
+    "標準の順序",
+    "기본 순서",
+    "Standardreihenfolge",
+    "Ordre par défaut"
+  ],
+  "Title": [
+    "标题",
+    "標題",
+    "タイトル",
+    "제목",
+    "Titel",
+    "Titre"
+  ],
+  "Duration": [
+    "时长",
+    "時長",
+    "再生時間",
+    "길이",
+    "Dauer",
+    "Durée"
+  ],
+  "Track number": [
+    "音轨编号",
+    "音軌編號",
+    "トラック番号",
+    "트랙 번호",
+    "Titelnummer",
+    "Numéro de piste"
+  ],
+  "Descending": [
+    "降序",
+    "降冪",
+    "降順",
+    "내림차순",
+    "Absteigend",
+    "Décroissant"
+  ],
+  "Ascending": [
+    "升序",
+    "升冪",
+    "昇順",
+    "오름차순",
+    "Aufsteigend",
+    "Croissant"
+  ],
+  "Reverse sort": [
+    "反转排序",
+    "反轉排序",
+    "並び順を反転",
+    "정렬 순서 반전",
+    "Sortierung umkehren",
+    "Inverser le tri"
+  ],
+  "Selected": [
+    "已选择",
+    "已選取",
+    "選択済み",
+    "선택됨",
+    "ausgewählt",
+    "sélectionnés"
+  ],
+  "Select all": [
+    "全选",
+    "全選",
+    "すべて選択",
+    "모두 선택",
+    "Alles auswählen",
+    "Tout sélectionner"
+  ],
+  "Clear selection": [
+    "取消选择",
+    "取消選取",
+    "選択解除",
+    "선택 해제",
+    "Auswahl aufheben",
+    "Désélectionner"
+  ],
+  "Various artists": [
+    "群星",
+    "群星",
+    "さまざまなアーティスト",
+    "여러 아티스트",
+    "Verschiedene Künstler",
+    "Artistes variés"
+  ],
+  "Tracks": [
+    "首歌曲",
+    "首歌曲",
+    "曲",
+    "곡",
+    "Titel",
+    "titres"
+  ],
+  "Play next": [
+    "下一首播放",
+    "下一首播放",
+    "次に再生",
+    "다음에 재생",
+    "Als Nächstes abspielen",
+    "Écouter ensuite"
+  ],
+  "Add to queue": [
+    "加入播放队列",
+    "加入播放佇列",
+    "キューの末尾に追加",
+    "대기열에 추가",
+    "Zur Warteschlange hinzufügen",
+    "Ajouter à la file"
+  ],
+  "Added to queue": [
+    "已加入队列",
+    "已加入佇列",
+    "キューに追加しました",
+    "대기열에 추가됨",
+    "Zur Warteschlange hinzugefügt",
+    "Ajouté à la file"
+  ],
+  "Rename playlist": [
+    "重命名歌单",
+    "重新命名歌單",
+    "プレイリスト名を変更",
+    "재생목록 이름 변경",
+    "Playlist umbenennen",
+    "Renommer la playlist"
+  ],
+  "Album artist": [
+    "专辑艺人",
+    "專輯藝人",
+    "アルバムアーティスト",
+    "앨범 아티스트",
+    "Albumkünstler",
+    "Artiste de l’album"
+  ],
+  "Year": [
+    "年份",
+    "年份",
+    "年",
+    "연도",
+    "Jahr",
+    "Année"
+  ],
+  "Disc number": [
+    "碟片编号",
+    "碟片編號",
+    "ディスク番号",
+    "디스크 번호",
+    "CD-Nummer",
+    "Numéro de disque"
+  ],
+  "Codec": [
+    "编码格式",
+    "編碼格式",
+    "コーデック",
+    "코덱",
+    "Codec",
+    "Codec"
+  ],
+  "Bitrate": [
+    "比特率",
+    "位元率",
+    "ビットレート",
+    "비트 전송률",
+    "Bitrate",
+    "Débit"
+  ],
+  "Sample rate": [
+    "采样率",
+    "取樣率",
+    "サンプルレート",
+    "샘플링 속도",
+    "Abtastrate",
+    "Fréquence d’échantillonnage"
+  ],
+  "File path": [
+    "文件路径",
+    "檔案路徑",
+    "ファイルの場所",
+    "파일 경로",
+    "Dateipfad",
+    "Chemin du fichier"
+  ],
+  "Song information": [
+    "歌曲信息",
+    "歌曲資訊",
+    "曲の情報",
+    "곡 정보",
+    "Titelinformationen",
+    "Informations du titre"
+  ],
+  "Close": [
+    "关闭",
+    "關閉",
+    "閉じる",
+    "닫기",
+    "Schließen",
+    "Fermer"
+  ],
+  "Back": [
+    "后退",
+    "返回",
+    "戻る",
+    "뒤로",
+    "Zurück",
+    "Retour"
+  ],
+  "Forward": [
+    "前进",
+    "前進",
+    "進む",
+    "앞으로",
+    "Vorwärts",
+    "Suivant"
+  ],
+  "Search scope": [
+    "搜索范围",
+    "搜尋範圍",
+    "検索範囲",
+    "검색 범위",
+    "Suchbereich",
+    "Portée de recherche"
+  ],
+  "Entire library": [
+    "整个资料库",
+    "整個資料庫",
+    "ライブラリ全体",
+    "전체 라이브러리",
+    "Gesamte Mediathek",
+    "Toute la bibliothèque"
+  ],
+  "Current view": [
+    "当前页面",
+    "目前頁面",
+    "現在の表示",
+    "현재 보기",
+    "Aktuelle Ansicht",
+    "Vue actuelle"
+  ],
+  "More actions": [
+    "更多操作",
+    "更多操作",
+    "その他の操作",
+    "추가 작업",
+    "Weitere Aktionen",
+    "Autres actions"
+  ],
+  "Go to artist": [
+    "前往艺人",
+    "前往藝人",
+    "アーティストを表示",
+    "아티스트로 이동",
+    "Zum Künstler",
+    "Voir l’artiste"
+  ],
+  "Remove from playlist": [
+    "从歌单移除",
+    "從歌單移除",
+    "プレイリストから削除",
+    "재생목록에서 제거",
+    "Aus Playlist entfernen",
+    "Retirer de la playlist"
+  ],
+  "Previous page": [
+    "上一页",
+    "上一頁",
+    "前のページ",
+    "이전 페이지",
+    "Vorherige Seite",
+    "Page précédente"
+  ],
+  "Next page": [
+    "下一页",
+    "下一頁",
+    "次のページ",
+    "다음 페이지",
+    "Nächste Seite",
+    "Page suivante"
+  ],
+  "Save as playlist": [
+    "保存为歌单",
+    "儲存為歌單",
+    "プレイリストとして保存",
+    "재생목록으로 저장",
+    "Als Playlist speichern",
+    "Enregistrer en playlist"
+  ],
+  "Move up": [
+    "上移",
+    "上移",
+    "上へ移動",
+    "위로 이동",
+    "Nach oben",
+    "Monter"
+  ],
+  "Move down": [
+    "下移",
+    "下移",
+    "下へ移動",
+    "아래로 이동",
+    "Nach unten",
+    "Descendre"
+  ],
+  "Remove from queue": [
+    "从队列移除",
+    "從佇列移除",
+    "キューから削除",
+    "대기열에서 제거",
+    "Aus Warteschlange entfernen",
+    "Retirer de la file"
+  ],
+  "Queue is empty": [
+    "队列为空",
+    "佇列為空",
+    "キューは空です",
+    "대기열이 비어 있습니다",
+    "Warteschlange ist leer",
+    "La file est vide"
+  ],
+  "Use default order to rearrange": [
+    "切换为默认顺序后可拖动排序",
+    "切換為預設順序後可拖曳排序",
+    "標準の順序で並べ替えてください",
+    "기본 순서로 전환한 후 이동하세요",
+    "Zum Verschieben Standardreihenfolge wählen",
+    "Choisissez l’ordre par défaut pour réorganiser"
+  ],
+  "Repeat one": [
+    "单曲循环",
+    "單曲循環",
+    "1曲リピート",
+    "한 곡 반복",
+    "Einen Titel wiederholen",
+    "Répéter le titre"
+  ],
+  "Repeat all": [
+    "列表循环",
+    "清單循環",
+    "すべてリピート",
+    "전체 반복",
+    "Alle wiederholen",
+    "Tout répéter"
+  ],
+  "Repeat off": [
+    "关闭循环",
+    "關閉循環",
+    "リピートなし",
+    "반복 끄기",
+    "Wiederholung aus",
+    "Répétition désactivée"
+  ],
+  "Previous track": [
+    "上一首",
+    "上一首",
+    "前の曲",
+    "이전 곡",
+    "Vorheriger Titel",
+    "Titre précédent"
+  ],
+  "Next track": [
+    "下一首",
+    "下一首",
+    "次の曲",
+    "다음 곡",
+    "Nächster Titel",
+    "Titre suivant"
+  ],
+  "Search results": [
+    "搜索结果",
+    "搜尋結果",
+    "検索結果",
+    "검색 결과",
+    "Suchergebnisse",
+    "Résultats de recherche"
+  ]
+};
+const featureLanguages = ["zh-Hans","zh-Hant","ja","ko","de","fr"];
+
 /** 按英文键查询本地化文案，缺失时回退到英文。 */
-export function t(text: string): string { const index=base.indexOf(text);return index>=0?(entries[current]?.[index]??text):text; }
+export function t(text: string): string { const index=base.indexOf(text);return index>=0?(entries[current]?.[index]??text):(featureLabels[text]?.[featureLanguages.indexOf(current)]??text); }
 /** 返回当前使用的语言。 */
 export function getLanguage(): string { return current; }

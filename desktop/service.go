@@ -36,17 +36,22 @@ type Profile struct {
 
 // Song 统一服务器、本地文件、电台及播客的可播放条目。
 type Song struct {
-	ID        string  `json:"id"`
-	ProfileID string  `json:"profileID"`
-	Title     string  `json:"title"`
-	Artist    string  `json:"artist"`
-	Album     string  `json:"album"`
-	Genre     string  `json:"genre"`
-	Duration  float64 `json:"duration"`
-	Track     int     `json:"trackNumber"`
-	Codec     string  `json:"codec"`
-	Artwork   string  `json:"artwork"`
-	Path      string  `json:"path,omitempty"`
+	ID          string  `json:"id"`
+	ProfileID   string  `json:"profileID"`
+	Title       string  `json:"title"`
+	Artist      string  `json:"artist"`
+	Album       string  `json:"album"`
+	Genre       string  `json:"genre"`
+	Duration    float64 `json:"duration"`
+	Track       int     `json:"trackNumber"`
+	Codec       string  `json:"codec"`
+	Artwork     string  `json:"artwork"`
+	Path        string  `json:"path,omitempty"`
+	AlbumArtist string  `json:"albumArtist,omitempty"`
+	Year        int     `json:"year,omitempty"`
+	Disc        int     `json:"discNumber,omitempty"`
+	Bitrate     int     `json:"bitrate,omitempty"`
+	SampleRate  int     `json:"sampleRate,omitempty"`
 }
 
 // Playlist 保存不受数量限制的本地歌单。

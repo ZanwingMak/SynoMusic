@@ -56,6 +56,11 @@ export interface Song {
   codec: string;
   artwork: string;
   path?: string;
+  albumArtist?: string;
+  year?: number;
+  discNumber?: number;
+  bitrate?: number;
+  sampleRate?: number;
 }
 
 /** State 保存无需远端账号的用户资料，凭证单独存入钥匙串。 */
