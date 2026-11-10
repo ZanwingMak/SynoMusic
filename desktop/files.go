@@ -67,6 +67,9 @@ func (s *Service) ImportMusic() (int, error) {
 	if err != nil || len(paths) == 0 {
 		return 0, err
 	}
+	if err = rememberLocalAccess(paths); err != nil {
+		return 0, err
+	}
 	songs := []Song{}
 	for _, root := range paths {
 		err = filepath.WalkDir(root, func(path string, d fs.DirEntry, walkErr error) error {

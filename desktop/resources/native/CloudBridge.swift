@@ -63,3 +63,56 @@ public func synomusicCloudSync(_ input: UnsafePointer<CChar>, callback: @escapin
         }
     }
 }
+
+/// 仅保留当前进程已开启的目录访问，避免重复增加安全作用域引用计数。
+private let fileAccessLock = NSLock()
+private var accessibleFolders: [String: URL] = [:]
+private let bookmarkDefaultsKey = "synomusic.localFolderBookmarks"
+
+/// 恢复本机安全作用域书签；已失效或被移除的目录等待用户重新选择。
+@_cdecl("synomusic_restore_files")
+public func restoreMusicFolders() {
+    fileAccessLock.lock()
+    defer { fileAccessLock.unlock() }
+    var bookmarks = UserDefaults.standard.dictionary(forKey: bookmarkDefaultsKey) as? [String: Data] ?? [:]
+    for (path, data) in bookmarks {
+        var stale = false
+        guard let url = try? URL(resolvingBookmarkData: data, options: [.withSecurityScope],
+                                 relativeTo: nil, bookmarkDataIsStale: &stale) else { continue }
+        if accessibleFolders[url.path] == nil, url.startAccessingSecurityScopedResource() {
+            accessibleFolders[url.path] = url
+        }
+        if stale, let refreshed = try? url.bookmarkData(options: [.withSecurityScope],
+                                                      includingResourceValuesForKeys: nil, relativeTo: nil) {
+            bookmarks[path] = refreshed
+        }
+    }
+    UserDefaults.standard.set(bookmarks, forKey: bookmarkDefaultsKey)
+}
+
+/// 为用户在原生选择器中授权的音乐目录生成本机书签，原始音频保留原位置。
+@_cdecl("synomusic_remember_files")
+public func rememberMusicFolders(_ input: UnsafePointer<CChar>) -> Int32 {
+    guard let paths = try? JSONDecoder().decode([String].self, from: Data(String(cString: input).utf8)) else { return 1 }
+    fileAccessLock.lock()
+    defer { fileAccessLock.unlock() }
+    var bookmarks = UserDefaults.standard.dictionary(forKey: bookmarkDefaultsKey) as? [String: Data] ?? [:]
+    for path in paths {
+        let url = URL(fileURLWithPath: path, isDirectory: true)
+        guard let bookmark = try? url.bookmarkData(options: [.withSecurityScope],
+                                                  includingResourceValuesForKeys: nil, relativeTo: nil) else { return 1 }
+        bookmarks[path] = bookmark
+        if accessibleFolders[path] == nil, url.startAccessingSecurityScopedResource() {
+            accessibleFolders[path] = url
+        }
+    }
+    UserDefaults.standard.set(bookmarks, forKey: bookmarkDefaultsKey)
+    return 0
+}
+
+/// 通过 Foundation 返回正确的应用支持目录，App Sandbox 下自动定位容器。
+@_cdecl("synomusic_support_directory")
+public func musicSupportDirectory(callback: @escaping @convention(c) (UnsafePointer<CChar>) -> Void) {
+    let path = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.path ?? ""
+    path.withCString { callback($0) }
+}

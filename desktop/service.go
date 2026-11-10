@@ -83,7 +83,8 @@ var seekCommand = mygo.NewEvent[float64]("seekCommand")
 
 // newService 恢复磁盘状态，不保存密码到 JSON。
 func newService() (*Service, error) {
-	base, err := os.UserConfigDir()
+	restoreLocalAccess()
+	base, err := desktopConfigDir()
 	if err != nil {
 		return nil, err
 	}
