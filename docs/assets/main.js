@@ -2,7 +2,7 @@
   const supported = ['en', 'zh-Hans', 'zh-Hant', 'ja', 'ko', 'de', 'fr'];
   const imageLocales = { en: 'en-US', 'zh-Hans': 'zh-Hans', 'zh-Hant': 'zh-Hant', ja: 'ja', ko: 'ko', de: 'de-DE', fr: 'fr-FR' };
   const appStore = 'https://apps.apple.com/app/id6784094020';
-  const release = 'https://github.com/ZanwingMak/SynoMusic/releases/tag/v1.6.0';
+  const release = 'https://github.com/ZanwingMak/SynoMusic/releases/tag/v1.6.1';
   let translations = {};
   let language = 'en';
   let platform = 'mac';
