@@ -13,6 +13,7 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var showFullPlayer: Bool = false
     @State private var isAutoLogging: Bool = false
+    @State private var showSupport = false
 
     /// 仅 DEBUG：`-demo` 启动参数直接进入主框架，便于演示。
     private var isDemo: Bool {
@@ -47,6 +48,7 @@ struct RootView: View {
             FullPlayerView(isPresented: $showFullPlayer)
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showSupport) { SupportView() }
         .onChange(of: playback.currentSong?.id) { oldID, newID in
             if newID == nil {
                 showFullPlayer = false
@@ -69,6 +71,10 @@ struct RootView: View {
         #if DEBUG
         .onAppear {
             let args = ProcessInfo.processInfo.arguments
+            if args.contains("-demo") { reviewMode.activate() }
+            if args.contains("-settings") { navigation.selectedTab = .settings }
+            if args.contains("-browse") { navigation.selectedTab = .browse }
+            if args.contains("-support") { showSupport = true }
             if args.contains("-fullplayer") {
                 playback.play(queue: DemoMode.songs, startAt: 0)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
@@ -167,6 +173,8 @@ struct RootView: View {
     private func handleDeepLink(_ url: URL) {
         let target = url.host ?? url.pathComponents.dropFirst().first
         switch target {
+        case "support":
+            showSupport = true
         case "smart-mixes":
             openShortcutAction(.smartMixes)
         case "downloads":

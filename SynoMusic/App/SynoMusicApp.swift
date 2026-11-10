@@ -54,6 +54,7 @@ struct SynoMusicApp: App {
                 .environmentObject(cloudSync)
                 .environmentObject(reviewMode)
                 .onAppear {
+                    migrateUnlockedPlayback()
                     playback.applyPlaybackSettings(playbackSettings)
                     playback.downloadManager = downloads
                     cloudSync.configure(
@@ -65,13 +66,11 @@ struct SynoMusicApp: App {
                         songUserDataStore: songUserDataStore,
                         playbackEngine: playback
                     )
-                    applyPurchaseLimits()
                     cloudSync.scheduleAutomaticPull()
                     cloudSync.scheduleOccasionalSync()
                 }
                 .task {
                     await purchaseStore.start()
-                    applyPurchaseLimits()
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
@@ -97,9 +96,7 @@ struct SynoMusicApp: App {
                 .onReceive(songUserDataStore.objectWillChange) { _ in
                     cloudSync.scheduleAutomaticPush()
                 }
-                .onChange(of: purchaseStore.hasFullAccess) { _, _ in
-                    applyPurchaseLimits()
-                }
+
                 .tint(theme.current.accent(in: .dark))
                 .preferredColorScheme(theme.appearance.colorScheme)
                 // 只对语言变化重建整树（翻译值仅在 body 重算时才会刷新）；
@@ -108,19 +105,12 @@ struct SynoMusicApp: App {
         }
     }
 
-    /// 根据购买状态强制应用免费版限制。
-    private func applyPurchaseLimits() {
-        guard purchaseStore.hasLoadedEntitlements else { return }
-        guard !purchaseStore.hasFullAccess else {
-            if playbackSettings.backgroundPlaybackEnabled == false {
-                playbackSettings.backgroundPlaybackEnabled = true
-            }
-            return
-        }
-        playbackSettings.backgroundPlaybackEnabled = false
-        if cloudSync.isEnabled {
-            cloudSync.setEnabled(false)
-        }
+    /// 升级到全部功能开放后，恢复旧版曾被付费限制关闭的后台播放。
+    private func migrateUnlockedPlayback() {
+        let key = "syno.unlockedPlaybackMigrated"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        playbackSettings.backgroundPlaybackEnabled = true
+        UserDefaults.standard.set(true, forKey: key)
     }
 }
 

@@ -570,6 +570,10 @@ final class PlaybackEngine: ObservableObject {
     /// Demo 模拟：UI 上时间线走，但不真正出声。
     private func startDemoPlayback(for song: Song, autoPlay: Bool) {
         isDemoPlayback = true
+        if DemoMode.songs.contains(where: { $0.id == song.id }) {
+            lyrics = DemoMode.lyrics
+            currentLyricIndex = 0
+        }
         demoTicker?.cancel()
         player.pause()
         player.removeAllItems()

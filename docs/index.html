@@ -2,201 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <meta name="description" content="SynoMusic is a native iOS music client for self-hosted music libraries, including Audio Station, Plex, Jellyfin, Emby, WebDAV, SMB, and local files.">
-  <title>SynoMusic - Native self-hosted music for iPhone</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f6f4ef">
+  <meta name="description" content="Your music, at home. Free, open-source music clients for iPhone, iPad and Mac. Connect your own Synology, Plex, Jellyfin, Emby, WebDAV, SMB or local music library.">
+  <meta property="og:title" content="SynoMusic — Your music, at home.">
+  <meta property="og:description" content="One library. Every little moment. All features are free on iPhone, iPad and Mac.">
+  <meta property="og:image" content="https://zanwingmak.github.io/SynoMusic/assets/images/social.png">
+  <title>SynoMusic — Your music, at home.</title>
   <link rel="icon" href="./assets/images/app-icon-preview.png">
   <link rel="apple-touch-icon" href="./assets/images/app-icon-preview.png">
   <link rel="stylesheet" href="./assets/styles.css">
+  <script src="./assets/main.js" defer></script>
 </head>
 <body>
-  <div class="site-shell">
-    <header class="site-header" data-reveal>
-      <a class="brand" href="#top" aria-label="SynoMusic">
-        <img src="./assets/images/app-icon-preview.png" width="44" height="44" alt="">
-        <span>SynoMusic</span>
-      </a>
-      <nav class="main-nav" aria-label="Primary">
-        <a href="#features" data-i18n="nav.features">Features</a>
-        <a href="#screens" data-i18n="nav.screens">Screens</a>
-        <a href="#privacy" data-i18n="nav.privacy">Privacy</a>
-        <a href="#download" data-i18n="nav.download">Download</a>
-      </nav>
-      <label class="language-picker">
-        <span class="sr-only" data-i18n="language.label">Language</span>
-        <select id="languageSelect" aria-label="Language">
-          <option value="en">English</option>
-          <option value="zh-Hans">简体中文</option>
-          <option value="zh-Hant">繁體中文</option>
-          <option value="ja">日本語</option>
-          <option value="ko">한국어</option>
-          <option value="de">Deutsch</option>
-          <option value="fr">Français</option>
-        </select>
-      </label>
-    </header>
-
-    <main id="top">
-      <section class="hero-section" aria-labelledby="hero-title">
-        <div class="hero-copy" data-reveal>
-          <p class="eyebrow" data-i18n="hero.eyebrow">Native iOS client for self-hosted music</p>
-          <h1 id="hero-title" data-i18n="hero.title">Your music library, beautifully native on iPhone.</h1>
-          <p class="hero-lede" data-i18n="hero.lede">Stream Audio Station, Plex, Jellyfin, Emby, WebDAV, SMB, and local music with a polished player, synced lyrics, offline downloads, Lock Screen controls and Dynamic Island support.</p>
-          <div class="hero-actions">
-            <a class="button primary" href="https://apps.apple.com/app/id6784094020" data-i18n="hero.primaryCta">View on App Store</a>
-            <a class="button secondary" href="./privacy.html" data-i18n="hero.secondaryCta">Privacy Policy</a>
-          </div>
-          <div class="hero-meta" aria-label="Highlights">
-            <span data-i18n="hero.metaOne">iOS 17+</span>
-            <span data-i18n="hero.metaTwo">Multiple sources</span>
-            <span data-i18n="hero.metaThree">7 languages</span>
-          </div>
-        </div>
-
-        <div class="hero-visual" data-reveal>
-          <div class="visual-orbit" aria-hidden="true"></div>
-          <div class="phone-stack" aria-label="SynoMusic app screenshots">
-            <img class="phone-shot shot-back" src="./assets/images/screen-library.png" width="430" height="932" alt="">
-            <img class="phone-shot shot-front" src="./assets/images/screen-player.png" width="430" height="932" alt="SynoMusic full player screen">
-          </div>
-          <div class="status-float status-top">
-            <span class="status-dot"></span>
-            <span data-i18n="hero.floatOne">Private music streaming</span>
-          </div>
-          <div class="status-float status-bottom">
-            <span class="wave-icon" aria-hidden="true"></span>
-            <span data-i18n="hero.floatTwo">Lyrics stay in sync</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="section intro-strip" aria-label="Product summary" data-reveal>
-        <div>
-          <p class="section-kicker" data-i18n="intro.kicker">Built for your own library</p>
-          <h2 data-i18n="intro.title">A refined music app for the library you already own.</h2>
-        </div>
-        <p data-i18n="intro.body">SynoMusic keeps your own library at the center: credentials stay in Keychain, playback uses native iOS media controls, and your albums, artists, playlists and folders stay reachable without forcing a cloud subscription.</p>
-      </section>
-
-      <section id="features" class="section feature-grid" aria-labelledby="features-title">
-        <div class="section-heading" data-reveal>
-          <p class="section-kicker" data-i18n="features.kicker">What it handles</p>
-          <h2 id="features-title" data-i18n="features.title">Everything expected from a serious private music client.</h2>
-        </div>
-        <div class="features">
-          <article class="feature-panel large" data-reveal>
-            <div class="feature-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M4 17V7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
-            </div>
-            <h3 data-i18n="features.library.title">Library first</h3>
-            <p data-i18n="features.library.body">Browse albums, artists, genres, folders, server playlists and every song with fast native navigation.</p>
-          </article>
-          <article class="feature-panel tall" data-reveal>
-            <div class="feature-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
-            </div>
-            <h3 data-i18n="features.player.title">Polished playback</h3>
-            <p data-i18n="features.player.body">AVQueuePlayer, AirPlay, Lock Screen controls, Dynamic Island and automatic format fallback when original streams fail.</p>
-          </article>
-          <article class="feature-panel" data-reveal>
-            <div class="feature-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M12 3v18M5 8h14M7 16h10"/></svg>
-            </div>
-            <h3 data-i18n="features.lyrics.title">Live lyrics</h3>
-            <p data-i18n="features.lyrics.body">Read synced lyrics, tune font size, offset and follow mode, or fetch lyrics online when the source has none.</p>
-          </article>
-          <article class="feature-panel" data-reveal>
-            <div class="feature-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-            </div>
-            <h3 data-i18n="features.offline.title">Offline cache</h3>
-            <p data-i18n="features.offline.body">Download songs into the app sandbox and manage cached tracks from Settings.</p>
-          </article>
-          <article class="feature-panel wide" data-reveal>
-            <div class="feature-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M12 3a7 7 0 0 0-7 7v3a7 7 0 0 0 14 0v-3a7 7 0 0 0-7-7Z"/><path d="M9 10h6M9 14h6"/></svg>
-            </div>
-            <h3 data-i18n="features.quickconnect.title">QuickConnect and direct servers</h3>
-            <p data-i18n="features.quickconnect.body">Use HTTPS, local hosts, DDNS, QuickConnect, Plex authorization, WebDAV folders, or SMB shares with saved profiles and Keychain credentials.</p>
-          </article>
-        </div>
-      </section>
-
-      <section id="screens" class="section screen-showcase" aria-labelledby="screens-title">
-        <div class="section-heading" data-reveal>
-          <p class="section-kicker" data-i18n="screens.kicker">Screens that feel at home on iOS</p>
-          <h2 id="screens-title" data-i18n="screens.title">Library, player and settings designed for repeated daily use.</h2>
-        </div>
-        <div class="screen-rail" aria-label="Application screenshots">
-          <figure data-reveal>
-            <img src="./assets/images/screen-library.png" width="430" height="932" alt="Library screen">
-            <figcaption data-i18n="screens.library">Library</figcaption>
-          </figure>
-          <figure data-reveal>
-            <img src="./assets/images/screen-browse.png" width="430" height="932" alt="Browse screen">
-            <figcaption data-i18n="screens.browse">Browse</figcaption>
-          </figure>
-          <figure data-reveal>
-            <img src="./assets/images/screen-player.png" width="430" height="932" alt="Full player screen">
-            <figcaption data-i18n="screens.player">Full player</figcaption>
-          </figure>
-          <figure data-reveal>
-            <img src="./assets/images/screen-settings.png" width="430" height="932" alt="Settings screen">
-            <figcaption data-i18n="screens.settings">Settings</figcaption>
-          </figure>
-        </div>
-      </section>
-
-      <section id="privacy" class="section trust-section" aria-labelledby="privacy-title">
-        <div class="trust-copy" data-reveal>
-          <p class="section-kicker" data-i18n="privacy.kicker">Private by design</p>
-          <h2 id="privacy-title" data-i18n="privacy.title">Your own library stays the source of truth.</h2>
-          <p data-i18n="privacy.body">SynoMusic is an unofficial self-hosted music client. It connects only to music sources you authorize, stores credentials in iOS Keychain, and keeps downloads inside the app sandbox.</p>
-        </div>
-        <div class="state-board" data-reveal aria-live="polite">
-          <div class="state-row loading">
-            <span></span>
-            <strong data-i18n="states.loading.title">Loading library</strong>
-            <small data-i18n="states.loading.body">Fetching albums from your music source.</small>
-          </div>
-          <div class="state-row empty">
-            <span></span>
-            <strong data-i18n="states.empty.title">No radio matches</strong>
-            <small data-i18n="states.empty.body">Change a filter and keep browsing.</small>
-          </div>
-          <div class="state-row error">
-            <span></span>
-            <strong data-i18n="states.error.title">Connection needs attention</strong>
-            <small data-i18n="states.error.body">Update the address or sign in again.</small>
-          </div>
-        </div>
-      </section>
-
-      <section id="download" class="section download-section" aria-labelledby="download-title" data-reveal>
-        <div class="download-card">
-          <img src="./assets/images/app-icon.png" width="96" height="96" alt="">
-          <div>
-            <p class="section-kicker" data-i18n="download.kicker">App Store</p>
-            <h2 id="download-title" data-i18n="download.title">Get SynoMusic for iPhone and iPad</h2>
-            <p data-i18n="download.body">Install SynoMusic from the App Store when available, or follow TestFlight while the commercial release is being reviewed.</p>
-          </div>
-          <div class="download-actions">
-            <a class="button primary" href="https://apps.apple.com/app/id6784094020" data-i18n="download.primaryCta">Open App Store</a>
-            <a class="button secondary" href="./terms.html" data-i18n="download.secondaryCta">Terms of Use</a>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="site-footer">
-      <span>SynoMusic</span>
-      <span data-i18n="footer.note">Unofficial self-hosted music client.</span>
-      <a href="./privacy.html" data-i18n="footer.privacy">Privacy</a>
-      <a href="./terms.html" data-i18n="footer.terms">Terms</a>
-    </footer>
-  </div>
-
-  <script src="./assets/main.js"></script>
+  <header class="site-header wrap">
+    <a class="brand" href="#top" aria-label="SynoMusic home"><img src="./assets/images/app-icon-preview.png" width="32" height="32" alt=""><span>SynoMusic</span></a>
+    <nav aria-label="Main navigation"><a href="#experience" data-i18n="navExperience">Experience</a><a href="#clients" data-i18n="navClients">Apps</a><a href="#open" data-i18n="navOpen">Free & open</a></nav>
+    <div class="header-actions"><label class="language-label"><span class="sr-only">Language</span><select id="language" aria-label="Language"><option value="en">English</option><option value="zh-Hans">简体中文</option><option value="zh-Hant">繁體中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="de">Deutsch</option><option value="fr">Français</option></select></label><a class="button small dark" href="#clients" data-i18n="getApp">Get the app <span>↗</span></a></div>
+  </header>
+  <main id="top">
+    <section class="hero wrap">
+      <div class="hero-heading reveal"><div><p class="eyebrow"><span class="live-dot"></span><span data-i18n="eyebrow">YOUR COLLECTION. YOUR CONNECTION.</span></p><h1 data-i18n="heroTitle">Your music,<br><em>at home.</em></h1></div><div class="hero-description"><p data-i18n="heroDescription">The music you’ve collected. The albums you come back to. A beautiful place to hear them all — on iPhone, iPad and Mac.</p><div class="actions"><a class="button dark" href="https://apps.apple.com/app/id6784094020" data-i18n="iosDownload">Get for iPhone & iPad <span>↗</span></a><a class="text-link" href="#clients" data-i18n="macDiscover">Meet SynoMusic for Mac <span>↗</span></a></div><p class="hero-note" data-i18n="heroNote">Every feature is free. A little support is always optional.</p></div></div>
+      <div class="product-stage reveal" aria-label="SynoMusic on Mac, Windows and iPhone"><div class="stage-grain" aria-hidden="true"></div><div class="stage-caption"><span>SYNO / MUSIC</span><span data-i18n="stageCaption">A little less noise. A little more music.</span></div><div class="mac-window"><div class="window-chrome"><span></span><span></span><span></span><small>SynoMusic</small></div><img id="hero-mac" src="./assets/images/mac-library.png" width="1420" height="920" alt="SynoMusic Mac app with a sidebar, album library, and persistent player"></div><div class="phone-window"><img id="hero-phone" src="./assets/images/screen-player-new.png" width="1320" height="2868" alt="SynoMusic iPhone player with synchronized lyrics"></div><div class="stage-footnote"><span>iPHONE · iPAD · MAC · WINDOWS</span><span data-i18n="stageFootnote">Your own music, beautifully connected.</span></div></div>
+      <div class="source-strip"><span data-i18n="sourcesLead">Bring the library you love.</span><div><span>Synology</span><span>Plex</span><span>Jellyfin</span><span>Emby</span><span>WebDAV</span><span>SMB</span><span data-i18n="localFiles">Local files</span></div></div>
+    </section>
+    <section id="experience" class="experience wrap section-space">
+      <div class="section-intro reveal"><p class="eyebrow">01 / <span data-i18n="navExperience">EXPERIENCE</span></p><h2 data-i18n="experienceTitle">Less between you<br>and the music.</h2><p data-i18n="experienceBody">Your albums stay center stage. The details stay out of the way. Settle into a familiar library, follow every lyric, and let the next song find you.</p></div>
+      <div class="experience-grid"><article class="listen-card reveal"><div class="card-heading"><p class="eyebrow" data-i18n="listenEyebrow">A LIBRARY THAT FEELS LIKE YOURS</p><h3 data-i18n="listenTitle">Collected with care.<br>Played with joy.</h3><p data-i18n="listenBody">Albums, artists, favorites, smart mixes and playlists. All the ways you find your music, together.</p></div><img id="library-detail" src="./assets/images/screen-library-new.png" width="1320" height="2868" alt="A real iPhone library screen showing original demo albums" loading="lazy"></article><article class="lyric-card reveal"><div class="lyric-quote" aria-hidden="true"><span>A little light across the room</span><strong>A little space<br>to hear the day</strong><span>The quiet follows every note</span></div><div class="card-heading"><p class="eyebrow" data-i18n="lyricsEyebrow">IN STEP WITH EVERY WORD</p><h3 data-i18n="lyricsTitle">A closer listen.</h3><p data-i18n="lyricsBody">Synced lyrics, your own edits, adjustable text and timing. Find your place in the song.</p><span class="sample-note" data-i18n="sampleNote">Original demo lyrics shown.</span></div><div class="record-circles" aria-hidden="true"></div></article></div>
+      <div class="details-grid reveal"><article><span class="detail-number">01</span><h3 data-i18n="offlineTitle">Take it with you.</h3><p data-i18n="offlineBody">Keep authorized music offline, organize a download queue, and import the files you already own.</p></article><article><span class="detail-number">02</span><h3 data-i18n="playbackTitle">Listen your way.</h3><p data-i18n="playbackBody">Background audio, AirPlay, an equalizer, crossfade and a sleep timer. The little things that make a long listen better.</p></article><article><span class="detail-number">03</span><h3 data-i18n="privacyTitle">Keep your own keys.</h3><p data-i18n="privacyBody">Connect directly to servers you authorize. Credentials stay in your system Keychain. No SynoMusic account required.</p></article></div>
+    </section>
+    <section id="clients" class="clients-section section-space"><div class="wrap"><div class="section-intro reveal"><p class="eyebrow">02 / <span data-i18n="navClients">THE APPS</span></p><h2 data-i18n="clientsTitle">At your desk.<br>Out in the world.</h2><p data-i18n="clientsBody">One love for your music. A different kind of care for every screen.</p></div><div class="client-switch" role="tablist" aria-label="Choose a client"><button role="tab" aria-selected="true" id="tab-mac" data-client="mac" aria-controls="client-preview">Mac</button><button id="tab-windows" type="button" role="tab" data-client="windows" aria-selected="false" aria-controls="client-preview" tabindex="-1">Windows</button><button role="tab" aria-selected="false" id="tab-iphone" data-client="iphone" aria-controls="client-preview">iPhone</button><button role="tab" aria-selected="false" id="tab-ipad" data-client="ipad" aria-controls="client-preview">iPad</button></div><div id="client-preview" class="client-preview reveal" role="tabpanel" aria-labelledby="tab-mac"><div class="client-copy"><span class="platform-label" id="platform-label">macOS 13+</span><h3 id="client-title"></h3><p id="client-description"></p><ul id="client-highlights"></ul><div id="client-downloads"></div></div><div class="client-screen" id="client-screen"><img id="client-image" src="./assets/images/mac-library.png" alt="SynoMusic for Mac" loading="lazy"></div></div></div></section>
+    <section id="open" class="open-section wrap section-space"><div class="open-copy reveal"><p class="eyebrow">03 / <span data-i18n="navOpen">FREE & OPEN</span></p><h2 data-i18n="openTitle">Free to enjoy.<br>Yours to support.</h2><p data-i18n="openBody">A personal music app should feel personal — including the choice to support it. Every feature is available to everyone. If SynoMusic makes your day a little better, you can leave the developer a tip inside the iPhone or iPad app.</p><div class="support-prices" aria-label="Optional support amounts in US dollars"><span>$0.99</span><span>$1.99</span><span>$2.99</span><span>$5.99</span><span>$9.99</span></div><p class="price-note" data-i18n="priceNote">USD reference prices. Local prices appear in the app. One-time consumable support, with no automatic renewal or extra features.</p><a class="text-link" href="https://github.com/ZanwingMak/SynoMusic" data-i18n="githubLink">Make yourself at home on GitHub <span>↗</span></a></div><div class="open-art reveal" aria-hidden="true"><div class="sleeve sleeve-one"><span>SYNO / STUDIO</span><strong>YOUR<br>OWN<br>MUSIC.</strong><small>PLAY IT YOUR WAY.</small></div><div class="vinyl-disc"><div><span>SynoMusic</span><small>FREE & OPEN</small></div></div></div></section>
+    <section class="faq-section wrap section-space"><div class="section-intro reveal"><p class="eyebrow">04 / <span data-i18n="questions">A FEW GOOD QUESTIONS</span></p><h2 data-i18n="faqTitle">Before you press play.</h2></div><div class="faq-list reveal"><details><summary data-i18n="q1">Do I need a NAS or a server?</summary><p data-i18n="a1">You can connect a supported server or use your own local audio files. SynoMusic does not include a commercial music catalog or a streaming subscription.</p></details><details><summary data-i18n="q2">What can I connect?</summary><p data-i18n="a2">Synology Audio Station, Plex, Jellyfin, Emby, WebDAV and SMB. Use only accounts, tokens, files and content you are authorized to access.</p></details><details><summary data-i18n="q3">Is anything locked behind a purchase?</summary><p data-i18n="a3">No. All features are free. Optional support purchases thank the developer; they do not unlock features and do not renew automatically.</p></details><details><summary data-i18n="q4">What happens to an earlier subscription?</summary><p data-i18n="a4">The new app no longer requires a subscription. An existing Apple subscription is managed separately and is not automatically cancelled by this update. Use “Manage previous subscriptions” in Settings to review or cancel it.</p></details><details><summary data-i18n="q5">Where can I get help or contribute?</summary><p><a href="https://github.com/ZanwingMak/SynoMusic/issues" data-i18n="a5">Report an issue or join the discussion on our public GitHub repository.</a></p></details></div></section>
+    <section class="closing wrap reveal"><div><p class="eyebrow">SYNO / MUSIC</p><h2 data-i18n="closingTitle">Make room for<br>your music.</h2></div><div class="actions"><a class="button dark" href="https://apps.apple.com/app/id6784094020" data-i18n="iosDownload">Get for iPhone & iPad <span>↗</span></a><a class="button outline" href="https://github.com/ZanwingMak/SynoMusic/releases/tag/v1.6.0" data-i18n="macDownload">Download for Mac <span>↗</span></a></div></section>
+  </main>
+  <footer class="site-footer wrap"><div class="footer-top"><a class="brand" href="#top"><img src="./assets/images/app-icon-preview.png" alt="" width="30" height="30">SynoMusic</a><p data-i18n="footerLine">A home for the music you call your own.</p><nav aria-label="Footer"><a href="./privacy.html" data-i18n="privacy">Privacy</a><a href="./terms.html" data-i18n="terms">Terms</a><a href="https://github.com/ZanwingMak/SynoMusic">GitHub ↗</a><a href="https://github.com/ZanwingMak/SynoMusic/issues" data-i18n="support">Support ↗</a></nav></div><div class="footer-bottom"><span>© 2026 SynoMusic · GPL-3.0</span><p data-i18n="disclaimer">An independent, unofficial client. Synology, Plex, Jellyfin and Emby belong to their respective owners. Only connect music you are authorized to use.</p></div></footer>
 </body>
 </html>

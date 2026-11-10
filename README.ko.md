@@ -4,7 +4,7 @@
 
 [English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
-[공식 웹사이트](https://zanwingmak.github.io/SynoMusic-OpenSource/) · [개인정보 처리방침](https://zanwingmak.github.io/SynoMusic-OpenSource/privacy.html) · [이용 약관](https://zanwingmak.github.io/SynoMusic-OpenSource/terms.html)
+[공식 웹사이트](https://zanwingmak.github.io/SynoMusic/) · [개인정보 처리방침](https://zanwingmak.github.io/SynoMusic/privacy.html) · [이용 약관](https://zanwingmak.github.io/SynoMusic/terms.html)
 
 SynoMusic은 음악을 직접 운영하는 서버나 로컬 파일에 보관하는 사용자를 위한 앱입니다. 사용자가 승인한 음악 라이브러리에만 연결하고, 자격 증명은 iOS Keychain에 저장합니다. 세련된 플레이어, 가사, 다운로드, 위젯, 잠금 화면 제어, Dynamic Island, 테마 설정을 제공합니다.
 

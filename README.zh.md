@@ -4,7 +4,7 @@
 
 [English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
-[官网](https://zanwingmak.github.io/SynoMusic-OpenSource/) · [隐私政策](https://zanwingmak.github.io/SynoMusic-OpenSource/privacy.html) · [服务条款](https://zanwingmak.github.io/SynoMusic-OpenSource/terms.html)
+[官网](https://zanwingmak.github.io/SynoMusic/) · [隐私政策](https://zanwingmak.github.io/SynoMusic/privacy.html) · [服务条款](https://zanwingmak.github.io/SynoMusic/terms.html)
 
 SynoMusic 适合把音乐保存在自己服务器或本地文件中的用户。App 只连接你授权的音乐库，凭证保存在 iOS Keychain，并提供精致播放器、歌词、下载、小组件、锁屏控制、灵动岛和主题定制。
 

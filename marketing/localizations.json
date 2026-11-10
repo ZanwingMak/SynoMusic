@@ -1,0 +1,410 @@
+{
+  "en-US": {
+    "uiLanguage": "en",
+    "languageName": "English",
+    "tagline": "Your music. No limits.",
+    "description": "SynoMusic brings your own music library to iPhone and iPad. Connect authorized Synology Audio Station, Plex, Jellyfin, Emby, WebDAV or SMB servers, or import local music. Browse albums, artists and folders, create playlists, follow synchronized lyrics, download your authorized music, enjoy background playback, AirPlay, Lock Screen controls, Siri, widgets and iCloud sync. Radio and podcasts use their respective public services.\n\nAll features are now free. The paywall and feature limits have been removed. You can optionally thank the developer with a one-time, repeatable support purchase. Support grants no additional features and never renews automatically.\n\nSynoMusic is an unofficial client. It does not provide a music catalog or music licenses and is not affiliated with Synology, Plex, Jellyfin or Emby. Connect only content and services you are authorized to use.\n\nTerms of Use (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nPrivacy Policy: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "whatsNew": "All features are now free. The paywall and feature limits have been removed. You can optionally thank the developer with a one-time, repeatable support purchase. Support grants no additional features and never renews automatically.",
+    "promotionalText": "All features are free. Connect your own music, enjoy synchronized lyrics and offline playback, and support development only if you wish.",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player",
+    "headlines": [
+      "Your music.\nNo limits.",
+      "Every source.\nOne library.",
+      "Lyrics, in\nthe moment.",
+      "Every feature.\nYours to use.",
+      "Made for Mac.\nFeels like home."
+    ],
+    "tipNames": [
+      "A little thanks",
+      "Buy a coffee",
+      "Add a treat",
+      "Warm support",
+      "Special thanks"
+    ],
+    "tipDescription": "Optional one-time tip. All features are free."
+  },
+  "zh-Hans": {
+    "uiLanguage": "zh-Hans",
+    "languageName": "简体中文",
+    "tagline": "你的音乐，不设限。",
+    "description": "SynoMusic 让自己的音乐资料库，在 iPhone 和 iPad 上随时相伴。连接你授权的 Synology Audio Station、Plex、Jellyfin、Emby、WebDAV、SMB 服务器，或导入本地音乐。浏览专辑、艺术家和文件夹，创建歌单，查看同步歌词，下载已获授权的音乐，享受后台播放、AirPlay、锁屏控制、Siri、小组件及 iCloud 同步。电台和播客使用各自的公开服务。\n\n全部功能现已免费开放，付费墙及功能数量限制已移除。你可以通过一次性、可重复购买的赞助自愿感谢开发者。赞助不会解锁额外功能，也不会自动续费。\n\nSynoMusic 是非官方客户端，不提供音乐曲库或音乐授权，与 Synology、Plex、Jellyfin、Emby 无隶属关系。请仅连接和使用你有权访问的内容与服务。\n\nTerms of Use (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nPrivacy Policy: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "whatsNew": "全部功能现已免费开放，付费墙及功能数量限制已移除。你可以通过一次性、可重复购买的赞助自愿感谢开发者。赞助不会解锁额外功能，也不会自动续费。",
+    "promotionalText": "全部功能免费开放。连接自己的音乐，享受同步歌词与离线播放。喜欢 SynoMusic，可自愿赞助开发。",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player",
+    "headlines": [
+      "你的音乐，\n不设限。",
+      "每一种来源，\n同一个资料库。",
+      "让歌词，\n跟上此刻。",
+      "每一项功能，\n都属于你。",
+      "为 Mac 设计，\n自在如归。"
+    ],
+    "tipNames": [
+      "一份心意",
+      "请喝咖啡",
+      "加份甜点",
+      "暖心支持",
+      "特别感谢"
+    ],
+    "tipDescription": "自愿一次性赞助，所有功能均可免费使用。"
+  },
+  "zh-Hant": {
+    "uiLanguage": "zh-Hant",
+    "languageName": "繁體中文",
+    "tagline": "你的音樂，不設限。",
+    "description": "SynoMusic 讓自己的音樂資料庫，在 iPhone 和 iPad 上隨時相伴。連接你授權的 Synology Audio Station、Plex、Jellyfin、Emby、WebDAV、SMB 伺服器，或匯入本機音樂。瀏覽專輯、藝人與資料夾，建立歌單，查看同步歌詞，下載已獲授權的音樂，享受背景播放、AirPlay、鎖定畫面控制、Siri、小工具及 iCloud 同步。電台與 Podcast 使用各自的公開服務。\n\n所有功能現已免費開放，付費牆及功能數量限制已移除。你可以透過一次性、可重複購買的贊助自願感謝開發者。贊助不會解鎖額外功能，也不會自動續費。\n\nSynoMusic 是非官方用戶端，不提供音樂曲庫或音樂授權，與 Synology、Plex、Jellyfin、Emby 無隸屬關係。請僅連接和使用你有權存取的內容與服務。\n\nTerms of Use (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nPrivacy Policy: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "whatsNew": "所有功能現已免費開放，付費牆及功能數量限制已移除。你可以透過一次性、可重複購買的贊助自願感謝開發者。贊助不會解鎖額外功能，也不會自動續費。",
+    "promotionalText": "所有功能免費開放。連接自己的音樂，享受同步歌詞與離線播放。喜歡 SynoMusic，可自願贊助開發。",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player",
+    "headlines": [
+      "你的音樂，\n不設限。",
+      "每一種來源，\n同一個資料庫。",
+      "讓歌詞，\n跟上此刻。",
+      "每一項功能，\n都屬於你。",
+      "為 Mac 設計，\n自在如歸。"
+    ],
+    "tipNames": [
+      "一份心意",
+      "請喝咖啡",
+      "加份甜點",
+      "暖心支持",
+      "特別感謝"
+    ],
+    "tipDescription": "自願一次性贊助，所有功能皆可免費使用。"
+  },
+  "ja": {
+    "uiLanguage": "ja",
+    "languageName": "日本語",
+    "tagline": "あなたの音楽を、自由に。",
+    "description": "SynoMusic は自分の音楽ライブラリを iPhone と iPad で楽しむアプリです。利用権限のある Synology Audio Station、Plex、Jellyfin、Emby、WebDAV、SMB に接続するか、ローカル音楽を読み込めます。アルバムやアーティスト、フォルダの閲覧、プレイリスト、同期歌詞、許可された音楽のダウンロード、バックグラウンド再生、AirPlay、ロック画面操作、Siri、ウィジェット、iCloud 同期に対応。ラジオとポッドキャストは各公開サービスを利用します。\n\nすべての機能を無料で利用できるようになりました。購入による制限と数量制限を撤廃しました。開発者への支援は任意の一回限りの購入です。繰り返し支援できますが、追加機能の解除や自動更新はありません。\n\nSynoMusic は非公式クライアントです。音楽カタログや音楽ライセンスを提供せず、Synology、Plex、Jellyfin、Emby と提携していません。利用権限のあるコンテンツとサービスのみ接続してください。\n\nTerms of Use (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nPrivacy Policy: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "whatsNew": "すべての機能を無料で利用できるようになりました。購入による制限と数量制限を撤廃しました。開発者への支援は任意の一回限りの購入です。繰り返し支援できますが、追加機能の解除や自動更新はありません。",
+    "promotionalText": "すべての機能が無料。自分の音楽をつなぎ、同期歌詞やオフライン再生を楽しめます。開発への支援は任意です。",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player",
+    "headlines": [
+      "あなたの音楽を、\nもっと自由に。",
+      "多彩なソースを、\nひとつの場所に。",
+      "歌詞とともに、\nこの瞬間を。",
+      "すべての機能を、\nあなたに。",
+      "Mac のための、\n心地よい音楽体験。"
+    ],
+    "tipNames": [
+      "感謝の気持ち",
+      "コーヒーを一杯",
+      "おやつを添えて",
+      "温かい応援",
+      "特別な感謝"
+    ],
+    "tipDescription": "任意の一回限りの支援。すべての機能は無料です。"
+  },
+  "ko": {
+    "uiLanguage": "ko",
+    "languageName": "한국어",
+    "tagline": "나의 음악, 제한 없이.",
+    "description": "SynoMusic은 iPhone과 iPad에서 나만의 음악 보관함을 즐기는 앱입니다. 이용 권한이 있는 Synology Audio Station, Plex, Jellyfin, Emby, WebDAV, SMB 서버에 연결하거나 로컬 음악을 가져오세요. 앨범, 아티스트, 폴더 탐색, 재생목록, 동기화 가사, 허가된 음악 다운로드, 백그라운드 재생, AirPlay, 잠금 화면 제어, Siri, 위젯, iCloud 동기화를 지원합니다. 라디오와 팟캐스트는 각각의 공개 서비스를 이용합니다.\n\n모든 기능을 무료로 사용할 수 있습니다. 유료 기능 잠금과 개수 제한을 없앴습니다. 개발자에게 선택적으로 일회성 후원을 할 수 있으며 반복 후원도 가능합니다. 후원은 추가 기능을 제공하거나 자동 갱신되지 않습니다.\n\nSynoMusic은 비공식 클라이언트로 음악 카탈로그나 라이선스를 제공하지 않으며 Synology, Plex, Jellyfin, Emby와 제휴하지 않습니다. 이용 권한이 있는 콘텐츠와 서비스만 연결하세요.\n\nTerms of Use (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nPrivacy Policy: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "whatsNew": "모든 기능을 무료로 사용할 수 있습니다. 유료 기능 잠금과 개수 제한을 없앴습니다. 개발자에게 선택적으로 일회성 후원을 할 수 있으며 반복 후원도 가능합니다. 후원은 추가 기능을 제공하거나 자동 갱신되지 않습니다.",
+    "promotionalText": "모든 기능은 무료입니다. 나만의 음악을 연결하고 동기화 가사와 오프라인 재생을 즐기세요. 개발 후원은 선택 사항입니다.",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player",
+    "headlines": [
+      "나의 음악,\n제한 없이.",
+      "모든 음악 소스,\n하나의 보관함.",
+      "이 순간을 따라,\n흐르는 가사.",
+      "모든 기능을,\n누구에게나.",
+      "Mac을 위한,\n편안한 음악 공간."
+    ],
+    "tipNames": [
+      "감사의 마음",
+      "커피 한 잔",
+      "디저트 추가",
+      "따뜻한 응원",
+      "특별한 감사"
+    ],
+    "tipDescription": "선택적인 일회성 후원. 모든 기능은 무료입니다."
+  },
+  "de-DE": {
+    "uiLanguage": "de",
+    "languageName": "Deutsch",
+    "tagline": "Deine Musik. Ohne Grenzen.",
+    "description": "SynoMusic bringt deine eigene Musiksammlung auf iPhone und iPad. Verbinde autorisierte Synology Audio Station-, Plex-, Jellyfin-, Emby-, WebDAV- oder SMB-Server oder importiere lokale Musik. Entdecke Alben, Künstler und Ordner, erstelle Playlists, lies synchronisierte Liedtexte und lade autorisierte Musik herunter. Mit Hintergrundwiedergabe, AirPlay, Sperrbildschirm-Steuerung, Siri, Widgets und iCloud-Synchronisierung. Radio und Podcasts nutzen ihre jeweiligen öffentlichen Dienste.\n\nAlle Funktionen sind jetzt kostenlos. Bezahlschranke und Mengenbegrenzungen wurden entfernt. Du kannst die Entwicklung freiwillig durch einen einmaligen, wiederholbaren Kauf unterstützen. Die Unterstützung schaltet keine zusätzlichen Funktionen frei und verlängert sich nicht automatisch.\n\nSynoMusic ist ein inoffizieller Client ohne eigenen Musikkatalog oder Musiklizenzen und ist nicht mit Synology, Plex, Jellyfin oder Emby verbunden. Verbinde nur Inhalte und Dienste, zu deren Nutzung du berechtigt bist.\n\nTerms of Use (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nPrivacy Policy: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "whatsNew": "Alle Funktionen sind jetzt kostenlos. Bezahlschranke und Mengenbegrenzungen wurden entfernt. Du kannst die Entwicklung freiwillig durch einen einmaligen, wiederholbaren Kauf unterstützen. Die Unterstützung schaltet keine zusätzlichen Funktionen frei und verlängert sich nicht automatisch.",
+    "promotionalText": "Alle Funktionen sind kostenlos. Deine eigene Musik, synchronisierte Liedtexte und Offline-Wiedergabe. Unterstütze die Entwicklung, wenn du möchtest.",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player",
+    "headlines": [
+      "Deine Musik.\nOhne Grenzen.",
+      "Jede Quelle.\nEine Mediathek.",
+      "Liedtexte,\nganz im Moment.",
+      "Alle Funktionen.\nFür dich.",
+      "Für den Mac.\nWie zu Hause."
+    ],
+    "tipNames": [
+      "Ein kleines Danke",
+      "Ein Kaffee",
+      "Etwas Süßes",
+      "Herzliche Unterstützung",
+      "Besonderer Dank"
+    ],
+    "tipDescription": "Freiwilliger Kauf. Alle Funktionen kostenlos."
+  },
+  "fr-FR": {
+    "uiLanguage": "fr",
+    "languageName": "Français",
+    "tagline": "Votre musique, sans limites.",
+    "description": "SynoMusic vous permet de profiter de votre bibliothèque musicale sur iPhone et iPad. Connectez vos serveurs autorisés Synology Audio Station, Plex, Jellyfin, Emby, WebDAV ou SMB, ou importez vos fichiers locaux. Parcourez albums, artistes et dossiers, créez des playlists, suivez les paroles synchronisées et téléchargez votre musique autorisée. Avec lecture en arrière-plan, AirPlay, commandes sur écran verrouillé, Siri, widgets et synchronisation iCloud. La radio et les podcasts utilisent leurs services publics respectifs.\n\nToutes les fonctionnalités sont désormais gratuites. Le mur payant et les limites ont été supprimés. Vous pouvez remercier le développeur par un achat facultatif, unique et renouvelable manuellement. Ce soutien ne débloque aucune fonction et ne se renouvelle jamais automatiquement.\n\nSynoMusic est un client non officiel, sans catalogue ni licence musicale, et n’est pas affilié à Synology, Plex, Jellyfin ou Emby. Connectez uniquement des contenus et services que vous êtes autorisé à utiliser.\n\nTerms of Use (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nPrivacy Policy: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "whatsNew": "Toutes les fonctionnalités sont désormais gratuites. Le mur payant et les limites ont été supprimés. Vous pouvez remercier le développeur par un achat facultatif, unique et renouvelable manuellement. Ce soutien ne débloque aucune fonction et ne se renouvelle jamais automatiquement.",
+    "promotionalText": "Tout est gratuit : votre musique, les paroles synchronisées et la lecture hors ligne. Soutenez le développement uniquement si vous le souhaitez.",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player",
+    "headlines": [
+      "Votre musique.\nSans limites.",
+      "Toutes vos sources.\nUne bibliothèque.",
+      "Les paroles,\nau bon moment.",
+      "Toutes les fonctions.\nPour vous.",
+      "Pensé pour Mac.\nComme chez soi."
+    ],
+    "tipNames": [
+      "Un petit merci",
+      "Un café",
+      "Une douceur",
+      "Un soutien chaleureux",
+      "Un grand merci"
+    ],
+    "tipDescription": "Soutien facultatif. Tout est gratuit."
+  },
+  "es-ES": {
+    "uiLanguage": "en",
+    "languageName": "Español",
+    "tagline": "Tu música, sin límites.",
+    "description": "SynoMusic lleva tu biblioteca musical a iPhone y iPad. Conecta servidores autorizados de Synology Audio Station, Plex, Jellyfin, Emby, WebDAV o SMB, o importa música local. Explora álbumes, artistas y carpetas, crea listas, sigue las letras sincronizadas y descarga música autorizada. Con reproducción en segundo plano, AirPlay, controles en la pantalla bloqueada, Siri, widgets y sincronización con iCloud. La radio y los pódcasts utilizan sus respectivos servicios públicos.\n\nTodas las funciones son ahora gratuitas. Hemos eliminado el muro de pago y los límites. Puedes agradecer al desarrollador con una aportación opcional de un solo pago que puedes repetir. No desbloquea funciones adicionales ni se renueva automáticamente.\n\nSynoMusic es un cliente no oficial. No ofrece catálogo ni licencias musicales y no está afiliado a Synology, Plex, Jellyfin o Emby. Conecta solo contenido y servicios que tengas autorización para utilizar.\n\nTerms of Use (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nPrivacy Policy: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "whatsNew": "Todas las funciones son ahora gratuitas. Hemos eliminado el muro de pago y los límites. Puedes agradecer al desarrollador con una aportación opcional de un solo pago que puedes repetir. No desbloquea funciones adicionales ni se renueva automáticamente.",
+    "promotionalText": "Todas las funciones son gratis. Tu música, letras sincronizadas y reproducción sin conexión. Apoya el desarrollo solo si lo deseas.",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player",
+    "headlines": [
+      "Tu música.\nSin límites.",
+      "Todas las fuentes.\nUna biblioteca.",
+      "Las letras,\nen su momento.",
+      "Cada función.\nPara ti.",
+      "Hecho para Mac.\nComo en casa."
+    ],
+    "tipNames": [
+      "Un pequeño gracias",
+      "Un café",
+      "Algo dulce",
+      "Un apoyo especial",
+      "Muchas gracias"
+    ],
+    "tipDescription": "Apoyo opcional. Todo es gratis."
+  },
+  "pt-BR": {
+    "uiLanguage": "en",
+    "languageName": "Português",
+    "tagline": "Sua música, sem limites.",
+    "description": "O SynoMusic leva sua biblioteca de música ao iPhone e iPad. Conecte servidores autorizados Synology Audio Station, Plex, Jellyfin, Emby, WebDAV ou SMB, ou importe músicas locais. Explore álbuns, artistas e pastas, crie playlists, acompanhe letras sincronizadas e baixe suas músicas autorizadas. Com reprodução em segundo plano, AirPlay, controles na tela bloqueada, Siri, widgets e sincronização com iCloud. Rádio e podcasts usam seus respectivos serviços públicos.\n\nTodos os recursos agora são gratuitos. Removemos a barreira de pagamento e os limites. Você pode agradecer ao desenvolvedor com uma contribuição opcional, única e repetível. O apoio não libera funções extras e não é renovado automaticamente.\n\nO SynoMusic é um cliente não oficial, sem catálogo ou licenças de música, e não é afiliado à Synology, Plex, Jellyfin ou Emby. Conecte somente conteúdos e serviços que você tem autorização para usar.\n\nTerms of Use (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nPrivacy Policy: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "whatsNew": "Todos os recursos agora são gratuitos. Removemos a barreira de pagamento e os limites. Você pode agradecer ao desenvolvedor com uma contribuição opcional, única e repetível. O apoio não libera funções extras e não é renovado automaticamente.",
+    "promotionalText": "Todos os recursos são gratuitos. Suas músicas, letras sincronizadas e reprodução offline. Apoie o desenvolvimento apenas se quiser.",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player",
+    "headlines": [
+      "Sua música.\nSem limites.",
+      "Todas as fontes.\nUma biblioteca.",
+      "Letras,\nno momento certo.",
+      "Cada recurso.\nPara você.",
+      "Feito para Mac.\nSinta-se em casa."
+    ],
+    "tipNames": [
+      "Um pequeno obrigado",
+      "Um café",
+      "Um doce",
+      "Um apoio especial",
+      "Muito obrigado"
+    ],
+    "tipDescription": "Apoio opcional. Todos os recursos são grátis."
+  },
+  "it": {
+    "uiLanguage": "en",
+    "languageName": "Italiano",
+    "tagline": "La tua musica, senza limiti.",
+    "description": "SynoMusic porta la tua libreria musicale su iPhone e iPad. Collega server autorizzati Synology Audio Station, Plex, Jellyfin, Emby, WebDAV o SMB, oppure importa musica locale. Esplora album, artisti e cartelle, crea playlist, segui i testi sincronizzati e scarica musica autorizzata. Con riproduzione in background, AirPlay, controlli sulla schermata di blocco, Siri, widget e sincronizzazione iCloud. Radio e podcast utilizzano i rispettivi servizi pubblici.\n\nTutte le funzionalità sono ora gratuite. Abbiamo rimosso il blocco a pagamento e i limiti. Puoi ringraziare lo sviluppatore con un acquisto facoltativo, singolo e ripetibile. Il sostegno non sblocca funzioni aggiuntive e non si rinnova automaticamente.\n\nSynoMusic è un client non ufficiale, senza catalogo né licenze musicali, e non è affiliato a Synology, Plex, Jellyfin o Emby. Collega solo contenuti e servizi che sei autorizzato a utilizzare.\n\nTerms of Use (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nPrivacy Policy: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "whatsNew": "Tutte le funzionalità sono ora gratuite. Abbiamo rimosso il blocco a pagamento e i limiti. Puoi ringraziare lo sviluppatore con un acquisto facoltativo, singolo e ripetibile. Il sostegno non sblocca funzioni aggiuntive e non si rinnova automaticamente.",
+    "promotionalText": "Tutte le funzioni sono gratuite. La tua musica, testi sincronizzati e ascolto offline. Sostieni lo sviluppo solo se lo desideri.",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player",
+    "headlines": [
+      "La tua musica.\nSenza limiti.",
+      "Ogni sorgente.\nUna libreria.",
+      "I testi,\nal momento giusto.",
+      "Ogni funzione.\nPer te.",
+      "Creato per Mac.\nCome a casa."
+    ],
+    "tipNames": [
+      "Un piccolo grazie",
+      "Un caffè",
+      "Un dolcetto",
+      "Un sostegno speciale",
+      "Un grande grazie"
+    ],
+    "tipDescription": "Sostegno facoltativo. Tutto è gratuito."
+  },
+  "ru": {
+    "uiLanguage": "en",
+    "languageName": "Русский",
+    "tagline": "Ваша музыка. Без границ.",
+    "description": "SynoMusic открывает вашу музыкальную библиотеку на iPhone и iPad. Подключайте разрешённые серверы Synology Audio Station, Plex, Jellyfin, Emby, WebDAV и SMB или импортируйте локальные файлы. Просматривайте альбомы, исполнителей и папки, создавайте плейлисты, читайте синхронные тексты и скачивайте музыку, на которую у вас есть права. Доступны фоновое воспроизведение, AirPlay, управление с экрана блокировки, Siri, виджеты и iCloud. Радио и подкасты используют соответствующие общедоступные сервисы.\n\nВсе функции теперь бесплатны. Платный доступ и ограничения количества удалены. Можно добровольно поблагодарить разработчика разовой покупкой, которую разрешено повторять. Поддержка не открывает дополнительные функции и не продлевается автоматически.\n\nSynoMusic — неофициальный клиент без собственного музыкального каталога или лицензий, не связанный с Synology, Plex, Jellyfin или Emby. Подключайте только контент и сервисы, которыми вам разрешено пользоваться.\n\nTerms of Use (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nPrivacy Policy: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "whatsNew": "Все функции теперь бесплатны. Платный доступ и ограничения количества удалены. Можно добровольно поблагодарить разработчика разовой покупкой, которую разрешено повторять. Поддержка не открывает дополнительные функции и не продлевается автоматически.",
+    "promotionalText": "Все функции бесплатны: своя музыка, синхронные тексты и прослушивание офлайн. Поддержка разработки — только по желанию.",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player",
+    "headlines": [
+      "Ваша музыка.\nБез границ.",
+      "Любые источники.\nОдна библиотека.",
+      "Тексты песен,\nв такт моменту.",
+      "Все возможности.\nДля вас.",
+      "Создано для Mac.\nКак дома."
+    ],
+    "tipNames": [
+      "Небольшое спасибо",
+      "Чашка кофе",
+      "Что-нибудь сладкое",
+      "Тёплая поддержка",
+      "Особая благодарность"
+    ],
+    "tipDescription": "Поддержка по желанию. Всё бесплатно."
+  },
+  "ar-SA": {
+    "languageName": "العربية",
+    "tagline": "موسيقاك، بلا حدود.",
+    "whatsNew": "أصبحت جميع الميزات مجانية. أزلنا جدار الدفع وحدود الميزات. يمكنك شكر المطوّر اختياريًا بدعم لمرة واحدة قابل للتكرار. لا يمنح الدعم أي ميزات إضافية ولا يتجدد تلقائيًا.",
+    "promotionalText": "جميع الميزات مجانية. استمتع بموسيقاك وكلمات الأغاني المتزامنة والاستماع دون اتصال. دعم التطوير اختياري تمامًا.",
+    "headlines": [
+      "موسيقاك،\nبلا حدود.",
+      "كل المصادر،\nمكتبة واحدة.",
+      "كلمات الأغاني،\nفي وقتها.",
+      "كل الميزات،\nمتاحة لك.",
+      "مصمم لأجل Mac،\nكأنك في بيتك."
+    ],
+    "tipNames": [
+      "كلمة شكر",
+      "فنجان قهوة",
+      "حلوى صغيرة",
+      "دعم كريم",
+      "شكر خاص"
+    ],
+    "tipDescription": "دعم اختياري لمرة واحدة. كل الميزات مجانية.",
+    "uiLanguage": "en",
+    "description": "يتيح لك SynoMusic الاستمتاع بمكتبتك الموسيقية الخاصة على iPhone وiPad. اتصل بخوادم Synology Audio Station أو Plex أو Jellyfin أو Emby أو WebDAV أو SMB التي تملك إذنًا لاستخدامها، أو استورد ملفات الموسيقى المحلية. تصفّح الألبومات والفنانين والمجلدات، وأنشئ قوائم تشغيل، وتابع كلمات الأغاني المتزامنة، ونزّل الموسيقى المصرّح لك بها. يدعم التطبيق التشغيل في الخلفية وAirPlay والتحكم من شاشة القفل وSiri والأدوات والمزامنة عبر iCloud. يستخدم الراديو والبودكاست الخدمات العامة الخاصة بكل منهما.\n\nأصبحت جميع الميزات مجانية. أزلنا جدار الدفع وحدود الميزات. يمكنك شكر المطوّر اختياريًا بدعم لمرة واحدة قابل للتكرار. لا يمنح الدعم أي ميزات إضافية ولا يتجدد تلقائيًا.\n\nSynoMusic عميل غير رسمي، ولا يوفّر كتالوجًا موسيقيًا أو تراخيص موسيقى، وليس تابعًا لـ Synology أو Plex أو Jellyfin أو Emby. اتصل فقط بالمحتوى والخدمات التي تملك إذنًا لاستخدامها.\n\nشروط الاستخدام (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nسياسة الخصوصية: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player"
+  },
+  "pl": {
+    "languageName": "Polski",
+    "tagline": "Twoja muzyka. Bez ograniczeń.",
+    "whatsNew": "Wszystkie funkcje są teraz bezpłatne. Usunęliśmy blokadę płatności i limity. Możesz dobrowolnie podziękować deweloperowi jednorazowym zakupem, który można powtarzać. Wsparcie nie odblokowuje dodatkowych funkcji i nie odnawia się automatycznie.",
+    "promotionalText": "Wszystkie funkcje są bezpłatne. Twoja muzyka, zsynchronizowane teksty i słuchanie offline. Wspieraj rozwój tylko wtedy, gdy chcesz.",
+    "headlines": [
+      "Twoja muzyka.\nBez ograniczeń.",
+      "Każde źródło.\nJedna biblioteka.",
+      "Teksty piosenek,\nw rytmie chwili.",
+      "Wszystkie funkcje.\nDla Ciebie.",
+      "Stworzone dla Maca.\nJak u siebie."
+    ],
+    "tipNames": [
+      "Małe podziękowanie",
+      "Kawa",
+      "Coś słodkiego",
+      "Serdeczne wsparcie",
+      "Szczególne podziękowanie"
+    ],
+    "tipDescription": "Dobrowolne wsparcie. Funkcje są bezpłatne.",
+    "uiLanguage": "en",
+    "description": "SynoMusic przenosi Twoją własną bibliotekę muzyczną na iPhone’a i iPada. Połącz serwery Synology Audio Station, Plex, Jellyfin, Emby, WebDAV lub SMB, z których masz prawo korzystać, albo zaimportuj lokalną muzykę. Przeglądaj albumy, wykonawców i foldery, twórz playlisty, śledź zsynchronizowane teksty i pobieraj muzykę, do której masz uprawnienia. Korzystaj z odtwarzania w tle, AirPlay, sterowania na ekranie blokady, Siri, widżetów i synchronizacji iCloud. Radio i podcasty korzystają z odpowiednich usług publicznych.\n\nWszystkie funkcje są teraz bezpłatne. Usunęliśmy blokadę płatności i limity. Możesz dobrowolnie podziękować deweloperowi jednorazowym zakupem, który można powtarzać. Wsparcie nie odblokowuje dodatkowych funkcji i nie odnawia się automatycznie.\n\nSynoMusic to nieoficjalny klient. Nie oferuje katalogu ani licencji muzycznych i nie jest powiązany z Synology, Plex, Jellyfin ani Emby. Łącz wyłącznie treści i usługi, z których masz prawo korzystać.\n\nWarunki użytkowania (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nPolityka prywatności: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player"
+  },
+  "uk": {
+    "languageName": "Українська",
+    "tagline": "Ваша музика. Без обмежень.",
+    "whatsNew": "Усі функції тепер безкоштовні. Платний доступ і кількісні обмеження прибрано. Ви можете добровільно подякувати розробнику одноразовою покупкою, яку можна повторювати. Підтримка не відкриває додаткових функцій і не поновлюється автоматично.",
+    "promotionalText": "Усі функції безкоштовні: власна музика, синхронізовані тексти й прослуховування офлайн. Підтримуйте розробку лише за бажанням.",
+    "headlines": [
+      "Ваша музика.\nБез обмежень.",
+      "Будь-які джерела.\nЄдина бібліотека.",
+      "Тексти пісень,\nу ритмі миті.",
+      "Усі можливості.\nДля вас.",
+      "Створено для Mac.\nЯк удома."
+    ],
+    "tipNames": [
+      "Невелика подяка",
+      "Чашка кави",
+      "Щось солодке",
+      "Тепла підтримка",
+      "Особлива подяка"
+    ],
+    "tipDescription": "Добровільна підтримка. Усе безкоштовно.",
+    "uiLanguage": "en",
+    "description": "SynoMusic відкриває вашу власну музичну бібліотеку на iPhone та iPad. Підключайте сервери Synology Audio Station, Plex, Jellyfin, Emby, WebDAV або SMB, якими вам дозволено користуватися, чи імпортуйте локальні файли. Переглядайте альбоми, виконавців і папки, створюйте списки відтворення, читайте синхронізовані тексти та завантажуйте музику, на яку маєте права. Доступні фонове відтворення, AirPlay, керування з екрана блокування, Siri, віджети й синхронізація iCloud. Радіо та подкасти використовують відповідні загальнодоступні сервіси.\n\nУсі функції тепер безкоштовні. Платний доступ і кількісні обмеження прибрано. Ви можете добровільно подякувати розробнику одноразовою покупкою, яку можна повторювати. Підтримка не відкриває додаткових функцій і не поновлюється автоматично.\n\nSynoMusic — неофіційний клієнт без власного музичного каталогу чи музичних ліцензій, не пов’язаний із Synology, Plex, Jellyfin або Emby. Підключайте лише вміст і сервіси, якими вам дозволено користуватися.\n\nУмови використання (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nПолітика конфіденційності: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player"
+  },
+  "tr": {
+    "languageName": "Türkçe",
+    "tagline": "Müziğin. Sınır tanımadan.",
+    "whatsNew": "Tüm özellikler artık ücretsiz. Ücretli erişimi ve kullanım sınırlarını kaldırdık. Tek seferlik ve tekrarlanabilir bir satın almayla geliştiriciye isteğe bağlı olarak teşekkür edebilirsin. Destek ek özellik açmaz ve otomatik yenilenmez.",
+    "promotionalText": "Tüm özellikler ücretsiz. Kendi müziğin, eşzamanlı sözler ve çevrimdışı dinleme. Geliştirmeyi yalnızca istersen destekle.",
+    "headlines": [
+      "Müziğin.\nSınır tanımadan.",
+      "Her kaynak.\nTek arşiv.",
+      "Şarkı sözleri,\ntam zamanında.",
+      "Tüm özellikler.\nSenin için.",
+      "Mac için tasarlandı.\nEvinde gibi."
+    ],
+    "tipNames": [
+      "Küçük bir teşekkür",
+      "Bir kahve",
+      "Bir tatlı",
+      "İçten destek",
+      "Özel teşekkür"
+    ],
+    "tipDescription": "İsteğe bağlı destek. Tüm özellikler ücretsiz.",
+    "uiLanguage": "en",
+    "description": "SynoMusic, kendi müzik arşivini iPhone ve iPad’e taşır. Kullanma yetkin olan Synology Audio Station, Plex, Jellyfin, Emby, WebDAV veya SMB sunucularına bağlan ya da yerel müziğini içe aktar. Albümlere, sanatçılara ve klasörlere göz at, çalma listeleri oluştur, eşzamanlı şarkı sözlerini takip et ve izinli müziğini indir. Arka planda çalma, AirPlay, kilit ekranı denetimleri, Siri, araç takımları ve iCloud eşzamanlamasının keyfini çıkar. Radyo ve podcast’ler kendi herkese açık hizmetlerini kullanır.\n\nTüm özellikler artık ücretsiz. Ücretli erişimi ve kullanım sınırlarını kaldırdık. Tek seferlik ve tekrarlanabilir bir satın almayla geliştiriciye isteğe bağlı olarak teşekkür edebilirsin. Destek ek özellik açmaz ve otomatik yenilenmez.\n\nSynoMusic resmî olmayan bir istemcidir. Müzik kataloğu veya müzik lisansı sunmaz; Synology, Plex, Jellyfin ya da Emby ile bağlantılı değildir. Yalnızca kullanma yetkin olan içerik ve hizmetlere bağlan.\n\nKullanım Koşulları (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nGizlilik Politikası: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player"
+  },
+  "en-GB": {
+    "uiLanguage": "en",
+    "languageName": "English (UK)",
+    "tagline": "Your music. No limits.",
+    "description": "SynoMusic brings your own music library to iPhone and iPad. Connect authorized Synology Audio Station, Plex, Jellyfin, Emby, WebDAV or SMB servers, or import local music. Browse albums, artists and folders, create playlists, follow synchronized lyrics, download your authorized music, enjoy background playback, AirPlay, Lock Screen controls, Siri, widgets and iCloud sync. Radio and podcasts use their respective public services.\n\nAll features are now free. The paywall and feature limits have been removed. You can optionally thank the developer with a one-time, repeatable support purchase. Support grants no additional features and never renews automatically.\n\nSynoMusic is an unofficial client. It does not provide a music catalog or music licenses and is not affiliated with Synology, Plex, Jellyfin or Emby. Connect only content and services you are authorized to use.\n\nTerms of Use (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nPrivacy Policy: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "whatsNew": "All features are now free. The paywall and feature limits have been removed. You can optionally thank the developer with a one-time, repeatable support purchase. Support grants no additional features and never renews automatically.",
+    "promotionalText": "All features are free. Connect your own music, enjoy synchronized lyrics and offline playback, and support development only if you wish.",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player",
+    "headlines": [
+      "Your music.\nNo limits.",
+      "Every source.\nOne library.",
+      "Lyrics, in\nthe moment.",
+      "Every feature.\nYours to use.",
+      "Made for Mac.\nFeels like home."
+    ],
+    "tipNames": [
+      "A little thanks",
+      "Buy a coffee",
+      "Add a treat",
+      "Warm support",
+      "Special thanks"
+    ],
+    "tipDescription": "Optional one-time tip. All features are free."
+  },
+  "en-CA": {
+    "uiLanguage": "en",
+    "languageName": "English (Canada)",
+    "tagline": "Your music. No limits.",
+    "description": "SynoMusic brings your own music library to iPhone and iPad. Connect authorized Synology Audio Station, Plex, Jellyfin, Emby, WebDAV or SMB servers, or import local music. Browse albums, artists and folders, create playlists, follow synchronized lyrics, download your authorized music, enjoy background playback, AirPlay, Lock Screen controls, Siri, widgets and iCloud sync. Radio and podcasts use their respective public services.\n\nAll features are now free. The paywall and feature limits have been removed. You can optionally thank the developer with a one-time, repeatable support purchase. Support grants no additional features and never renews automatically.\n\nSynoMusic is an unofficial client. It does not provide a music catalog or music licenses and is not affiliated with Synology, Plex, Jellyfin or Emby. Connect only content and services you are authorized to use.\n\nTerms of Use (EULA): https://zanwingmak.github.io/SynoMusic/terms.html\nPrivacy Policy: https://zanwingmak.github.io/SynoMusic/privacy.html",
+    "whatsNew": "All features are now free. The paywall and feature limits have been removed. You can optionally thank the developer with a one-time, repeatable support purchase. Support grants no additional features and never renews automatically.",
+    "promotionalText": "All features are free. Connect your own music, enjoy synchronized lyrics and offline playback, and support development only if you wish.",
+    "keywords": "music,NAS,Plex,Jellyfin,Emby,WebDAV,SMB,Synology,lyrics,offline,player",
+    "headlines": [
+      "Your music.\nNo limits.",
+      "Every source.\nOne library.",
+      "Lyrics, in\nthe moment.",
+      "Every feature.\nYours to use.",
+      "Made for Mac.\nFeels like home."
+    ],
+    "tipNames": [
+      "A little thanks",
+      "Buy a coffee",
+      "Add a treat",
+      "Warm support",
+      "Special thanks"
+    ],
+    "tipDescription": "Optional one-time tip. All features are free."
+  }
+}

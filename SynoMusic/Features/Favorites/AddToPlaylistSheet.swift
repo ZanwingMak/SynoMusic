@@ -4,7 +4,6 @@ import SwiftUI
 /// 多选确认后批量加入歌曲到所有勾选的歌单。
 struct AddToPlaylistSheet: View {
     @EnvironmentObject private var playlists: PlaylistStore
-    @EnvironmentObject private var purchase: PurchaseStore
     @Environment(\.dismiss) private var dismiss
 
     let song: Song
@@ -13,7 +12,6 @@ struct AddToPlaylistSheet: View {
     @State private var showCreate: Bool = false
     @State private var newName: String = ""
     @State private var newColor: Int = 1
-    @State private var paywallFeature: PremiumFeature?
 
     var body: some View {
         NavigationStack {
@@ -94,11 +92,6 @@ struct AddToPlaylistSheet: View {
                 createPlaylistSheet
                     .presentationDetents([.medium])
             }
-            .sheet(item: $paywallFeature) { feature in
-                PaywallView(feature: feature)
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-            }
         }
     }
 
@@ -136,10 +129,7 @@ struct AddToPlaylistSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("创建并选择".t) {
-                        guard canCreatePlaylist else {
-                            paywallFeature = .localPlaylists
-                            return
-                        }
+
                         let p = playlists.create(name: newName, colorIndex: newColor)
                         selected.insert(p.id)
                         newName = ""
@@ -152,19 +142,10 @@ struct AddToPlaylistSheet: View {
         }
     }
 
-    /// 打开新建歌单弹窗，免费版达到上限时展示付费墙。
+    /// 打开新建歌单弹窗，不限制歌单数量。
     private func startCreatingPlaylist() {
-        guard canCreatePlaylist else {
-            Haptics.tap()
-            paywallFeature = .localPlaylists
-            return
-        }
-        showCreate = true
-    }
 
-    /// 判断当前购买状态下是否还能创建本地歌单。
-    private var canCreatePlaylist: Bool {
-        purchase.canUse(.localPlaylists) || playlists.userPlaylists.count < PurchaseLimits.maxFreeUserPlaylists
+        showCreate = true
     }
 
     /// 切换一个歌单的选中状态。

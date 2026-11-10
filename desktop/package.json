@@ -1,0 +1,26 @@
+{
+  "name": "synomusic-desktop",
+  "version": "1.6.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "mygo dev",
+    "build": "npm run build:native && mygo build -platform darwin/universal",
+    "generate": "mygo generate",
+    "dev:web": "vite --host 127.0.0.1",
+    "build:web": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "build:native": "bash scripts-build-native.sh",
+    "build:windows": "node scripts-build.mjs",
+    "build:mac": "npm run build:native && mygo build -platform darwin/universal"
+  },
+  "dependencies": {
+    "mygo-runtime": "0.8.3"
+  },
+  "devDependencies": {
+    "mygo-cli": "0.8.3",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.2",
+    "lucide": "^0.468.0"
+  }
+}

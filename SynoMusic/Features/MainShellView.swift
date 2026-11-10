@@ -45,24 +45,21 @@ struct MainShellView: View {
                             switch route {
                             case .downloads:
                                 serverDependentDestination {
-                                    PremiumFeatureGate(feature: .songDownloads) {
-                                        DownloadsListView()
-                                    }
+                                    DownloadsListView()
+
                                 }
                                 .reserveMiniPlayer(visible: playback.currentSong != nil)
                             case .login(let profile):
                                 LoginView(profile: profile)
                                     .reserveMiniPlayer(visible: playback.currentSong != nil)
                             case .widgets:
-                                PremiumFeatureGate(feature: .systemIntegrations) {
-                                    WidgetManagerView()
-                                }
+                                WidgetManagerView()
+
                                 .reserveMiniPlayer(visible: playback.currentSong != nil)
                             case .localImports:
                                 serverDependentDestination {
-                                    PremiumFeatureGate(feature: .localImport) {
-                                        LocalImportView()
-                                    }
+                                    LocalImportView()
+
                                 }
                                 .reserveMiniPlayer(visible: playback.currentSong != nil)
                             }

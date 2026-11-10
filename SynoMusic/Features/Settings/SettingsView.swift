@@ -13,7 +13,6 @@ struct SettingsView: View {
     @EnvironmentObject private var lm: LanguageManager
     @EnvironmentObject private var playbackSettings: PlaybackSettings
     @EnvironmentObject private var navigation: AppNavigationState
-    @EnvironmentObject private var purchase: PurchaseStore
     @EnvironmentObject private var cloudSync: CloudSyncStore
     @EnvironmentObject private var reviewMode: AppReviewMode
     @Environment(\.colorScheme) private var colorScheme
@@ -21,7 +20,8 @@ struct SettingsView: View {
     @State private var serverInfo: [String: String] = [:]
     @State private var editingProfile: ServerProfile?
     @State private var pendingDelete: ServerProfile?
-    @State private var paywallFeature: PremiumFeature?
+    @EnvironmentObject private var purchase: PurchaseStore
+    @State private var showSupport = false
     @State private var selectedIconName: String? = UIApplication.shared.alternateIconName
     @State private var isChangingIcon: Bool = false
     @State private var switchingProfileID: UUID?
@@ -64,15 +64,12 @@ struct SettingsView: View {
                 await cloudSync.refreshCloudAvailability()
             }
         }
+        .sheet(isPresented: $showSupport) { SupportView() }
         .sheet(item: $editingProfile) { profile in
             ServerEditorView(profile: profile)
                 .presentationDetents([.large])
         }
-        .sheet(item: $paywallFeature) { feature in
-            PaywallView(feature: feature)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-        }
+
         .alert(
             "删除服务器".t,
             isPresented: Binding(
@@ -237,33 +234,21 @@ struct SettingsView: View {
         }
     }
 
-    /// 服务器配置导入导出入口；完整功能解锁后可用。
+    /// 服务器配置导入导出入口；所有用户均可用。
     @ViewBuilder
     private var serverConfigurationTransferRows: some View {
-        if purchase.canUse(.serverConfigurationTransfer) {
-            Button {
-                beginServerConfigurationExport()
-            } label: {
-                themedLabel("导出服务器配置".t, systemImage: "square.and.arrow.up")
-            }
-            Button {
-                Haptics.tap()
-                isShowingServerImport = true
-            } label: {
-                themedLabel("导入服务器配置".t, systemImage: "square.and.arrow.down")
-            }
-        } else {
-            Button {
-                showPaywall(for: .serverConfigurationTransfer)
-            } label: {
-                HStack {
-                    themedLabel("导入/导出服务器配置".t, systemImage: "arrow.up.arrow.down.square")
-                    Spacer()
-                    Image(systemName: "lock.fill")
-                        .foregroundStyle(.secondary)
-                }
-            }
+        Button {
+            beginServerConfigurationExport()
+        } label: {
+            themedLabel("导出服务器配置".t, systemImage: "square.and.arrow.up")
         }
+        Button {
+            Haptics.tap()
+            isShowingServerImport = true
+        } label: {
+            themedLabel("导入服务器配置".t, systemImage: "square.and.arrow.down")
+        }
+
     }
 
     private var languageSection: some View {
@@ -292,9 +277,7 @@ struct SettingsView: View {
                                 AppIconChoiceView(
                                     choice: choice,
                                     isSelected: selectedIconName == choice.alternateName,
-                                    isLocked: choice.alternateName != nil
-                                        && !purchase.canUse(.appIcon)
-                                        && selectedIconName != choice.alternateName
+                                    isLocked: false
                                 )
                             }
                             .buttonStyle(.plain)
@@ -310,7 +293,7 @@ struct SettingsView: View {
         } header: {
             Text("App 图标".t)
         } footer: {
-            Text(purchase.canUse(.appIcon) ? "选择后系统会立即替换主屏幕图标。".t : "默认图标可免费恢复；备用图标需要解锁完整功能。".t)
+            Text("选择后系统会立即替换主屏幕图标。".t)
         }
     }
 
@@ -332,51 +315,39 @@ struct SettingsView: View {
 
     private var playbackEnhancementSection: some View {
         Section {
-            if purchase.canUse(.playbackEnhancements) {
-                Picker(selection: $playbackSettings.playerArtworkStyle) {
-                    ForEach(PlayerArtworkStyle.allCases) { style in
-                        Text(style.titleKey.t).tag(style)
-                    }
-                } label: {
-                    themedLabel("播放器样式".t, systemImage: "rectangle.stack")
+            Picker(selection: $playbackSettings.playerArtworkStyle) {
+                ForEach(PlayerArtworkStyle.allCases) { style in
+                    Text(style.titleKey.t).tag(style)
                 }
-                Toggle(isOn: $playbackSettings.crossfadeEnabled) {
-                    themedLabel("歌曲淡入淡出".t, systemImage: "waveform")
-                }
-                if playbackSettings.crossfadeEnabled {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("淡入淡出时长".t)
-                            Spacer()
-                            Text(String(format: "%.0f s", playbackSettings.crossfadeDuration))
-                                .foregroundStyle(.secondary)
-                        }
-                        Slider(value: $playbackSettings.crossfadeDuration, in: 1...8, step: 1)
-                    }
-                }
-                Picker(selection: $playbackSettings.equalizerPreset) {
-                    ForEach(EqualizerPreset.allCases) { preset in
-                        Text(preset.titleKey.t).tag(preset)
-                    }
-                } label: {
-                    themedLabel("均衡器预设".t, systemImage: "slider.horizontal.3")
-                }
-            } else {
-                Button {
-                    showPaywall(for: .playbackEnhancements)
-                } label: {
+            } label: {
+                themedLabel("播放器样式".t, systemImage: "rectangle.stack")
+            }
+            Toggle(isOn: $playbackSettings.crossfadeEnabled) {
+                themedLabel("歌曲淡入淡出".t, systemImage: "waveform")
+            }
+            if playbackSettings.crossfadeEnabled {
+                VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        themedLabel("播放增强".t, systemImage: "slider.horizontal.3")
+                        Text("淡入淡出时长".t)
                         Spacer()
-                        Image(systemName: "lock.fill")
+                        Text(String(format: "%.0f s", playbackSettings.crossfadeDuration))
                             .foregroundStyle(.secondary)
                     }
+                    Slider(value: $playbackSettings.crossfadeDuration, in: 1...8, step: 1)
                 }
             }
+            Picker(selection: $playbackSettings.equalizerPreset) {
+                ForEach(EqualizerPreset.allCases) { preset in
+                    Text(preset.titleKey.t).tag(preset)
+                }
+            } label: {
+                themedLabel("均衡器预设".t, systemImage: "slider.horizontal.3")
+            }
+
         } header: {
             Text("播放增强".t)
         } footer: {
-            Text("黑胶播放器、淡入淡出和均衡器预设属于完整功能。".t)
+            Text("黑胶播放器、淡入淡出和均衡器预设均可免费使用。".t)
         }
     }
 
@@ -384,38 +355,17 @@ struct SettingsView: View {
     private var cacheSection: some View {
         if shouldShowServerDependentEntries {
             Section("下载与缓存".t) {
-                if purchase.canUse(.songDownloads) {
-                    NavigationLink(value: SettingsRoute.downloads) {
-                        HStack {
-                            themedLabel("已下载歌曲".t, systemImage: "arrow.down.circle")
-                            Spacer()
-                            Text("管理".t).foregroundStyle(.secondary)
-                        }
-                    }
-                } else {
-                    Button {
-                        showPaywall(for: .songDownloads)
-                    } label: {
-                        HStack {
-                            themedLabel("已下载歌曲".t, systemImage: "arrow.down.circle")
-                            Spacer()
-                            Image(systemName: "lock.fill")
-                                .foregroundStyle(.secondary)
-                        }
+                NavigationLink(value: SettingsRoute.downloads) {
+                    HStack {
+                        themedLabel("已下载歌曲".t, systemImage: "arrow.down.circle")
+                        Spacer()
+                        Text("管理".t).foregroundStyle(.secondary)
                     }
                 }
-                if purchase.canUse(.localImport) {
-                    NavigationLink(value: SettingsRoute.localImports) {
-                        localImportRow(isLocked: false)
-                    }
-                } else {
-                    Button {
-                        showPaywall(for: .localImport)
-                    } label: {
-                        localImportRow(isLocked: true)
-                    }
-                    .buttonStyle(.plain)
+                NavigationLink(value: SettingsRoute.localImports) {
+                    localImportRow(isLocked: false)
                 }
+
             }
         }
     }
@@ -440,22 +390,10 @@ struct SettingsView: View {
 
     private var othersSection: some View {
         Section {
-            if purchase.canUse(.backgroundPlayback) {
-                Toggle(isOn: $playbackSettings.backgroundPlaybackEnabled) {
-                    themedLabel("后台播放".t, systemImage: "play.circle")
-                }
-            } else {
-                Button {
-                    showPaywall(for: .backgroundPlayback)
-                } label: {
-                    HStack {
-                        themedLabel("后台播放".t, systemImage: "play.circle")
-                        Spacer()
-                        Image(systemName: "lock.fill")
-                            .foregroundStyle(.secondary)
-                    }
-                }
+            Toggle(isOn: $playbackSettings.backgroundPlaybackEnabled) {
+                themedLabel("后台播放".t, systemImage: "play.circle")
             }
+
             fixedPlaybackFeatureRow("锁屏控制".t, systemImage: "lock.open")
             fixedPlaybackFeatureRow("AirPlay".t, systemImage: "airplayaudio")
         } header: {
@@ -465,86 +403,30 @@ struct SettingsView: View {
         }
     }
 
+    /// 自愿赞助入口；所有功能均可免费使用。
     private var purchaseSection: some View {
         Section {
-            if purchase.hasFullAccess {
-                Button {
-                    showPaywall(for: .allAccess)
-                } label: {
-                    HStack {
-                        PremiumAccessBadge(showsText: true)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-            } else {
-                Button {
-                    showPaywall(for: .allAccess)
-                } label: {
-                    HStack {
-                        themedLabel("解锁完整功能".t, systemImage: "sparkles")
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                }
+            Button { showSupport = true } label: {
+                themedLabel("感谢赞助开发".t, systemImage: "heart")
             }
             Button {
-                playback.setStatus("正在恢复购买…".t)
-                Task {
-                    await purchase.restorePurchases()
-                    if let message = purchase.statusMessage {
-                        playback.setStatus(message)
-                    }
-                }
+                Task { await purchase.manageSubscriptions() }
             } label: {
-                themedLabel("已经购买？恢复购买".t, systemImage: "arrow.clockwise.circle")
-            }
-            Button {
-                playback.setStatus("正在打开兑换页面…".t)
-                Task {
-                    await purchase.redeemOfferCode()
-                    if let message = purchase.statusMessage {
-                        playback.setStatus(message)
-                    }
-                }
-            } label: {
-                themedLabel("App 兑换".t, systemImage: "giftcard")
-            }
-            if let message = purchase.statusMessage {
-                Text(message)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                themedLabel("管理历史订阅".t, systemImage: "person.crop.circle")
             }
         } header: {
-            Text("完整功能".t)
+            Text("支持开发".t)
         } footer: {
-            Text("订阅与终身解锁由 App Store 处理；订阅试用需在 App Store Connect 中配置。".t)
+            Text("所有功能免费开放。赞助完全自愿，不解锁额外功能，也不会自动续费。".t)
         }
     }
 
     private var widgetSection: some View {
         Section {
-            if purchase.canUse(.systemIntegrations) {
-                NavigationLink(value: SettingsRoute.widgets) {
-                    widgetManagerRow(isLocked: false)
-                }
-            } else {
-                Button {
-                    showPaywall(for: .systemIntegrations)
-                } label: {
-                    widgetManagerRow(isLocked: true)
-                }
-                .buttonStyle(.plain)
+            NavigationLink(value: SettingsRoute.widgets) {
+                widgetManagerRow(isLocked: false)
             }
+
         } header: {
             Text("Siri 与小组件".t)
         } footer: {
@@ -689,20 +571,15 @@ struct SettingsView: View {
     }
 
     private var serverSectionFooter: String {
-        if purchase.canUse(.serverProfiles) {
-            return "点击行设为默认；下次启动 App 会用默认服务器自动登录。点 ⓘ 编辑配置；左滑删除。导出的配置不包含密码；导入后请重新输入密码或重新授权。".t
-        }
-        return "免费版最多保存 1 个服务器配置；解锁后可添加多个服务器。".t
+        return "点击行设为默认；下次启动 App 会用默认服务器自动登录。点 ⓘ 编辑配置；左滑删除。导出的配置不包含密码；导入后请重新输入密码或重新授权。".t
+
     }
 
     private var cloudSyncBinding: Binding<Bool> {
         Binding(
             get: { cloudSync.isEnabled },
             set: { enabled in
-                if enabled, !purchase.canUse(.iCloudSync) {
-                    showPaywall(for: .iCloudSync)
-                    return
-                }
+
                 cloudSync.setEnabled(enabled)
             }
         )
@@ -724,22 +601,22 @@ struct SettingsView: View {
 
     /// 商业版官网地址。
     private var officialWebsiteURL: URL {
-        URL(string: "https://zanwingmak.github.io/SynoMusic-OpenSource/")!
+        URL(string: "https://zanwingmak.github.io/SynoMusic/")!
     }
 
     /// 公开问题反馈地址。
     private var feedbackURL: URL {
-        URL(string: "https://github.com/ZanwingMak/SynoMusic-OpenSource/issues")!
+        URL(string: "https://github.com/ZanwingMak/SynoMusic/issues")!
     }
 
     /// 服务条款地址。
     private var termsURL: URL {
-        URL(string: "https://zanwingmak.github.io/SynoMusic-OpenSource/terms.html")!
+        URL(string: "https://zanwingmak.github.io/SynoMusic/terms.html")!
     }
 
     /// 隐私政策地址。
     private var privacyURL: URL {
-        URL(string: "https://zanwingmak.github.io/SynoMusic-OpenSource/privacy.html")!
+        URL(string: "https://zanwingmak.github.io/SynoMusic/privacy.html")!
     }
 
     /// 形如 "字段 ······ 值" 的行。
@@ -842,12 +719,9 @@ struct SettingsView: View {
         }
     }
 
-    /// 打开添加服务器编辑器，免费版超过数量限制时改为展示付费墙。
+    /// 打开添加服务器编辑器，不限制服务器数量。
     private func startAddingServer() {
-        guard purchase.canUse(.serverProfiles) || serverStore.profiles.count < PurchaseLimits.maxFreeServerProfiles else {
-            showPaywall(for: .serverProfiles)
-            return
-        }
+
         editingProfile = ServerProfile(host: "", username: "")
     }
 
@@ -858,19 +732,10 @@ struct SettingsView: View {
         startAddingServer()
     }
 
-    /// 点击图标时允许免费恢复默认图标，备用图标再检查购买状态。
+    /// 点击图标后应用所选图标。
     private func handleAppIconTap(_ choice: AppIconChoice) {
-        guard choice.alternateName == nil || purchase.canUse(.appIcon) || selectedIconName == choice.alternateName else {
-            showPaywall(for: .appIcon)
-            return
-        }
-        applyAppIcon(choice)
-    }
 
-    /// 统一打开付费墙，减少各入口的状态赋值重复。
-    private func showPaywall(for feature: PremiumFeature) {
-        Haptics.tap()
-        paywallFeature = feature
+        applyAppIcon(choice)
     }
 
     /// 手动触发 iCloud 同步，并保留短暂 loading 反馈。

@@ -4,15 +4,14 @@ import SwiftUI
 struct LibraryHomeView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
-    @EnvironmentObject private var purchase: PurchaseStore
     @EnvironmentObject private var reviewMode: AppReviewMode
     @EnvironmentObject private var navigation: AppNavigationState
     @EnvironmentObject private var cloudSync: CloudSyncStore
     @EnvironmentObject private var theme: ThemeManager
     @Environment(\.colorScheme) private var colorScheme
     @StateObject private var vm = LibraryHomeViewModel()
-    @State private var paywallFeature: PremiumFeature?
     @State private var isSyncingCloud = false
+    @State private var showSupport = false
 
     var body: some View {
         ScrollView {
@@ -60,11 +59,8 @@ struct LibraryHomeView: View {
                 cloudSyncButton
             }
         }
-        .sheet(item: $paywallFeature) { feature in
-            PaywallView(feature: feature)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-        }
+
+        .sheet(isPresented: $showSupport) { SupportView() }
         .task(id: homeLoadIdentity) {
             await vm.load(musicClient: session.musicClient, force: true, useMockData: reviewMode.isEnabled)
         }
@@ -103,19 +99,15 @@ struct LibraryHomeView: View {
         .buttonStyle(.plain)
     }
 
-    /// 首页右上角的购买与订阅入口。
+    /// 首页右上角的自愿赞助入口。
     private var purchaseButton: some View {
         Button {
             Haptics.tap()
-            paywallFeature = .allAccess
+            showSupport = true
         } label: {
-            if purchase.hasFullAccess {
-                PremiumToolbarIcon()
-            } else {
-                Image(systemName: "sparkles")
-            }
+            Image(systemName: "heart")
         }
-        .accessibilityLabel(purchase.hasFullAccess ? "完整功能已解锁".t : "购买与订阅".t)
+        .accessibilityLabel("感谢赞助开发".t)
         .buttonStyle(.plain)
     }
 
@@ -273,12 +265,10 @@ private struct Header: View {
 private struct QuickActions: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
-    @EnvironmentObject private var purchase: PurchaseStore
     @EnvironmentObject private var reviewMode: AppReviewMode
     @EnvironmentObject private var navigation: AppNavigationState
     @State private var isShuffling = false
     @State private var showServerPrompt = false
-    @State private var paywallFeature: PremiumFeature?
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -352,11 +342,7 @@ private struct QuickActions: View {
         .serverRequiredPrompt(isPresented: $showServerPrompt) {
             navigation.openAddServer()
         }
-        .sheet(item: $paywallFeature) { feature in
-            PaywallView(feature: feature)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-        }
+
     }
 
     /// 点击随机播放时先检查是否已连接服务器。
@@ -369,17 +355,11 @@ private struct QuickActions: View {
         Task { await randomShuffleAll() }
     }
 
-    /// 绘制快捷入口；付费功能优先弹付费墙，需要服务器的页面再弹添加服务器确认框。
+    /// 绘制快捷入口；需要服务器的页面弹出添加服务器确认框。
     @ViewBuilder
     private func routeCard(route: BrowseRoute, title: String, subtitle: String, icon: String, gradient: [Color]) -> some View {
-        if let feature = route.premiumFeature, !purchase.canUse(feature) {
-            Button {
-                showPaywall(for: feature)
-            } label: {
-                ActionCard(title: title, subtitle: subtitle, icon: icon, gradient: gradient)
-            }
-            .buttonStyle(.plain)
-        } else if route.requiresServer && session.musicClient == nil && !reviewMode.isEnabled {
+
+        if route.requiresServer && session.musicClient == nil && !reviewMode.isEnabled {
             Button {
                 Haptics.tap()
                 showServerPrompt = true
@@ -393,12 +373,6 @@ private struct QuickActions: View {
             }
             .buttonStyle(.plain)
         }
-    }
-
-    /// 打开指定功能的付费墙，并提供轻触反馈。
-    private func showPaywall(for feature: PremiumFeature) {
-        Haptics.tap()
-        paywallFeature = feature
     }
 
     /// 判断是否显示依赖真实服务器或外部在线资源的快捷入口。

@@ -5,12 +5,10 @@ struct LoginFlowView: View {
     @EnvironmentObject private var serverStore: ServerStore
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var theme: ThemeManager
-    @EnvironmentObject private var purchase: PurchaseStore
     @State private var path = NavigationPath()
     @State private var editingProfile: ServerProfile?
     @State private var connectingProfileID: UUID?
     @State private var quickConnectError: String?
-    @State private var paywallFeature: PremiumFeature?
     /// 由父视图传入：RootView 正在尝试自动登录默认服务器。
     var autoLoggingIn: Bool = false
 
@@ -95,11 +93,6 @@ struct LoginFlowView: View {
                 ServerEditorView(profile: profile)
                     .presentationDetents([.large])
             }
-            .sheet(item: $paywallFeature) { feature in
-                PaywallView(feature: feature)
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-            }
             .preferredColorScheme(.dark)
             #if DEBUG
             .task {
@@ -152,13 +145,9 @@ struct LoginFlowView: View {
         }
     }
 
-    /// 打开新增服务器编辑器；免费版达到上限时展示付费墙。
+    /// 打开新增服务器编辑器；不限制歌单数量。
     private func startAddingServer() {
-        guard purchase.canUse(.serverProfiles) || serverStore.profiles.count < PurchaseLimits.maxFreeServerProfiles else {
-            Haptics.tap()
-            paywallFeature = .serverProfiles
-            return
-        }
+
         editingProfile = ServerProfile(host: "", username: "")
     }
 }

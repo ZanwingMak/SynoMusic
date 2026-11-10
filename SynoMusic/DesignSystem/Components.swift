@@ -389,6 +389,7 @@ actor OnlineCoverLookupCache {
 
 /// 远程加载的封面图：失败/未加载时显示渐变占位。
 struct CoverArt: View {
+    @EnvironmentObject private var reviewMode: AppReviewMode
     let url: URL?
     var cornerRadius: CGFloat = 10
     var fallbackSeed: String = ""
@@ -398,7 +399,9 @@ struct CoverArt: View {
 
     var body: some View {
         Group {
-            if let url, !primaryFailed {
+            if (reviewMode.isEnabled || DemoMode.isEnabled), let album = demoAlbum {
+                DemoArtworkView(title: album.name, seed: album.id)
+            } else if let url, !primaryFailed {
                 remoteImage(url: url, marksPrimaryFailure: true)
             } else if let onlineFallbackURL {
                 remoteImage(url: onlineFallbackURL, marksPrimaryFailure: false)
@@ -412,6 +415,11 @@ struct CoverArt: View {
         .task(id: lookupTaskID) { await loadOnlineFallbackIfNeeded() }
         .onChange(of: url) { _, _ in resetLoadingState() }
         .onChange(of: lookup) { _, _ in resetLoadingState() }
+    }
+
+    /// 演示内容只使用应用自己绘制的原创封面，不向在线服务查询虚构音乐。
+    private var demoAlbum: Album? {
+        DemoMode.albums.first { $0.id == fallbackSeed || $0.name == lookup?.album }
     }
 
     /// 用种子生成稳定渐变，避免占位看起来千篇一律。
@@ -469,6 +477,7 @@ struct CoverArt: View {
 
     /// 原封面不可用时，从在线缓存查询封面。
     private func loadOnlineFallbackIfNeeded() async {
+        guard !reviewMode.isEnabled, !DemoMode.isEnabled else { return }
         guard onlineFallbackURL == nil else { return }
         guard url == nil || primaryFailed else { return }
         guard let found = await OnlineCoverLookupCache.shared.url(for: lookup) else { return }

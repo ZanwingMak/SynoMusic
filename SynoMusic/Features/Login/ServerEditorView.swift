@@ -6,7 +6,6 @@ struct ServerEditorView: View {
     @EnvironmentObject private var serverStore: ServerStore
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
-    @EnvironmentObject private var purchase: PurchaseStore
     @EnvironmentObject private var reviewMode: AppReviewMode
     @EnvironmentObject private var theme: ThemeManager
     @Environment(\.dismiss) private var dismiss
@@ -626,7 +625,6 @@ struct ServerEditorView: View {
     #endif
 
     private func saveOnly() {
-        guard canSaveProfileUnderLimit() else { return }
         var p = applyMode(to: profile)
         if p.name.trimmingCharacters(in: .whitespaces).isEmpty { p.name = displayName(of: p) }
         serverStore.upsert(p)
@@ -768,7 +766,6 @@ struct ServerEditorView: View {
             error = "该音乐源正在接入中，当前版本暂不可连接。".t
             return
         }
-        guard canSaveProfileUnderLimit() else { return }
         if profile.providerType == .plex, plexLoginMode == .account {
             await beginPlexPinAuthorization()
             return
@@ -1013,18 +1010,6 @@ struct ServerEditorView: View {
         playback.stop()
         Haptics.success()
         dismiss()
-    }
-
-    /// 校验免费版服务器数量限制，避免新增入口以外的路径写入超量配置。
-    private func canSaveProfileUnderLimit() -> Bool {
-        guard !isEditingExisting,
-              !purchase.canUse(.serverProfiles),
-              serverStore.profiles.count >= PurchaseLimits.maxFreeServerProfiles else {
-            return true
-        }
-        error = PremiumFeature.serverProfiles.lockedMessage.t
-        Haptics.warning()
-        return false
     }
 
     /// 处理用户从系统文件 App 选择的 SMB 文件夹授权。

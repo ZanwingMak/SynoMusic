@@ -10,7 +10,6 @@ struct FullPlayerView: View {
     @EnvironmentObject private var downloads: DownloadManager
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var navigation: AppNavigationState
-    @EnvironmentObject private var purchase: PurchaseStore
     @EnvironmentObject private var playbackSettings: PlaybackSettings
     @EnvironmentObject private var reviewMode: AppReviewMode
     @Binding var isPresented: Bool
@@ -33,12 +32,12 @@ struct FullPlayerView: View {
     @State private var draftLyricFontSize: Double = 18
     @State private var draftLyricAutoScroll: Bool = true
     @State private var draftLyricDelay: Double = 0
-    @State private var paywallFeature: PremiumFeature?
 
     /// 创建全屏播放器，并在调试参数要求时预展开右上角菜单。
     init(isPresented: Binding<Bool>) {
         self._isPresented = isPresented
         #if DEBUG
+        self._showLyrics = State(initialValue: ProcessInfo.processInfo.arguments.contains("-lyrics"))
         self._showPlayerMenu = State(initialValue: ProcessInfo.processInfo.arguments.contains("-show-player-menu"))
         #else
         self._showPlayerMenu = State(initialValue: false)
@@ -181,11 +180,7 @@ struct FullPlayerView: View {
             )
             .presentationDetents([.medium, .large])
         }
-        .sheet(item: $paywallFeature) { feature in
-            PaywallView(feature: feature)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-        }
+
         .sheet(isPresented: $showResearchSheet) {
             if let song = playback.currentSong {
                 SongResearchSheet(song: song, coverURL: session.musicClient?.songCoverURL(song: song))
@@ -250,10 +245,7 @@ struct FullPlayerView: View {
     /// 下载当前歌曲到本地缓存，并同步设置页下载管理。
     private func downloadCurrent() async {
         guard shouldShowDownloadActions else { return }
-        guard purchase.canUse(.songDownloads) else {
-            paywallFeature = .songDownloads
-            return
-        }
+
         guard let song = playback.currentSong else {
             playback.setStatus("无法下载当前歌曲".t)
             return
@@ -310,10 +302,7 @@ struct FullPlayerView: View {
     /// 关闭播放器并跳转到设置里的下载管理。
     private func openDownloadManager() {
         guard shouldShowDownloadActions else { return }
-        guard purchase.canUse(.songDownloads) else {
-            paywallFeature = .songDownloads
-            return
-        }
+
         isPresented = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
             navigation.openDownloads()
@@ -996,10 +985,7 @@ extension FullPlayerView {
 
     /// 从右上角菜单进入歌词编辑；先切到歌词页，确保实时预览能被看到。
     private func openLyricEditorFromMenu() {
-        guard purchase.canUse(.lyricEditing) else {
-            paywallFeature = .lyricEditing
-            return
-        }
+
         if !showLyrics {
             withAnimation(.easeInOut(duration: 0.24)) {
                 showLyrics = true
@@ -1010,10 +996,7 @@ extension FullPlayerView {
 
     /// 打开歌曲与歌手的在线资料工具。
     private func openResearchSheet() {
-        guard purchase.canUse(.onlineMetadata) else {
-            paywallFeature = .onlineMetadata
-            return
-        }
+
         showResearchSheet = true
     }
 

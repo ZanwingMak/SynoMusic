@@ -1,0 +1,7 @@
+node_modules/
+dist/
+build/
+.mygo/
+resources/synomusic-bridge
+.DS_Store
+resources/native/*.dylib

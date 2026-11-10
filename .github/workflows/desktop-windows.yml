@@ -1,0 +1,46 @@
+name: Windows desktop
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'codex/**']
+    paths: ['desktop/**', '.github/workflows/desktop-windows.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: desktop/go.mod
+          cache-dependency-path: desktop/go.sum
+      - run: npm ci
+      - run: npm run build:windows
+      - name: Check Windows application startup
+        shell: pwsh
+        run: |
+          $app = Start-Process -FilePath "$PWD/build/windows-amd64/SynoMusic.exe" -PassThru
+          try {
+            Start-Sleep -Seconds 10
+            if ($app.HasExited) { throw "SynoMusic exited during startup: $($app.ExitCode)" }
+            Write-Output "SynoMusic started successfully on Windows x64."
+          } finally {
+            if (-not $app.HasExited) { Stop-Process -Id $app.Id }
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SynoMusic-Windows
+          path: |
+            desktop/build/windows-amd64/*.exe
+            desktop/build/windows-arm64/*.exe
+          retention-days: 14

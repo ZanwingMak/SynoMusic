@@ -67,7 +67,8 @@ final class LanguageManager: ObservableObject {
     func t(_ key: String) -> String {
         let code = current.lookupCode
         if code == AppLanguage.zhHans.rawValue { return key }
-        return L10n.table[code]?[key]
+        return L10n.supportTable[code]?[key]
+            ?? L10n.table[code]?[key]
             ?? L10n.release155Additions[code]?[key]
             ?? L10n.release154Additions[code]?[key]
             ?? L10n.release152Additions[code]?[key]
@@ -75,6 +76,7 @@ final class LanguageManager: ObservableObject {
             ?? L10n.release144Additions[code]?[key]
             ?? L10n.commercialTable[code]?[key]
             ?? L10n.auditAdditions[code]?[key]
+            ?? L10n.supportTable[AppLanguage.en.rawValue]?[key]
             ?? L10n.table[AppLanguage.en.rawValue]?[key]
             ?? L10n.release155Additions[AppLanguage.en.rawValue]?[key]
             ?? L10n.release154Additions[AppLanguage.en.rawValue]?[key]

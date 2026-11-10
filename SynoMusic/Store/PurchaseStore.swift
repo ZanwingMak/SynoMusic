@@ -2,393 +2,117 @@ import Foundation
 import StoreKit
 import UIKit
 
-/// StoreKit 本地校验错误。
-private enum PurchaseError: Error {
-    case failedVerification
-}
-
-/// 商业版商品定义；App Store Connect 内购商品 ID 必须与这里保持一致。
+/// 自愿赞助商品；全部为可重复购买的消耗型项目，不关联功能权限。
 enum SynoMusicProduct: String, CaseIterable, Identifiable {
-    case weekly = "app.synomusic.SynoMusic.subscription.weekly"
-    case monthly = "app.synomusic.SynoMusic.subscription.monthly"
-    case quarterly = "app.synomusic.SynoMusic.subscription.quarterly"
-    case yearly = "app.synomusic.SynoMusic.subscription.yearly"
-    case lifetime = "app.synomusic.SynoMusic.lifetime"
-
-    static let allCases: [SynoMusicProduct] = [.weekly, .monthly, .yearly, .lifetime]
-    private static let entitlementCases: [SynoMusicProduct] = [.weekly, .monthly, .quarterly, .yearly, .lifetime]
+    case thanks = "app.synomusic.SynoMusic.support.099"
+    case coffee = "app.synomusic.SynoMusic.support.199"
+    case treat = "app.synomusic.SynoMusic.support.299"
+    case generous = "app.synomusic.SynoMusic.support.599"
+    case extraordinary = "app.synomusic.SynoMusic.support.999"
 
     var id: String { rawValue }
+    var sortIndex: Int { Self.allCases.firstIndex(of: self) ?? 0 }
 
-    static var entitlementIDs: Set<String> {
-        Set(entitlementCases.map(\.rawValue))
-    }
-
-    /// 商品在付费墙中的固定排序。
-    var sortIndex: Int {
-        switch self {
-        case .weekly: return 0
-        case .monthly: return 1
-        case .yearly: return 2
-        case .lifetime: return 3
-        case .quarterly: return 99
-        }
-    }
-
-    /// 顶部档位切换的短标题。
-    var tabTitle: String {
-        switch self {
-        case .weekly: return "每周"
-        case .monthly: return "每月"
-        case .quarterly: return "每季"
-        case .yearly: return "每年"
-        case .lifetime: return "终身"
-        }
-    }
-
-    /// 商品的本地展示名称；真实价格仍以 StoreKit 返回为准。
+    /// 本地化赞助名称；金额始终使用 App Store 返回的地区价格。
     var title: String {
         switch self {
-        case .weekly: return "周订阅"
-        case .monthly: return "月订阅"
-        case .quarterly: return "季订阅"
-        case .yearly: return "年订阅"
-        case .lifetime: return "终身解锁"
-        }
-    }
-
-    /// 商品的短说明，用于购买列表辅助用户快速区分。
-    var subtitle: String {
-        switch self {
-        case .weekly: return "适合先短期体验完整功能"
-        case .monthly: return "按月解锁完整功能"
-        case .quarterly: return "按季度解锁完整功能"
-        case .yearly: return "长期使用更省心"
-        case .lifetime: return "一次购买，终身解锁"
+        case .thanks: return "一份心意"
+        case .coffee: return "请喝咖啡"
+        case .treat: return "加份甜点"
+        case .generous: return "暖心支持"
+        case .extraordinary: return "特别感谢"
         }
     }
 }
 
-/// 需要购买后解锁的功能点。
-enum PremiumFeature: String, Identifiable {
-    case allAccess
-    case appIcon
-    case backgroundPlayback
-    case serverProfiles
-    case localPlaylists
-    case playbackHistory
-    case radio
-    case podcasts
-    case songDownloads
-    case lyricEditing
-    case iCloudSync
-    case smartMixes
-    case downloadQueue
-    case lyricTools
-    case systemIntegrations
-    case playbackEnhancements
-    case onlineMetadata
-    case localImport
-    case serverConfigurationTransfer
-
-    var id: String { rawValue }
-
-    /// 功能点标题，用于付费墙和锁定提示。
-    var title: String {
-        switch self {
-        case .allAccess: return "完整功能"
-        case .appIcon: return "更换 App 图标"
-        case .backgroundPlayback: return "后台播放"
-        case .serverProfiles: return "多个服务器配置"
-        case .localPlaylists: return "更多本地歌单"
-        case .playbackHistory: return "历史记录"
-        case .radio: return "电台"
-        case .podcasts: return "播客"
-        case .songDownloads: return "歌曲下载"
-        case .lyricEditing: return "歌词编辑"
-        case .iCloudSync: return "iCloud 云同步"
-        case .smartMixes: return "智能歌单"
-        case .downloadQueue: return "下载队列"
-        case .lyricTools: return "歌词工具"
-        case .systemIntegrations: return "Siri 与小组件"
-        case .playbackEnhancements: return "播放增强"
-        case .onlineMetadata: return "在线资料工具"
-        case .localImport: return "本地音乐导入"
-        case .serverConfigurationTransfer: return "导入/导出服务器配置"
-        }
-    }
-
-    /// 被锁定时展示给用户的解释。
-    var lockedMessage: String {
-        switch self {
-        case .allAccess:
-            return "解锁完整功能后可使用全部高级能力。"
-        case .appIcon:
-            return "免费版暂不支持更换 App 图标。"
-        case .backgroundPlayback:
-            return "免费版进入后台后会自动暂停播放。"
-        case .serverProfiles:
-            return "免费版最多保存 1 个服务器配置。"
-        case .localPlaylists:
-            return "免费版最多创建 3 个本地歌单。"
-        case .playbackHistory:
-            return "历史记录需要解锁完整功能后使用。"
-        case .radio:
-            return "电台需要解锁完整功能后使用。"
-        case .podcasts:
-            return "播客搜索与播放需要解锁完整功能后使用。"
-        case .songDownloads:
-            return "歌曲下载需要解锁完整功能后使用。"
-        case .lyricEditing:
-            return "歌词编辑需要解锁完整功能后使用。"
-        case .iCloudSync:
-            return "iCloud 云同步需要解锁完整功能后使用。"
-        case .smartMixes:
-            return "智能歌单需要解锁完整功能后使用。"
-        case .downloadQueue:
-            return "下载队列需要解锁完整功能后使用。"
-        case .lyricTools:
-            return "歌词工具需要解锁完整功能后使用。"
-        case .systemIntegrations:
-            return "Siri 与小组件需要解锁完整功能后使用。"
-        case .playbackEnhancements:
-            return "播放增强需要解锁完整功能后使用。"
-        case .onlineMetadata:
-            return "在线资料工具需要解锁完整功能后使用。"
-        case .localImport:
-            return "本地音乐导入需要解锁完整功能后使用。"
-        case .serverConfigurationTransfer:
-            return "服务器配置导入导出需要解锁完整功能后使用。"
-        }
-    }
-}
-
-/// 免费版限制常量，集中维护，避免各页面写散。
-enum PurchaseLimits {
-    static let maxFreeServerProfiles = 1
-    static let maxFreeUserPlaylists = 3
-}
-
-/// StoreKit 2 购买状态：加载商品、购买、恢复购买、兑换和监听交易更新。
+/// StoreKit 赞助购买状态；功能始终开放，购买只表达对开发者的支持。
 @MainActor
 final class PurchaseStore: ObservableObject {
-    private let appStoreID = "6784094020"
-
     @Published private(set) var products: [Product] = []
-    @Published private(set) var purchasedProductIDs: Set<String> = []
-    @Published private(set) var hasLoadedEntitlements = false
     @Published private(set) var isLoadingProducts = false
     @Published private(set) var isPurchasing = false
-    @Published private(set) var isRestoringPurchases = false
-    @Published private(set) var isRedeemingOfferCode = false
     @Published private(set) var statusMessage: String?
-
     private var updatesTask: Task<Void, Never>?
     private var hasStarted = false
 
-    var hasFullAccess: Bool {
-        !purchasedProductIDs.isDisjoint(with: SynoMusicProduct.entitlementIDs)
-    }
+    deinit { updatesTask?.cancel() }
 
-    deinit {
-        updatesTask?.cancel()
-    }
-
-    /// 启动 StoreKit 状态监听并刷新当前权益。
+    /// 监听待完成交易；启动时不主动加载赞助商品或影响用户使用功能。
     func start() async {
         guard !hasStarted else { return }
         hasStarted = true
-        listenForTransactions()
-        await refreshEntitlements()
-        await loadProductsIfNeeded()
-    }
-
-    /// 按需加载 App Store Connect 中配置的内购商品。
-    func loadProductsIfNeeded() async {
-        guard products.isEmpty, !isLoadingProducts else { return }
-        isLoadingProducts = true
-        defer { isLoadingProducts = false }
-        do {
-            let identifiers = SynoMusicProduct.allCases.map(\.rawValue)
-            let fetched = try await Product.products(for: identifiers)
-            products = fetched.sorted { lhs, rhs in
-                productSortIndex(lhs.id) < productSortIndex(rhs.id)
-            }
-        } catch {
-            statusMessage = "内购商品加载失败".t + "：\(error.localizedDescription)"
-        }
-    }
-
-    /// 购买指定商品，并在成功后刷新权益。
-    func purchase(_ product: Product) async {
-        guard !isPurchasing else { return }
-        isPurchasing = true
-        defer { isPurchasing = false }
-        do {
-            let result = try await product.purchase()
-            switch result {
-            case .success(let verification):
-                let transaction = try verifiedTransaction(from: verification)
-                await transaction.finish()
-                await refreshEntitlements()
-                statusMessage = "购买已生效".t
-            case .userCancelled:
-                statusMessage = nil
-            case .pending:
-                statusMessage = "购买正在等待处理".t
-            @unknown default:
-                statusMessage = "购买状态暂时无法确认".t
-            }
-        } catch {
-            statusMessage = "购买失败".t + "：\(error.localizedDescription)"
-        }
-    }
-
-    /// 触发系统恢复购买流程，并刷新当前权益。
-    func restorePurchases() async {
-        guard !isRestoringPurchases else { return }
-        isRestoringPurchases = true
-        statusMessage = nil
-        defer { isRestoringPurchases = false }
-        do {
-            try await AppStore.sync()
-            await refreshEntitlements()
-            statusMessage = hasFullAccess ? "购买已恢复".t : "没有找到有效购买".t
-        } catch {
-            guard !isUserCancelled(error) else {
-                statusMessage = nil
-                return
-            }
-            statusMessage = "恢复购买失败".t + "：\(error.localizedDescription)"
-        }
-    }
-
-    /// 打开系统订阅管理面板，方便用户查看或取消订阅。
-    func manageSubscriptions() async {
-        guard let scene = activeWindowScene else {
-            statusMessage = "订阅管理暂不可用".t
-            return
-        }
-        do {
-            try await AppStore.showManageSubscriptions(in: scene)
-        } catch {
-            guard !isUserCancelled(error) else {
-                statusMessage = nil
-                return
-            }
-            statusMessage = "打开订阅管理失败".t + "：\(error.localizedDescription)"
-        }
-    }
-
-    /// 打开 App Store 的兑换码入口，避免 StoreKit 内嵌兑换面板在 iPad 审核环境停留在 Loading。
-    func redeemOfferCode() async {
-        guard !isRedeemingOfferCode else { return }
-        isRedeemingOfferCode = true
-        statusMessage = nil
-        defer { isRedeemingOfferCode = false }
-
-        for url in offerCodeRedemptionURLs {
-            if await openExternalURL(url) {
-                return
-            }
-        }
-
-        statusMessage = "当前无法打开兑换页面".t
-    }
-
-    /// 判断某个功能当前是否可使用。
-    func canUse(_ feature: PremiumFeature) -> Bool {
-        switch feature {
-        case .allAccess:
-            return hasFullAccess
-        default:
-            return hasFullAccess
-        }
-    }
-
-    /// 清除一次性状态提示。
-    func clearStatusMessage() {
-        statusMessage = nil
-    }
-
-    /// 从当前有效权益中刷新已购买商品 ID。
-    private func refreshEntitlements() async {
-        var activeIDs: Set<String> = []
-        for await result in Transaction.currentEntitlements {
-            guard let transaction = try? verifiedTransaction(from: result) else { continue }
-            guard SynoMusicProduct.entitlementIDs.contains(transaction.productID) else { continue }
-            guard transaction.revocationDate == nil else { continue }
-            activeIDs.insert(transaction.productID)
-        }
-        purchasedProductIDs = activeIDs
-        hasLoadedEntitlements = true
-    }
-
-    /// 监听交易更新，确保跨设备恢复和续订状态能及时反映到 UI。
-    private func listenForTransactions() {
-        updatesTask?.cancel()
         updatesTask = Task { [weak self] in
             for await result in Transaction.updates {
                 guard let self else { return }
-                if let transaction = try? await self.verifiedTransactionOnMainActor(from: result) {
-                    await transaction.finish()
-                    await self.refreshEntitlements()
+                guard case .verified(let transaction) = result,
+                      SynoMusicProduct(rawValue: transaction.productID) != nil else { continue }
+                await transaction.finish()
+                self.statusMessage = "感谢你的赞助与支持！".t
+            }
+        }
+    }
+
+    /// 加载苹果后台配置的消耗型赞助商品，并按金额档位排序。
+    func loadProductsIfNeeded() async {
+        guard products.isEmpty, !isLoadingProducts else { return }
+        isLoadingProducts = true
+        statusMessage = nil
+        defer { isLoadingProducts = false }
+        do {
+            let fetched = try await Product.products(for: SynoMusicProduct.allCases.map(\.rawValue))
+            products = fetched.filter { $0.type == .consumable }.sorted {
+                (SynoMusicProduct(rawValue: $0.id)?.sortIndex ?? .max)
+                    < (SynoMusicProduct(rawValue: $1.id)?.sortIndex ?? .max)
+            }
+            if products.isEmpty { statusMessage = "暂时没有加载到赞助项目，请稍后重试。".t }
+        } catch {
+            statusMessage = "赞助项目加载失败，请稍后重试。".t
+        }
+    }
+
+    /// 购买一次赞助；签名校验成功后完成交易，允许再次支持同一档位。
+    func purchase(_ product: Product) async -> Bool {
+        guard !isPurchasing, product.type == .consumable,
+              SynoMusicProduct(rawValue: product.id) != nil else { return false }
+        isPurchasing = true
+        statusMessage = nil
+        defer { isPurchasing = false }
+        do {
+            switch try await product.purchase() {
+            case .success(let verification):
+                guard case .verified(let transaction) = verification,
+                      transaction.productID == product.id else {
+                    statusMessage = "无法验证本次购买，请联系 Apple 支持。".t
+                    return false
                 }
+                await transaction.finish()
+                statusMessage = "感谢你的赞助与支持！".t
+                return true
+            case .userCancelled:
+                return false
+            case .pending:
+                statusMessage = "购买正在等待处理".t
+                return false
+            @unknown default:
+                statusMessage = "购买状态暂时无法确认".t
+                return false
             }
+        } catch {
+            statusMessage = "赞助未完成，请稍后重试。".t
+            return false
         }
     }
 
-    /// 在主线程校验交易签名，供异步监听任务调用。
-    private func verifiedTransactionOnMainActor(from result: VerificationResult<Transaction>) async throws -> Transaction {
-        try verifiedTransaction(from: result)
-    }
-
-    /// 校验 StoreKit 返回的交易签名。
-    private func verifiedTransaction(from result: VerificationResult<Transaction>) throws -> Transaction {
-        switch result {
-        case .verified(let transaction):
-            return transaction
-        case .unverified:
-            throw PurchaseError.failedVerification
-        }
-    }
-
-    /// 返回商品定义中的固定排序下标。
-    private func productSortIndex(_ productID: String) -> Int {
-        SynoMusicProduct(rawValue: productID)?.sortIndex ?? Int.max
-    }
-
-    /// 判断 StoreKit 错误是否来自用户主动取消。
-    private func isUserCancelled(_ error: Error) -> Bool {
-        if error is CancellationError { return true }
-        if let storeKitError = error as? StoreKitError,
-           case .userCancelled = storeKitError {
-            return true
-        }
-        return false
-    }
-
-    /// 当前前台窗口场景，用于展示系统订阅管理面板。
-    private var activeWindowScene: UIWindowScene? {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first { $0.activationState == .foregroundActive }
-    }
-
-    /// App Store 兑换入口 URL；优先走 App Store scheme，失败时回退到 HTTPS 通用链接。
-    private var offerCodeRedemptionURLs: [URL] {
-        [
-            URL(string: "itms-apps://apps.apple.com/redeem?ctx=offercodes&id=\(appStoreID)"),
-            URL(string: "https://apps.apple.com/redeem?ctx=offercodes&id=\(appStoreID)")
-        ].compactMap(\.self)
-    }
-
-    /// 打开外部链接并返回系统是否接受该跳转。
-    private func openExternalURL(_ url: URL) async -> Bool {
-        await withCheckedContinuation { continuation in
-            UIApplication.shared.open(url, options: [:]) { success in
-                continuation.resume(returning: success)
-            }
+    /// 保留历史订阅的管理入口，便于老用户查看或取消仍在续费的订阅。
+    func manageSubscriptions() async {
+        guard let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive }) else { return }
+        do {
+            try await AppStore.showManageSubscriptions(in: scene)
+        } catch {
+            if let storeError = error as? StoreKitError, case .userCancelled = storeError { return }
+            statusMessage = "打开订阅管理失败".t
         }
     }
 }

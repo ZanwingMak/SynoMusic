@@ -4,7 +4,7 @@
 
 [English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
-[Official Website](https://zanwingmak.github.io/SynoMusic-OpenSource/) · [Privacy Policy](https://zanwingmak.github.io/SynoMusic-OpenSource/privacy.html) · [Terms of Use](https://zanwingmak.github.io/SynoMusic-OpenSource/terms.html)
+[Official Website](https://zanwingmak.github.io/SynoMusic/) · [Privacy Policy](https://zanwingmak.github.io/SynoMusic/privacy.html) · [Terms of Use](https://zanwingmak.github.io/SynoMusic/terms.html)
 
 SynoMusic is built for people who keep music on their own servers. It connects only to music libraries you authorize, keeps credentials in iOS Keychain, and brings a polished iPhone player with lyrics, downloads, widgets, Lock Screen controls, Dynamic Island, and theme customization.
 

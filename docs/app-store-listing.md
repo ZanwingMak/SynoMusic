@@ -30,8 +30,8 @@ SynoMusic 是非官方客户端，与 Synology、Plex、Jellyfin、Emby 等项�
 ### 审核备注
 SynoMusic is an unofficial self-hosted music client. It connects only to music libraries authorized by the user. Jellyfin, Emby, Plex, WebDAV, and SMB integrations are scoped to music only; video, TV, and photos are not included. Subscriptions include visible product title, period, price, renewal disclosure, Terms of Use, and Privacy Policy in the purchase flow.
 
-Privacy Policy: https://zanwingmak.github.io/SynoMusic-OpenSource/privacy.html
-Terms of Use (EULA): https://zanwingmak.github.io/SynoMusic-OpenSource/terms.html
+Privacy Policy: https://zanwingmak.github.io/SynoMusic/privacy.html
+Terms of Use (EULA): https://zanwingmak.github.io/SynoMusic/terms.html
 
 ## English
 

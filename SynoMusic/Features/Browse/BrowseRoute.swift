@@ -51,35 +51,30 @@ extension BrowseRoute {
             ServerRequiredGate { FolderBrowseView(folder: folder) }
         case .radio:
             ServerDependentOnlineGate {
-                PremiumFeatureGate(feature: .radio) {
-                    RadioBrowseView()
-                }
+                RadioBrowseView()
+
             }
         case .podcasts:
             ServerDependentOnlineGate {
-                PremiumFeatureGate(feature: .podcasts) {
-                    PodcastBrowseView()
-                }
+                PodcastBrowseView()
+
             }
         case .podcastShow(let show):
             ServerDependentOnlineGate {
-                PremiumFeatureGate(feature: .podcasts) {
-                    PodcastShowDetailView(show: show)
-                }
+                PodcastShowDetailView(show: show)
+
             }
         case .favorites: LocalPlaylistDetailView(playlistID: PlaylistStore.favoritesID)
         case .allSongs:
             ServerRequiredGate { AllSongsView() }
         case .smartMixes:
-            PremiumFeatureGate(feature: .smartMixes) {
-                SmartMixesView()
-            }
+            SmartMixesView()
+
         case .localPlaylists: LocalPlaylistsView()
         case .localPlaylist(let id): LocalPlaylistDetailView(playlistID: id)
         case .playbackHistory:
-            PremiumFeatureGate(feature: .playbackHistory) {
-                PlaybackHistoryView()
-            }
+            PlaybackHistoryView()
+
         case .settings: SettingsView()
         }
     }
@@ -92,22 +87,6 @@ extension BrowseRoute {
             return true
         default:
             return false
-        }
-    }
-
-    /// 当前路由对应的付费功能；入口页用它提前拦截并展示付费墙。
-    var premiumFeature: PremiumFeature? {
-        switch self {
-        case .radio:
-            return .radio
-        case .podcasts, .podcastShow:
-            return .podcasts
-        case .smartMixes:
-            return .smartMixes
-        case .playbackHistory:
-            return .playbackHistory
-        default:
-            return nil
         }
     }
 
