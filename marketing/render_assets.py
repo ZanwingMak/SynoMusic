@@ -198,7 +198,7 @@ def render_store(source: Path, locale: str, metadata: dict, kind: str,
 
 # 生成多端宣传图，Mac 与手机均来自真实界面截图。
 def render_promo(phone: Path, mac: Path, locale: str, metadata: dict,
-                 output: Path, social: bool = False) -> Path:
+                 output: Path, social: bool = False, desktop_name: str = "Mac") -> Path:
     width, height = (1200, 630) if social else (1920, 1080)
     scale = width / 1920
     image = Image.new("RGBA", (width, height), PAPER)
@@ -209,7 +209,7 @@ def render_promo(phone: Path, mac: Path, locale: str, metadata: dict,
                            int(660 * scale), INK, output)
     image.alpha_composite(title, (margin, int(276 * scale)))
     draw = ImageDraw.Draw(image)
-    draw.text((margin, height - int(111 * scale)), "iPhone  /  iPad  /  Mac",
+    draw.text((margin, height - int(111 * scale)), f"iPhone  /  iPad  /  {desktop_name}",
               font=font("en-US", max(18, int(26 * scale))), fill=MUTED)
     draw.text((margin, height - int(65 * scale)), "SynoMusic",
               font=font("en-US", max(13, int(18 * scale))), fill=ACCENT)
@@ -222,7 +222,7 @@ def render_promo(phone: Path, mac: Path, locale: str, metadata: dict,
                  (width - phone_width - int(71 * scale), height - phone_height - int(41 * scale),
                   phone_width, phone_height),
                  radius=max(12, int(26 * scale)), frame=max(3, int(6 * scale)))
-    filename = "social.png" if social else "overview.png"
+    filename = ("windows-" if desktop_name == "Windows" else "") + ("social.png" if social else "overview.png")
     target = output / "Promotional" / locale / filename
     save_png(image, target)
     return target
@@ -304,6 +304,10 @@ def main() -> None:
         if phone and mac:
             paths.append(render_promo(phone, mac, locale, row, args.output))
             paths.append(render_promo(phone, mac, locale, row, args.output, social=True))
+        windows = find_raw(args.raw_root, locale, row, "windows-library.png")
+        if phone and windows:
+            paths.append(render_promo(phone, windows, locale, row, args.output, desktop_name="Windows"))
+            paths.append(render_promo(phone, windows, locale, row, args.output, social=True, desktop_name="Windows"))
     sheet = contact_sheet(paths, args.output)
     archive = archive_assets(paths, sheet, args.output) if args.archive and not missing else None
     print(json.dumps({"complete": not missing, "locales": len(locales), "images": len(paths),
