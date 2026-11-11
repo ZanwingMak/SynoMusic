@@ -54,7 +54,7 @@ struct LibraryHomeView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                purchaseButton
+                sponsorshipButton
                 toolbarLink(value: BrowseRoute.localPlaylists, systemImage: "music.note.list", label: "我的歌单".t)
                 cloudSyncButton
             }
@@ -88,10 +88,7 @@ struct LibraryHomeView: View {
                     .controlSize(.small)
                     .tint(theme.current.accent(in: colorScheme))
             } else {
-                Image(systemName: "arrow.triangle.2.circlepath.icloud")
-                    .font(.system(size: 19, weight: .semibold))
-                    .frame(width: 24, height: 24)
-                    .foregroundStyle(theme.current.accent(in: colorScheme))
+                toolbarIcon(systemImage: "arrow.triangle.2.circlepath.icloud")
             }
         }
         .disabled(isSyncingCloud)
@@ -99,16 +96,24 @@ struct LibraryHomeView: View {
         .buttonStyle(.plain)
     }
 
-    /// 首页右上角的自愿赞助入口。
-    private var purchaseButton: some View {
+    /// 首页自愿赞助入口，使用与相邻按钮一致的线性礼物图标。
+    private var sponsorshipButton: some View {
         Button {
             Haptics.tap()
             showSupport = true
         } label: {
-            Image(systemName: "heart")
+            toolbarIcon(systemImage: "gift")
         }
         .accessibilityLabel("感谢赞助开发".t)
         .buttonStyle(.plain)
+    }
+
+    /// 统一首页工具栏图标的大小、字重和主题颜色。
+    private func toolbarIcon(systemImage: String) -> some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 19, weight: .semibold))
+            .frame(width: 24, height: 24)
+            .foregroundStyle(theme.current.accent(in: colorScheme))
     }
 
     /// 从首页手动触发一次 iCloud 双向同步，并展示明确结果。
@@ -131,7 +136,7 @@ struct LibraryHomeView: View {
     /// 带轻触反馈的导航栏图标入口。
     private func toolbarLink(value: BrowseRoute, systemImage: String, label: String) -> some View {
         NavigationLink(value: value) {
-            Image(systemName: systemImage)
+            toolbarIcon(systemImage: systemImage)
                 .accessibilityLabel(label)
         }
         .simultaneousGesture(TapGesture().onEnded { Haptics.tap() })
