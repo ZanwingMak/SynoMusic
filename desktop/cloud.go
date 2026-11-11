@@ -50,6 +50,9 @@ func (s *Service) SyncCloud() (bool, error) {
 		if incoming.Lyrics == nil {
 			incoming.Lyrics = map[string]string{}
 		}
+		if incoming.Stats == nil {
+			incoming.Stats = map[string]SongStats{}
+		}
 		s.state = incoming
 		s.clients = map[string]*libraryClient{}
 		for _, list := range s.state.Playlists {

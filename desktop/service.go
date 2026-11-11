@@ -38,43 +38,49 @@ type Profile struct {
 
 // Song 统一服务器、本地文件、电台及播客的可播放条目。
 type Song struct {
-	ID          string  `json:"id"`
-	ProfileID   string  `json:"profileID"`
-	Title       string  `json:"title"`
-	Artist      string  `json:"artist"`
-	Album       string  `json:"album"`
-	Genre       string  `json:"genre"`
-	Duration    float64 `json:"duration"`
-	Track       int     `json:"trackNumber"`
-	Codec       string  `json:"codec"`
-	Artwork     string  `json:"artwork"`
-	Path        string  `json:"path,omitempty"`
-	AlbumArtist string  `json:"albumArtist,omitempty"`
-	Year        int     `json:"year,omitempty"`
-	Disc        int     `json:"discNumber,omitempty"`
-	Bitrate     int     `json:"bitrate,omitempty"`
-	SampleRate  int     `json:"sampleRate,omitempty"`
+	ID          string   `json:"id"`
+	ProfileID   string   `json:"profileID"`
+	Title       string   `json:"title"`
+	Artist      string   `json:"artist"`
+	Album       string   `json:"album"`
+	Genre       string   `json:"genre"`
+	Duration    float64  `json:"duration"`
+	Track       int      `json:"trackNumber"`
+	Codec       string   `json:"codec"`
+	Artwork     string   `json:"artwork"`
+	Path        string   `json:"path,omitempty"`
+	AlbumArtist string   `json:"albumArtist,omitempty"`
+	Year        int      `json:"year,omitempty"`
+	Disc        int      `json:"discNumber,omitempty"`
+	Bitrate     int      `json:"bitrate,omitempty"`
+	SampleRate  int      `json:"sampleRate,omitempty"`
+	TrackGain   *float64 `json:"trackGain,omitempty"`
+	AlbumGain   *float64 `json:"albumGain,omitempty"`
+	TrackPeak   float64  `json:"trackPeak,omitempty"`
+	AlbumPeak   float64  `json:"albumPeak,omitempty"`
 }
 
 // Playlist 保存不受数量限制的本地歌单。
 type Playlist struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Songs []Song `json:"songs"`
+	ID    string         `json:"id"`
+	Name  string         `json:"name"`
+	Songs []Song         `json:"songs"`
+	Smart *SmartPlaylist `json:"smart,omitempty"`
 }
 
 // State 保存无需远端账号的用户资料，凭证单独存入钥匙串。
 type State struct {
-	UpdatedAt int64             `json:"updatedAt"`
-	Cached    []Song            `json:"cached"`
-	Profiles  []Profile         `json:"profiles"`
-	Playlists []Playlist        `json:"playlists"`
-	History   []Song            `json:"history"`
-	Imports   []Song            `json:"imports"`
-	Favorites []string          `json:"favorites"`
-	Settings  map[string]string `json:"settings"`
-	Lyrics    map[string]string `json:"lyrics"`
-	Podcasts  []Podcast         `json:"podcasts"`
+	UpdatedAt int64                `json:"updatedAt"`
+	Cached    []Song               `json:"cached"`
+	Profiles  []Profile            `json:"profiles"`
+	Playlists []Playlist           `json:"playlists"`
+	History   []Song               `json:"history"`
+	Imports   []Song               `json:"imports"`
+	Favorites []string             `json:"favorites"`
+	Settings  map[string]string    `json:"settings"`
+	Lyrics    map[string]string    `json:"lyrics"`
+	Podcasts  []Podcast            `json:"podcasts"`
+	Stats     map[string]SongStats `json:"stats"`
 }
 
 // Service 向桌面前端提供类型安全的音乐能力。
@@ -115,6 +121,9 @@ func newService() (*Service, error) {
 	}
 	if s.state.Settings == nil {
 		s.state.Settings = map[string]string{}
+	}
+	if s.state.Stats == nil {
+		s.state.Stats = map[string]SongStats{}
 	}
 	if s.state.Lyrics == nil {
 		s.state.Lyrics = map[string]string{}
@@ -358,6 +367,9 @@ func (s *Service) CreatePlaylist(name string) (Playlist, error) {
 
 // SavePlaylist 更新歌单内容并保存播放所需的条目快照。
 func (s *Service) SavePlaylist(p Playlist) error {
+	if err := validateSmartPlaylist(p.Smart); err != nil {
+		return err
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for i := range s.state.Playlists {
@@ -444,13 +456,16 @@ func (s *Service) SaveLyrics(id string, text string) error {
 }
 
 // UpdateNowPlaying 同步系统媒体控制中心和媒体键状态。
-func (s *Service) UpdateNowPlaying(song Song, playing bool, position float64) {
+func (s *Service) UpdateNowPlaying(song Song, playing bool, position float64, rate float64) {
+	if rate < 0.5 || rate > 2 {
+		rate = 1
+	}
 	state := mygo.PlaybackPaused
 	if playing {
 		state = mygo.PlaybackPlaying
 	}
 	mygo.NowPlaying.Set(mygo.NowPlayingInfo{Title: song.Title, Artist: song.Artist, Album: song.Album,
-		Duration: time.Duration(song.Duration * float64(time.Second)), Position: time.Duration(position * float64(time.Second)), State: state,
+		Duration: time.Duration(song.Duration * float64(time.Second)), Position: time.Duration(position * float64(time.Second)), State: state, Rate: rate,
 		Commands: mygo.MediaPlay | mygo.MediaPause | mygo.MediaNext | mygo.MediaPrevious | mygo.MediaSeek})
 }
 

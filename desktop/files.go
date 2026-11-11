@@ -10,12 +10,14 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -61,10 +63,41 @@ func localSong(path string) Song {
 		}
 		song.Genre = metadata.Genre()
 		song.Track, _ = metadata.Track()
+		for name, value := range metadata.Raw() {
+			key := strings.ToLower(strings.ReplaceAll(name, " ", "_"))
+			gain := replayGainValue(value)
+			if gain == nil {
+				continue
+			}
+			switch key {
+			case "replaygain_track_gain":
+				song.TrackGain = gain
+			case "replaygain_album_gain":
+				song.AlbumGain = gain
+			case "replaygain_track_peak":
+				song.TrackPeak = *gain
+			case "replaygain_album_peak":
+				song.AlbumPeak = *gain
+			}
+		}
 	}
 	readLocalAudioInfo(f, &song)
 	song.Artwork = "music://localhost/artwork/" + url.PathEscape(song.ID)
 	return song
+}
+
+// replayGainValue 读取已有 ReplayGain 标签，保留零分贝并拒绝无效数值。
+func replayGainValue(value any) *float64 {
+	text := strings.Trim(fmt.Sprint(value), "[] \t\r\n")
+	fields := strings.Fields(text)
+	if len(fields) == 0 {
+		return nil
+	}
+	number, err := strconv.ParseFloat(fields[0], 64)
+	if err != nil || math.IsNaN(number) || math.IsInf(number, 0) {
+		return nil
+	}
+	return &number
 }
 
 // readLocalAudioInfo 从 WAV 与 FLAC 文件头读取时长和采样率，不解码整首音频。
@@ -133,12 +166,26 @@ func (s *Service) ImportMusic() (int, error) {
 	if err != nil || len(paths) == 0 {
 		return 0, err
 	}
-	if err = rememberLocalAccess(paths); err != nil {
+	return s.importMusicPaths(paths)
+}
+
+// ImportMusicFiles 通过原生选择器导入单首或多首音频，不强制选择整个目录。
+func (s *Service) ImportMusicFiles() (int, error) {
+	paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Title: "Import audio files", Multiple: true, Filters: []mygo.FileFilter{{Name: "Audio", Extensions: []string{"mp3", "m4a", "aac", "flac", "wav", "aiff", "aif", "ogg", "opus", "alac"}}}})
+	if err != nil || len(paths) == 0 {
+		return 0, err
+	}
+	return s.importMusicPaths(paths)
+}
+
+// importMusicPaths 合并文件与目录导入，保存沙盒访问权限并刷新已有歌曲标签。
+func (s *Service) importMusicPaths(paths []string) (int, error) {
+	if err := rememberLocalAccess(paths); err != nil {
 		return 0, err
 	}
 	songs := []Song{}
 	for _, root := range paths {
-		err = filepath.WalkDir(root, func(path string, d fs.DirEntry, walkErr error) error {
+		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, walkErr error) error {
 			if walkErr != nil {
 				return walkErr
 			}

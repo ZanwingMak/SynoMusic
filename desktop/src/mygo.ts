@@ -9,6 +9,20 @@ export interface Playlist {
   id: string;
   name: string;
   songs: Song[];
+  smart?: SmartPlaylist;
+}
+
+/** PlaylistImportResult 明确报告无法匹配的条目，不悄悄替换成其他歌曲。 */
+export interface PlaylistImportResult {
+  playlist: Playlist;
+  missing: number;
+}
+
+/** PlaylistRule 表示智能歌单的一条可编辑筛选规则。 */
+export interface PlaylistRule {
+  field: string;
+  operator: string;
+  value: string;
 }
 
 /** Podcast 保存公开 RSS 节目的订阅信息。 */
@@ -44,6 +58,16 @@ export interface RemotePlaylist {
   count: number;
 }
 
+/** SmartPlaylist 在指定音乐源中动态计算歌单，不复制或修改音频文件。 */
+export interface SmartPlaylist {
+  sourceID: string;
+  match: string;
+  rules: PlaylistRule[];
+  sort: string;
+  descending: boolean;
+  limit: number;
+}
+
 /** Song 统一服务器、本地文件、电台及播客的可播放条目。 */
 export interface Song {
   id: string;
@@ -62,6 +86,17 @@ export interface Song {
   discNumber?: number;
   bitrate?: number;
   sampleRate?: number;
+  trackGain?: number;
+  albumGain?: number;
+  trackPeak?: number;
+  albumPeak?: number;
+}
+
+/** SongStats 保存本机评分、有效播放次数与最近播放时间。 */
+export interface SongStats {
+  rating: number;
+  playCount: number;
+  lastPlayed: number;
 }
 
 /** State 保存无需远端账号的用户资料，凭证单独存入钥匙串。 */
@@ -76,6 +111,7 @@ export interface State {
   settings: Record<string, string>;
   lyrics: Record<string, string>;
   podcasts: Podcast[];
+  stats: Record<string, SongStats>;
 }
 
 // ---- Services ----
@@ -85,6 +121,10 @@ export const Service = {
   /** CachedLibrary 恢复最近成功读取的资料库，让网络异常时仍可浏览与播放已下载歌曲。 */
   cachedLibrary(profileID: string): Promise<Song[]> {
     return call("Service.CachedLibrary", profileID);
+  },
+  /** ClearListeningHistory 清理本机最近播放列表，保留评分、次数与原始音频。 */
+  clearListeningHistory(): Promise<void> {
+    return call("Service.ClearListeningHistory");
   },
   /** CloudSupported 仅在带有 Apple 配置描述文件的 Mac 应用中展示 iCloud 能力。 */
   cloudSupported(): Promise<boolean> {
@@ -106,13 +146,33 @@ export const Service = {
   downloads(): Promise<Song[]> {
     return call("Service.Downloads");
   },
+  /** ExportLyrics 保存用户正在编辑的歌词，LRC 时间标记保持原样。 */
+  exportLyrics(text: string): Promise<boolean> {
+    return call("Service.ExportLyrics", text);
+  },
+  /** ExportPlaylist 通过系统保存窗口导出 M3U8 或完整 JSON，不写入服务器凭证。 */
+  exportPlaylist(playlist: Playlist): Promise<boolean> {
+    return call("Service.ExportPlaylist", playlist);
+  },
   /** ExportProfiles 导出与手机端兼容且不含密码的服务器配置。 */
   exportProfiles(): Promise<boolean> {
     return call("Service.ExportProfiles");
   },
+  /** ImportLyrics 读取用户选择的 UTF-8 LRC 或纯文本文件，不自动覆盖当前歌曲。 */
+  importLyrics(): Promise<string> {
+    return call("Service.ImportLyrics");
+  },
   /** ImportMusic 通过原生文件选择器导入音频目录，并保留原文件位置。 */
   importMusic(): Promise<number> {
     return call("Service.ImportMusic");
+  },
+  /** ImportMusicFiles 通过原生选择器导入单首或多首音频，不强制选择整个目录。 */
+  importMusicFiles(): Promise<number> {
+    return call("Service.ImportMusicFiles");
+  },
+  /** ImportPlaylist 导入 M3U、M3U8 和 JSON，只匹配已有资料库或无凭证的公开音频流。 */
+  importPlaylist(): Promise<PlaylistImportResult> {
+    return call("Service.ImportPlaylist");
   },
   /** ImportProfiles 合并不含密码的服务器配置，保留现有音乐源。 */
   importProfiles(): Promise<number> {
@@ -138,6 +198,14 @@ export const Service = {
   radio(keyword: string): Promise<Song[]> {
     return call("Service.Radio", keyword);
   },
+  /** RateSong 保存零到五星评分，零表示取消评分。 */
+  rateSong(id: string, rating: number): Promise<SongStats> {
+    return call("Service.RateSong", id, rating);
+  },
+  /** RecordCompletedPlay 仅由达到有效聆听时长的播放器调用，不把拖动进度计为播放。 */
+  recordCompletedPlay(id: string): Promise<SongStats> {
+    return call("Service.RecordCompletedPlay", id);
+  },
   /** RecordPlay 更新最近播放记录并避免重复，最多保留五百条。 */
   recordPlay(song: Song): Promise<void> {
     return call("Service.RecordPlay", song);
@@ -146,9 +214,17 @@ export const Service = {
   removeDownload(id: string): Promise<void> {
     return call("Service.RemoveDownload", id);
   },
+  /** RemoveLocalSong 只移除本机资料库索引与本地歌单引用，不删除用户的原始音频。 */
+  removeLocalSong(id: string): Promise<void> {
+    return call("Service.RemoveLocalSong", id);
+  },
   /** RemoveProfile 移除配置与钥匙串凭证，保留用户创建的本地歌单。 */
   removeProfile(id: string): Promise<void> {
     return call("Service.RemoveProfile", id);
+  },
+  /** RevealLocalSong 在系统文件管理器显示已经导入并获授权的音频。 */
+  revealLocalSong(id: string): Promise<void> {
+    return call("Service.RevealLocalSong", id);
   },
   /** SaveLyrics 保存每首歌的自定义 LRC 或纯文本歌词。 */
   saveLyrics(id: string, text: string): Promise<void> {
@@ -166,6 +242,10 @@ export const Service = {
   saveSettings(settings: Record<string, string>): Promise<void> {
     return call("Service.SaveSettings", settings);
   },
+  /** SaveSmartPlaylist 在一次本机保存中创建或更新规则，避免产生空白中间歌单。 */
+  saveSmartPlaylist(playlist: Playlist): Promise<Playlist> {
+    return call("Service.SaveSmartPlaylist", playlist);
+  },
   /** SearchPodcasts 通过 Apple Podcasts 公共接口搜索节目。 */
   searchPodcasts(keyword: string, country: string): Promise<Podcast[]> {
     return call("Service.SearchPodcasts", keyword, country);
@@ -177,6 +257,14 @@ export const Service = {
   /** ServerPlaylists 分页读取 Audio Station、Plex、Jellyfin 与 Emby 的音频歌单。 */
   serverPlaylists(profileID: string): Promise<RemotePlaylist[]> {
     return call("Service.ServerPlaylists", profileID);
+  },
+  /** SetMiniPlayer 在同一窗口切换迷你播放器，音频、队列与原窗口位置保持不变。 */
+  setMiniPlayer(enabled: boolean): Promise<void> {
+    return call("Service.SetMiniPlayer", enabled);
+  },
+  /** SetPlayerOnTop 仅切换迷你播放器的置顶偏好，不改变系统其他窗口。 */
+  setPlayerOnTop(enabled: boolean): Promise<void> {
+    return call("Service.SetPlayerOnTop", enabled);
   },
   /** Snapshot 返回状态副本，避免前端更新与后台操作发生数据竞争。 */
   snapshot(): Promise<State> {
@@ -199,8 +287,8 @@ export const Service = {
     return call("Service.ToggleFavorite", id);
   },
   /** UpdateNowPlaying 同步系统媒体控制中心和媒体键状态。 */
-  updateNowPlaying(song: Song, playing: boolean, position: number): Promise<void> {
-    return call("Service.UpdateNowPlaying", song, playing, position);
+  updateNowPlaying(song: Song, playing: boolean, position: number, rate: number): Promise<void> {
+    return call("Service.UpdateNowPlaying", song, playing, position, rate);
   },
 } as const;
 

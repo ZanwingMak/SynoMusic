@@ -44,6 +44,7 @@ func main() {
 			{Role: mygo.RoleAppMenu},
 			{Label: "File", Submenu: []*mygo.MenuItem{
 				{Label: "Import Music…", Accelerator: "CmdOrCtrl+O", Click: func(*mygo.MenuItem, *mygo.Window) { playbackCommand.Broadcast("import") }},
+				{Label: "Import Audio Files…", Accelerator: "CmdOrCtrl+Shift+O", Click: func(*mygo.MenuItem, *mygo.Window) { playbackCommand.Broadcast("import-files") }},
 				{Label: "Add Server…", Accelerator: "CmdOrCtrl+N", Click: func(*mygo.MenuItem, *mygo.Window) { playbackCommand.Broadcast("server") }},
 				mygo.Separator(), {Role: mygo.RoleClose},
 			}},

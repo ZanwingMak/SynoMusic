@@ -155,7 +155,7 @@ func (c *libraryClient) request(method, address string, body io.Reader) (*http.R
 	if req.URL.Host == base.Host && req.URL.Scheme == base.Scheme {
 		switch c.profile.Provider {
 		case "jellyfin", "emby":
-			req.Header.Set("X-Emby-Authorization", `MediaBrowser Client="SynoMusic", Device="Desktop", DeviceId="synomusic-desktop", Version="1.6.5"`)
+			req.Header.Set("X-Emby-Authorization", `MediaBrowser Client="SynoMusic", Device="Desktop", DeviceId="synomusic-desktop", Version="1.6.6"`)
 			if c.token != "" {
 				req.Header.Set("X-Emby-Token", c.token)
 			}
@@ -433,7 +433,7 @@ func (c *libraryClient) mediaAddress(song Song, artwork bool) string {
 	switch c.profile.Provider {
 	case "synologyAudioStation":
 		if artwork {
-			return c.base + "/webapi/AudioStation/cover.cgi?" + url.Values{"api": {"SYNO.AudioStation.Cover"}, "method": {"getsongcover"}, "version": {"3"}, "id": {song.Path}, "_sid": {c.sessionToken()}}.Encode()
+			return c.base + "/webapi/AudioStation/cover.cgi?" + url.Values{"api": {"SYNO.AudioStation.Cover"}, "method": {"getsongcover"}, "version": {"3"}, "view": {"default"}, "id": {song.Path}, "_sid": {c.sessionToken()}}.Encode()
 		}
 		return c.base + "/webapi/AudioStation/stream.cgi?" + url.Values{"api": {"SYNO.AudioStation.Stream"}, "method": {"stream"}, "version": {"2"}, "id": {song.Path}, "_sid": {c.sessionToken()}}.Encode()
 	case "jellyfin", "emby":
