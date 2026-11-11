@@ -591,9 +591,9 @@ function shortcutsModal():void {
  form.querySelectorAll<HTMLInputElement>("[data-shortcut]").forEach(input=>input.onkeydown=event=>{
   if(["Tab","Escape"].includes(event.key))return;
   event.preventDefault();event.stopPropagation();const chord=shortcutChord(event);if(!chord)return;
-  const reserved=["Primary+KeyK","Primary+KeyA","Primary+KeyC","Primary+KeyV","Primary+KeyX","Primary+KeyZ","Primary+KeyQ","Primary+KeyW","Primary+KeyO","Primary+Shift+KeyO","Primary+KeyN","Alt+ArrowLeft","Alt+ArrowRight"];
+  const reserved=["Primary+KeyK","Primary+KeyA","Primary+KeyC","Primary+KeyV","Primary+KeyX","Primary+KeyZ","Primary+KeyQ","Primary+Shift+KeyQ","Primary+KeyW","Primary+KeyO","Primary+Shift+KeyO","Primary+KeyN","Alt+ArrowLeft","Alt+ArrowRight"];
   if(reserved.includes(chord)||[...form.querySelectorAll<HTMLInputElement>("[data-shortcut]")].some(other=>other!==input&&other.dataset.chord===chord)){form.querySelector(".form-error")!.textContent=t("This shortcut is already in use.");return;}
-  if(!/[+]/.test(chord)&&!chord.startsWith("Arrow")&&chord!=="Space"){form.querySelector(".form-error")!.textContent=t("Include Command, Control or Option for letter shortcuts.");return;}
+  if(!/[+]/.test(chord)&&!chord.startsWith("Arrow")&&!/^F\d+$/.test(chord)&&chord!=="Space"){form.querySelector(".form-error")!.textContent=t("Include Command, Control or Option for letter shortcuts.");return;}
   input.dataset.chord=chord;input.value=shortcutLabel(chord,platform);form.querySelector(".form-error")!.textContent="";
  });
  form.querySelector<HTMLButtonElement>("#reset-shortcuts")!.onclick=()=>{form.querySelectorAll<HTMLInputElement>("[data-shortcut]").forEach(input=>{input.dataset.chord=defaultShortcuts[input.dataset.shortcut!];input.value=shortcutLabel(input.dataset.chord,platform);});};

@@ -1,4 +1,4 @@
-export const defaultShortcuts:Record<string,string>={toggle:"Primary+KeyP",next:"Primary+ArrowRight",previous:"Primary+ArrowLeft",mute:"Primary+Shift+KeyV","volume-up":"Alt+ArrowUp","volume-down":"Alt+ArrowDown","seek-forward":"ArrowRight","seek-backward":"ArrowLeft","mini-player":"Primary+Shift+KeyM","now-playing":"Primary+Shift+KeyF",queue:"Primary+Shift+KeyQ",lyrics:"Primary+Shift+KeyL"};
+export const defaultShortcuts:Record<string,string>={toggle:"Primary+KeyP",next:"Primary+ArrowRight",previous:"Primary+ArrowLeft",mute:"Primary+Shift+KeyV","volume-up":"Alt+ArrowUp","volume-down":"Alt+ArrowDown","seek-forward":"ArrowRight","seek-backward":"ArrowLeft","mini-player":"Primary+Shift+KeyM","now-playing":"Primary+Shift+KeyF",queue:"Primary+Shift+KeyU",lyrics:"Primary+Shift+KeyL"};
 
 /** 将平台修饰键转换为稳定的快捷键标识，字母键不受输入语言影响。 */
 export function shortcutChord(event:KeyboardEvent):string {
