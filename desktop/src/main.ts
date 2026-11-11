@@ -3,6 +3,7 @@ import { Service, events, type State, type Song, type Playlist, type Profile, ty
 import { artwork } from "./artwork";
 import { t, setLanguage, getLanguage, languages } from "./i18n";
 import "./style.css";
+import "./visual.css";
 
 const parameters = new URLSearchParams(location.search);
 const demo = parameters.has("demo");
@@ -45,6 +46,17 @@ function icon(name: string): string { return `<i data-lucide="${h(name)}" aria-h
 function mediaURL(address: string): string { return platform === "windows" ? address.replace(/^music:\/\/localhost\//, "http://music.localhost/") : address; }
 /** 返回本地原创封面或后端代理的真实封面。 */
 function cover(song: Song): string { return song.artwork ? mediaURL(song.artwork) : artwork(song.album || song.title); }
+/** 使用当前封面营造柔和环境色，图像层不参与交互或辅助阅读。 */
+function ambientArtwork(song: Song): string {
+ return `<div class="ambient-art" aria-hidden="true" style="--ambient-phase:-${Math.round(performance.now()/1000)%24}s"><img src="${h(cover(song))}" data-cover="${h(song.album)}" alt=""><img src="${h(cover(song))}" data-cover="${h(song.album)}" alt=""></div>`;
+}
+/** 绘制播放状态指示，只表达播放状态，不模拟音频频谱。 */
+function playbackIndicator(): string { return '<span class="playback-indicator" aria-hidden="true"><span></span><span></span><span></span><span></span></span>'; }
+/** 无歌词时保留清晰的空状态，并提供手动编辑入口。 */
+function lyricContent(): string {
+ const lines=lyricLines();
+ return lines.length?lines.map(line=>`<button class="lyric-line" data-seek="${line.time}">${h(line.text)}</button>`).join(""):`<div class="lyrics-empty"><span class="lyrics-empty-mark">${icon("audio-lines")}</span><p>${t("No lyrics available")}</p><button class="button subtle" data-action="edit-lyrics">${icon("plus")}${t("Edit lyrics")}</button></div>`;
+}
 /** 将时长转换为播放器显示格式。 */
 function duration(seconds: number): string { if (!Number.isFinite(seconds)||seconds<0) return "0:00";return `${Math.floor(seconds/60)}:${Math.floor(seconds%60).toString().padStart(2,"0")}`; }
 /** 返回原生窗口或浏览器演示状态。 */
@@ -210,10 +222,13 @@ function searchResults(): string {
 
 /** 绘制完整桌面布局，播放器媒体对象独立于 DOM 保存。 */
 function render(): void {
+ document.querySelectorAll(".artwork-flight").forEach(node=>node.remove());
  const previous=rendered;
  shownSongs=visibleSongs();const count=view==="albums"?uniqueAlbums(shownSongs).length:shownSongs.length;page=Math.max(0,Math.min(page,Math.max(0,Math.ceil(count/pageSize)-1)));
  const closingPlayer=previous.expanded&&!nowPlaying?document.querySelector<HTMLElement>(".expanded-player"):null;
  const closingPanel=previous.panel&&previous.panel!==panel?document.querySelector<HTMLElement>(".detail-panel"):null;
+ const origin=previous.expanded!==nowPlaying?document.querySelector<HTMLImageElement>(previous.expanded?".expanded-cover>img":".now-cover"):null;
+ const artworkOrigin=origin?{src:origin.currentSrc||origin.src,bounds:origin.getBoundingClientRect()}:null;
  if(closingPanel)closingPanel.style.width=`${closingPanel.offsetWidth}px`;
  const scroll=document.querySelector(".content")?.scrollTop||0;
  rendered={content:JSON.stringify([source,view,page,busy,Boolean(search),searchScope]),panel,expanded:nowPlaying&&!!queue[current],song:queue[current]?.id||"",playing:!audio.paused};
@@ -221,14 +236,14 @@ function render(): void {
  app.classList.toggle("player-expanded",rendered.expanded);
  app.dataset.playing=String(rendered.playing);
  app.querySelectorAll<HTMLElement>(".sidebar,.workspace").forEach(node=>node.inert=rendered.expanded);
- createIcons({icons});bind();
+ createIcons({icons});bind();bindVisuals();
  if(previous.content===rendered.content)document.querySelector(".content")?.scrollTo(0,scroll);
- animateRender(previous,closingPlayer,closingPanel);
+ animateRender(previous,closingPlayer,closingPanel,artworkOrigin);
  document.querySelectorAll<HTMLImageElement>("img[data-cover]").forEach(img=>img.addEventListener("error",()=>{img.src=artwork(img.dataset.cover||"SynoMusic");},{once:true}));
  updateProgress();
 }
 /** 使用局部过渡表现导航和播放器状态变化，普通数据刷新不重播整页动画。 */
-function animateRender(previous:typeof rendered,closingPlayer:HTMLElement|null,closingPanel:HTMLElement|null): void {
+function animateRender(previous:typeof rendered,closingPlayer:HTMLElement|null,closingPanel:HTMLElement|null,artworkOrigin:{src:string;bounds:DOMRect}|null): void {
  if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
  const easing="cubic-bezier(0.16, 1, 0.3, 1)";
  /** 播放短暂的合成层动画，完成后由浏览器释放效果。 */
@@ -239,20 +254,47 @@ function animateRender(previous:typeof rendered,closingPlayer:HTMLElement|null,c
   const animation=node.animate([{opacity:1,transform:"translateY(0)"},{opacity:0,transform}],{duration:220,easing:"cubic-bezier(0.4, 0, 1, 1)",fill:"forwards"});
   void animation.finished.finally(()=>node.remove()).catch(()=>{});
  };
- if(previous.content!==rendered.content&&!rendered.expanded)enter(".content",[{opacity:.01,transform:"translateY(10px)"},{opacity:1,transform:"translateY(0)"}]);
+ if(previous.content!==rendered.content&&!rendered.expanded){
+  enter(".content",[{opacity:.01,transform:"translateY(12px)"},{opacity:1,transform:"translateY(0)"}],360);
+  document.querySelectorAll<HTMLElement>(".album-grid>.album-card,.artist-grid>.artist-card").forEach((node,i)=>{if(i<12)node.animate([{opacity:.01,transform:"translateY(18px)"},{opacity:1,transform:"translateY(0)"}],{duration:440,delay:Math.min(i,7)*32,easing,fill:"backwards"});});
+ }
  if(rendered.panel&&previous.panel!==rendered.panel)enter(".detail-panel",[{opacity:.01,transform:"translateX(24px)"},{opacity:1,transform:"translateX(0)"}],320);
  if(closingPanel)leave(closingPanel,document.querySelector(".content-split")!,"translateX(24px)");
  if(rendered.expanded&&!previous.expanded){
-  enter(".expanded-player",[{opacity:.01,transform:"translateY(36px)"},{opacity:1,transform:"translateY(0)"}],380);
-  enter(".expanded-art",[{opacity:.01,transform:"translateY(22px) scale(.96)"},{opacity:1,transform:"translateY(0) scale(1)"}],440,30);
-  enter(".expanded-lyrics",[{opacity:.01,transform:"translateY(16px)"},{opacity:1,transform:"translateY(0)"}],380,90);
+  enter(".expanded-player",[{opacity:.01},{opacity:1}],440);
+  enter(".expanded-metadata",[{opacity:.01,transform:"translateY(18px)"},{opacity:1,transform:"translateY(0)"}],520,100);
+  enter(".expanded-lyrics",[{opacity:.01,transform:"translateY(20px)"},{opacity:1,transform:"translateY(0)"}],520,140);
  }
  if(closingPlayer)leave(closingPlayer,app,"translateY(32px)");
+ if(artworkOrigin&&previous.expanded!==rendered.expanded){
+  const target=document.querySelector<HTMLImageElement>(rendered.expanded?".expanded-cover>img":".now-cover");
+  if(target){
+   const from=artworkOrigin.bounds,to=target.getBoundingClientRect();
+   const ghost=document.createElement("img");ghost.className="artwork-flight";ghost.src=artworkOrigin.src;ghost.alt="";ghost.setAttribute("aria-hidden","true");
+   Object.assign(ghost.style,{left:`${from.left}px`,top:`${from.top}px`,width:`${from.width}px`,height:`${from.height}px`});
+   document.body.append(ghost);target.style.opacity="0";
+   const animation=ghost.animate([{transform:"translate(0,0) scale(1)"},{transform:`translate(${to.left-from.left}px,${to.top-from.top}px) scale(${to.width/from.width},${to.height/from.height})`}],{duration:560,easing,fill:"forwards"});
+   void animation.finished.finally(()=>{target.style.opacity="";ghost.remove();}).catch(()=>{});
+  }
+ }
  if(previous.song&&previous.song!==rendered.song){
   enter(".now-playing>div",[{opacity:.01,transform:"translateY(5px)"},{opacity:1,transform:"translateY(0)"}]);
   if(rendered.expanded&&previous.expanded)enter(".expanded-art",[{opacity:.2,transform:"scale(.98)"},{opacity:1,transform:"scale(1)"}],360);
+  if(rendered.expanded&&previous.expanded)enter(".expanded-player>.ambient-art",[{opacity:0},{opacity:1}],650);
  }
  if(previous.playing!==rendered.playing)enter(".play-button svg",[{opacity:.3,transform:"scale(.7)"},{opacity:1,transform:"scale(1)"}],200);
+}
+
+/** 封面以小幅透视响应指针；减少动态效果或触控设备使用静态封面。 */
+function bindVisuals(): void {
+ const cover=document.querySelector<HTMLElement>(".expanded-cover");
+ if(!cover||matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)").matches)return;
+ cover.onpointermove=event=>{
+  const rect=cover.getBoundingClientRect(),x=(event.clientX-rect.left)/rect.width-.5,y=(event.clientY-rect.top)/rect.height-.5;
+  cover.style.setProperty("--tilt-x",`${-y*5}deg`);cover.style.setProperty("--tilt-y",`${x*5}deg`);
+  cover.style.setProperty("--shine-x",`${x*12}%`);cover.style.setProperty("--shine-y",`${y*12}%`);
+ };
+ cover.onpointerleave=()=>{cover.style.setProperty("--tilt-x","0deg");cover.style.setProperty("--tilt-y","0deg");};
 }
 
 /** 在线搜索保留输入和失败状态，空搜索结果不会回退成已订阅节目。 */
@@ -281,7 +323,7 @@ function content(): string {
  if(!shownSongs.length&&view.startsWith("server-playlist:"))return `<div class="page-heading"><h1>${h(title())}</h1><p class="muted">${t("This playlist is empty")}</p></div>`;
  if(!shownSongs.length)return `<div class="empty-state">${icon(search?"search-x":"disc-3")}<p class="eyebrow">YOUR OWN MUSIC, EVERYWHERE</p><h1>${t(search?"No results":"No music yet")}</h1><p>${t(search?"Try another search or connect another music source.":"Connect your server or import a music folder to get started.")}</p><div class="actions"><button class="button primary" data-action="server">${icon("plus")}${t("Connect a server")}</button><button class="button" data-action="import">${icon("folder-open")}${t("Import music")}</button></div><span class="free-message">${icon("heart")}${t("All features. Always free.")}</span></div>`;
  const albums=uniqueAlbums(shownSongs);
- if(view==="library"&&!search){const first=albums[0];return `<div class="page-heading"><p class="eyebrow">${demo?t("Demo library"):"YOUR PERSONAL SOUNDTRACK"}</p><h1>${t("Your music. Your space.")}</h1><p>${t("Browse your own collection")}</p></div><section class="listening-banner"><div class="banner-copy"><span class="pill">${icon("headphones")} ${t("Ready to listen")}</span><h2>${t("Made for a little more listening.")}</h2><p>${shownSongs.length} ${t("All songs").toLowerCase()} <span>·</span> ${albums.length} ${t("Albums").toLowerCase()} <span>·</span> ${t("Original quality")}</p><div class="actions"><button class="button primary" data-action="play-all">${icon("play")}${t("Play all")}</button><button class="button glass" data-action="shuffle-all">${icon("shuffle")}${t("Shuffle")}</button></div></div><div class="banner-record"><img src="${h(cover(first))}" data-cover="${h(first.album)}" alt="${h(first.album)}"><div class="vinyl"><span></span></div></div></section><div class="section-title"><h2>${t("Albums")}</h2><button data-view="albums">${t("Albums")} ${icon("arrow-up-right")}</button></div><div class="album-grid">${albums.slice(0,10).map(albumCard).join("")}</div><div class="section-title"><h2>${t("Favorites, in one place")}</h2><button data-view="favorites" aria-label="${h(t("Favorites"))}">${icon("arrow-up-right")}</button></div>${songTable(shownSongs.filter(song=>state.favorites.includes(song.id)).slice(0,5))}`;}
+ if(view==="library"&&!search){const first=albums[0];return `<div class="page-heading"><p class="eyebrow">${demo?t("Demo library"):"YOUR PERSONAL SOUNDTRACK"}</p><h1>${t("Your music. Your space.")}</h1><p>${t("Browse your own collection")}</p></div><section class="listening-banner">${ambientArtwork(first)}<div class="banner-copy"><span class="pill">${icon("headphones")} ${t("Ready to listen")}</span><h2>${t("Made for a little more listening.")}</h2><p>${shownSongs.length} ${t("All songs").toLowerCase()} <span>·</span> ${albums.length} ${t("Albums").toLowerCase()} <span>·</span> ${t("Original quality")}</p><div class="actions"><button class="button primary" data-action="play-all">${icon("play")}${t("Play all")}</button><button class="button glass" data-action="shuffle-all">${icon("shuffle")}${t("Shuffle")}</button></div></div><div class="banner-record"><img src="${h(cover(first))}" data-cover="${h(first.album)}" alt="${h(first.album)}"><div class="vinyl"><span></span></div></div></section><div class="section-title"><h2>${t("Albums")}</h2><button data-view="albums">${t("Albums")} ${icon("arrow-up-right")}</button></div><div class="album-grid">${albums.slice(0,10).map(albumCard).join("")}</div><div class="section-title"><h2>${t("Favorites, in one place")}</h2><button data-view="favorites" aria-label="${h(t("Favorites"))}">${icon("arrow-up-right")}</button></div>${songTable(shownSongs.filter(song=>state.favorites.includes(song.id)).slice(0,5))}`;}
  if(view==="albums")return `<div class="page-heading"><p class="eyebrow">${t("Browse by album")}</p><h1>${t("Albums")} <small>${albums.length}</small></h1></div>${libraryControls()}<div class="album-grid">${albums.slice(page*pageSize,(page+1)*pageSize).map(albumCard).join("")}</div>${pagination(albums.length)}`;
  if(view==="artists"){const artists=[...new Set(shownSongs.map(s=>s.artist||""))];return `<div class="page-heading"><p class="eyebrow">${t("Browse by artist")}</p><h1>${t("Artists")} <small>${artists.length}</small></h1></div><div class="artist-grid">${artists.map(name=>`<button class="artist-card" data-view="artist:${h(name)}"><img src="${h(cover(shownSongs.find(song=>song.artist===name)||shownSongs[0]))}" data-cover="${h(name)}" alt=""><strong>${h(name||t("Unknown artist"))}</strong><span>${shownSongs.filter(s=>s.artist===name).length} ${t("All songs").toLowerCase()}</span></button>`).join("")}</div>`;}
  if(view.startsWith("album:")||view.startsWith("artist:"))return `${collectionHeader()}${libraryControls()}${songTable(shownSongs)}`;
@@ -310,19 +352,19 @@ function requestLyrics(): void {
 }
 /** 歌词请求完成时只更新歌词区，保留正在进行的播放器展开动画。 */
 function refreshLyrics(): void {
- const lines=lyricLines();
  document.querySelectorAll<HTMLElement>(".lyrics-content").forEach(container=>{
-  container.innerHTML=lines.length?lines.map(line=>`<button class="lyric-line" data-seek="${line.time}">${h(line.text)}</button>`).join(""):`<p class="muted">${t("No lyrics available")}</p>`;
+  container.innerHTML=lyricContent();
+  container.querySelectorAll<HTMLElement>("[data-action]").forEach(node=>node.onclick=()=>void run(()=>action(node.dataset.action!)));
   container.querySelectorAll<HTMLElement>("[data-seek]").forEach(node=>node.onclick=()=>{const time=Number(node.dataset.seek);if(time>=0)seekPosition(time);});
  });
- updateProgress();
+ createIcons({icons});updateProgress();
 }
 /** 绘制常驻播放器，切页时保持播放位置与队列。 */
 function player(): string { const song=queue[current];return `${nowPlaying?expandedPlayer():""}<footer class="player-bar"><div class="now-playing">${song?`<button class="cover-expand" data-action="now-playing" aria-label="${h(t("Now playing"))}"><img class="now-cover" src="${h(cover(song))}" data-cover="${h(song.album)}" alt=""></button><div><strong>${h(song.title)}</strong><span>${h(song.artist)}</span></div><button class="icon-button ${state.favorites.includes(song.id)?"hearted":""}" data-favorite="${h(song.id)}" aria-label="${h(t("Favorites"))}">${icon("heart")}</button>`:`<div class="now-placeholder">${icon("music-2")}</div><div><strong>SynoMusic</strong><span>${t("Ready to listen")}</span></div>`}</div><div class="transport"><div class="transport-buttons">${tool("shuffle","shuffle","Shuffle",shuffle)}${tool("previous","skip-back","Previous track")}<button class="play-button ${loadingTrack?"is-loading":""}" data-action="toggle" aria-label="${h(t(loadingTrack?"Cancel":audio.paused?"Play":"Pause"))}">${icon(loadingTrack?"loader-circle":audio.paused?"play":"pause")}</button>${tool("next","skip-forward","Next track")}${tool("repeat",repeat==="one"?"repeat-1":"repeat",repeat==="one"?"Repeat one":repeat==="all"?"Repeat all":"Repeat off",repeat!=="off")}</div><div class="timeline"><span id="position">0:00</span><input id="progress" type="range" min="0" max="${Number.isFinite(audio.duration)?audio.duration:song?.duration||1}" step="0.1" value="${audio.currentTime}" ${song?.profileID==="radio"?"disabled":""} aria-label="${h(t("Playback position"))}"><span id="duration">${duration(audio.duration||song?.duration||0)}</span></div></div><div class="player-tools">${platform==="darwin"?tool("airplay","airplay","Playback"):""}${icon("volume-2")}<input id="volume" type="range" min="0" max="1" step="0.01" value="${audio.volume}" aria-label="${h(t("Volume"))}">${tool("lyrics","captions","Lyrics",panel==="lyrics")}${tool("queue","list-music","Queue",panel==="queue")}${tool("now-playing",nowPlaying?"minimize-2":"maximize-2","Now playing",nowPlaying)}</div></footer>`; }
 /** 绘制所有免费设置以及隐私与官方链接。 */
 function settings(): string {
  const setting=(label:string,control:string)=>`<label class="setting-row"><span>${t(label)}</span>${control}</label>`;
- return `<div class="page-heading"><p class="eyebrow">MAKE YOURSELF AT HOME</p><h1>${t("Settings")}</h1></div><div class="settings-body"><h2>${t("General")}</h2>${setting("Language",`<select id="language">${languages.map(([code,name])=>`<option value="${code}" ${getLanguage()===code?"selected":""}>${name}</option>`).join("")}</select>`)}${setting("Appearance",`<select data-setting="appearance">${["system","light","dark"].map(v=>`<option value="${v}" ${state.settings.appearance===v?"selected":""}>${t(v[0].toUpperCase()+v.slice(1))}</option>`).join("")}</select>`)}<h2>${t("Playback")}</h2>${setting("Crossfade",`<select data-setting="crossfade"><option value="0">${t("Off")}</option>${[2,4,6,8].map(n=>`<option value="${n}" ${Number(state.settings.crossfade)===n?"selected":""}>${n} s</option>`).join("")}</select>`)}${setting("Equalizer",`<select data-setting="equalizer">${["Flat","Bass","Acoustic","Vocal","Electronic"].map(v=>`<option ${state.settings.equalizer===v?"selected":""}>${v}</option>`).join("")}</select>`)}${setting("Sleep timer",`<select id="sleep"><option value="0" ${sleepDeadline?"":"selected"}>${t("Off")}</option>${[15,30,45,60,90].map(n=>`<option value="${n}" ${sleepDeadline&&sleepMinutes===n?"selected":""}>${n} ${t("minutes")}</option>`).join("")}</select>`)}${setting("Lyric offset",`<input data-setting="lyricOffset" type="number" min="-60" max="60" step="0.5" value="${Number(state.settings.lyricOffset)||0}">`)}${setting("Text size",`<input data-setting="lyricSize" type="number" min="14" max="42" value="${Number(state.settings.lyricSize)||24}">`)}${platform==="darwin"&&cloudSupported?`<h2>iCloud</h2>${setting("iCloud sync",`<input data-setting="icloud" type="checkbox" ${state.settings.icloud==="true"?"checked":""}>`)}<div class="actions"><button class="button" data-action="sync-cloud">${icon("cloud")}${t("Sync now")}</button></div>${state.settings.lastCloudSync?`<p class="version-label">${h(new Date(state.settings.lastCloudSync).toLocaleString())}</p>`:""}`:""}<h2>${t("Server profiles")}</h2>${state.profiles.map(p=>`<div class="setting-row"><span><strong>${h(p.name)}</strong><small>${h(p.providerType)} · ${h(p.host)}</small></span><button class="button subtle" data-edit-server="${h(p.id)}" aria-label="${h(t("Edit server"))}">${icon("pencil")}</button><button class="button subtle" data-remove-server="${h(p.id)}" aria-label="${h(t("Remove server"))}">${icon("trash-2")}</button></div>`).join("")}<div class="actions"><button class="button" data-action="server">${icon("plus")}${t("Add server")}</button><button class="button" data-action="export">${icon("upload")}${t("Export servers")}</button><button class="button" data-action="import-profiles">${icon("download")}${t("Import servers")}</button></div><div class="support-callout">${icon("heart")}<div><h3>${t("All features. Always free.")}</h3><p>${t("Support is optional. Music is for everyone.")}</p></div><button class="button" data-action="support">${t("View on iPhone")}${icon("arrow-up-right")}</button></div><div class="legal-links">${[["Website","https://zanwingmak.github.io/SynoMusic/"],["Source code","https://github.com/ZanwingMak/SynoMusic"],["Privacy policy","https://zanwingmak.github.io/SynoMusic/privacy.html"],["Terms of use","https://zanwingmak.github.io/SynoMusic/terms.html"]].map(([text,url])=>`<button data-link="${url}">${t(text)}${icon("arrow-up-right")}</button>`).join("")}</div><p class="version-label">SynoMusic for ${platform==="windows"?"Windows":"Mac"} · 1.6.4 · MyGo</p></div>`;
+ return `<div class="page-heading"><p class="eyebrow">MAKE YOURSELF AT HOME</p><h1>${t("Settings")}</h1></div><div class="settings-body"><h2>${t("General")}</h2>${setting("Language",`<select id="language">${languages.map(([code,name])=>`<option value="${code}" ${getLanguage()===code?"selected":""}>${name}</option>`).join("")}</select>`)}${setting("Appearance",`<select data-setting="appearance">${["system","light","dark"].map(v=>`<option value="${v}" ${state.settings.appearance===v?"selected":""}>${t(v[0].toUpperCase()+v.slice(1))}</option>`).join("")}</select>`)}<h2>${t("Playback")}</h2>${setting("Crossfade",`<select data-setting="crossfade"><option value="0">${t("Off")}</option>${[2,4,6,8].map(n=>`<option value="${n}" ${Number(state.settings.crossfade)===n?"selected":""}>${n} s</option>`).join("")}</select>`)}${setting("Equalizer",`<select data-setting="equalizer">${["Flat","Bass","Acoustic","Vocal","Electronic"].map(v=>`<option ${state.settings.equalizer===v?"selected":""}>${v}</option>`).join("")}</select>`)}${setting("Sleep timer",`<select id="sleep"><option value="0" ${sleepDeadline?"":"selected"}>${t("Off")}</option>${[15,30,45,60,90].map(n=>`<option value="${n}" ${sleepDeadline&&sleepMinutes===n?"selected":""}>${n} ${t("minutes")}</option>`).join("")}</select>`)}${setting("Lyric offset",`<input data-setting="lyricOffset" type="number" min="-60" max="60" step="0.5" value="${Number(state.settings.lyricOffset)||0}">`)}${setting("Text size",`<input data-setting="lyricSize" type="number" min="14" max="42" value="${Number(state.settings.lyricSize)||24}">`)}${platform==="darwin"&&cloudSupported?`<h2>iCloud</h2>${setting("iCloud sync",`<input data-setting="icloud" type="checkbox" ${state.settings.icloud==="true"?"checked":""}>`)}<div class="actions"><button class="button" data-action="sync-cloud">${icon("cloud")}${t("Sync now")}</button></div>${state.settings.lastCloudSync?`<p class="version-label">${h(new Date(state.settings.lastCloudSync).toLocaleString())}</p>`:""}`:""}<h2>${t("Server profiles")}</h2>${state.profiles.map(p=>`<div class="setting-row"><span><strong>${h(p.name)}</strong><small>${h(p.providerType)} · ${h(p.host)}</small></span><button class="button subtle" data-edit-server="${h(p.id)}" aria-label="${h(t("Edit server"))}">${icon("pencil")}</button><button class="button subtle" data-remove-server="${h(p.id)}" aria-label="${h(t("Remove server"))}">${icon("trash-2")}</button></div>`).join("")}<div class="actions"><button class="button" data-action="server">${icon("plus")}${t("Add server")}</button><button class="button" data-action="export">${icon("upload")}${t("Export servers")}</button><button class="button" data-action="import-profiles">${icon("download")}${t("Import servers")}</button></div><div class="support-callout">${icon("heart")}<div><h3>${t("All features. Always free.")}</h3><p>${t("Support is optional. Music is for everyone.")}</p></div><button class="button" data-action="support">${t("View on iPhone")}${icon("arrow-up-right")}</button></div><div class="legal-links">${[["Website","https://zanwingmak.github.io/SynoMusic/"],["Source code","https://github.com/ZanwingMak/SynoMusic"],["Privacy policy","https://zanwingmak.github.io/SynoMusic/privacy.html"],["Terms of use","https://zanwingmak.github.io/SynoMusic/terms.html"]].map(([text,url])=>`<button data-link="${url}">${t(text)}${icon("arrow-up-right")}</button>`).join("")}</div><p class="version-label">SynoMusic for ${platform==="windows"?"Windows":"Mac"} · 1.6.5 · MyGo</p></div>`;
 }
 /** 播放登记过的歌曲，避免多个异步播放请求交错覆盖状态。 */
 async function play(index: number, position=0, sequence=false): Promise<void> {
@@ -379,11 +421,13 @@ function seekPosition(position:number): void { if(!Number.isFinite(position)||po
 /** 展开专辑封面和同步歌词，继续使用底部同一套播放控件。 */
 function expandedPlayer(): string {
  const song=queue[current];if(!song)return "";
- return `<section class="expanded-player" aria-label="${h(t("Now playing"))}"><header class="expanded-heading"><span>${t("Now playing")}</span>${tool("now-playing","chevron-down","Close")}</header><div class="expanded-content"><div class="expanded-art"><img src="${h(cover(song))}" data-cover="${h(song.album)}" alt="${h(song.album)}"><h1>${h(song.title)}</h1><button class="text-link" data-view="artist:${h(song.artist)}">${h(song.artist)}</button><p class="muted">${h(song.album)} · ${h((song.codec||"").toUpperCase())}</p></div><div class="expanded-lyrics"><div class="panel-heading"><h3>${t("Lyrics")}</h3>${tool("edit-lyrics","pencil","Edit lyrics")}</div><div class="lyrics-content">${lyricLines().length?lyricLines().map(line=>`<button class="lyric-line" data-seek="${line.time}">${h(line.text)}</button>`).join(""):`<p class="muted">${t("No lyrics available")}</p>`}</div></div></div></section>`;
+ const quality=[song.codec?.toUpperCase(),song.sampleRate?`${song.sampleRate/1000} kHz`:"",song.bitrate?`${Math.round(song.bitrate/1000)} kbps`:""].filter(Boolean);
+ const upcoming=queue.slice(current+1,current+3);
+ return `<section class="expanded-player" aria-label="${h(t("Now playing"))}">${ambientArtwork(song)}<header class="expanded-heading"><span class="expanded-status">${playbackIndicator()}${t("Now playing")}</span><span class="expanded-wordmark">SYNO / MUSIC</span>${tool("now-playing","chevron-down","Close")}</header><div class="expanded-content"><div class="expanded-art"><div class="expanded-cover"><img src="${h(cover(song))}" data-cover="${h(song.album)}" alt="${h(song.album)}"><span class="cover-sheen" aria-hidden="true"></span></div><div class="expanded-metadata"><div class="expanded-track-heading"><h1>${h(song.title)}</h1><button class="icon-button ${state.favorites.includes(song.id)?"hearted":""}" data-favorite="${h(song.id)}" aria-label="${h(t("Favorites"))}">${icon("heart")}</button></div><button class="text-link" data-view="artist:${h(song.artist)}">${h(song.artist)}</button><p class="expanded-album">${h(song.album)}</p><div class="quality-tags"><span>${icon("audio-lines")}${h(quality.shift()||t("Original quality"))}</span>${quality.map(label=>`<span>${h(label)}</span>`).join("")}</div></div></div><div class="expanded-right"><div class="expanded-lyrics"><div class="panel-heading"><h3>${t("Lyrics")}</h3>${tool("edit-lyrics","pencil","Edit lyrics")}</div><div class="lyrics-content">${lyricContent()}</div></div>${upcoming.length?`<section class="stage-queue"><div class="stage-queue-heading"><span>${t("Queue")} <small>${queue.length}</small></span><button class="icon-button" data-action="queue" aria-label="${h(t("Queue"))}">${icon("arrow-up-right")}</button></div>${upcoming.map((item,index)=>`<button class="stage-queue-item" data-queue-index="${current+index+1}"><img src="${h(cover(item))}" data-cover="${h(item.album)}" alt=""><span><strong>${h(item.title)}</strong><small>${h(item.artist)}</small></span><span>${duration(item.duration)}</span>${icon("play")}</button>`).join("")}</section>`:""}</div></div></section>`;
 }
 
 /** 更新系统媒体中心，调用只在播放状态变化时触发。 */
-function syncNowPlaying(): void { savePlayback();const song=queue[current];if(song&&!demo)void Service.updateNowPlaying({...song,duration:Number.isFinite(audio.duration)?audio.duration:song.duration},!audio.paused,audio.src?audio.currentTime:resumePosition).catch(()=>{}); }
+function syncNowPlaying(): void { app.dataset.playing=String(!audio.paused);savePlayback();const song=queue[current];if(song&&!demo)void Service.updateNowPlaying({...song,duration:Number.isFinite(audio.duration)?audio.duration:song.duration},!audio.paused,audio.src?audio.currentTime:resumePosition).catch(()=>{}); }
 /** 更新进度与歌词高亮，避免每秒重建界面或中断输入。 */
 function updateProgress(): void {
  if(!audio.paused&&performance.now()-lastPlaybackSave>5000){lastPlaybackSave=performance.now();savePlayback();}

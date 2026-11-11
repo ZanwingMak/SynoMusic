@@ -94,7 +94,7 @@ func openWindow() {
 		titleBar = mygo.TitleBarHidden
 	}
 	mainWindow = mygo.NewWindow(mygo.WindowOptions{Title: "SynoMusic", Width: 1420, Height: 920, MinWidth: 980, MinHeight: 680,
-		TitleBarStyle: titleBar, TitleBarHeight: 54, BackgroundColor: "light-dark(#f8f8fa, #18191d)", URL: "/"})
+		TitleBarStyle: titleBar, TitleBarHeight: 54, BackgroundColor: "light-dark(#f7f6f3, #1a1c1b)", URL: "/"})
 	if runtime.GOOS == "darwin" {
 		mainWindow.OnClose(func(event *mygo.CloseEvent) {
 			if !quitting {

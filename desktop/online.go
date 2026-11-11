@@ -33,7 +33,7 @@ func publicJSON(address string, target any) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", "SynoMusic/1.6.4 (Desktop)")
+	req.Header.Set("User-Agent", "SynoMusic/1.6.5 (Desktop)")
 	resp, err := client.Do(req)
 	if err != nil {
 		return errors.New("online service unavailable")
