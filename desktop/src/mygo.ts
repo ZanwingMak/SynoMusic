@@ -108,6 +108,7 @@ export interface State {
   history: Song[];
   imports: Song[];
   favorites: string[];
+  favoriteSongs: Song[];
   settings: Record<string, string>;
   lyrics: Record<string, string>;
   podcasts: Podcast[];
@@ -178,7 +179,7 @@ export const Service = {
   importProfiles(): Promise<number> {
     return call("Service.ImportProfiles");
   },
-  /** Lyrics 优先读取用户编辑歌词，其次读取文件旁的 LRC 或音乐服务器歌词。 */
+  /** Lyrics 优先读取用户编辑、本地内嵌或服务器歌词；缺失时按用户偏好查询公开歌词库。 */
   lyrics(id: string): Promise<string> {
     return call("Service.Lyrics", id);
   },

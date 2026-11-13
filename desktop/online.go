@@ -8,8 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -33,7 +31,7 @@ func publicJSON(address string, target any) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", "SynoMusic/1.6.6 (Desktop)")
+	req.Header.Set("User-Agent", "SynoMusic/1.6.7 (Desktop)")
 	resp, err := client.Do(req)
 	if err != nil {
 		return errors.New("online service unavailable")
@@ -174,56 +172,6 @@ func (s *Service) Subscribe(show Podcast, enabled bool) error {
 	}
 	s.state.Podcasts = result
 	return s.saveLocked()
-}
-
-// Lyrics 优先读取用户编辑歌词，其次读取文件旁的 LRC 或音乐服务器歌词。
-func (s *Service) Lyrics(id string) (string, error) {
-	s.mu.Lock()
-	custom, hasCustom := s.state.Lyrics[id]
-	song, ok := s.songs[id]
-	s.mu.Unlock()
-	if hasCustom {
-		return custom, nil
-	}
-	if !ok {
-		return "", errors.New("song not found")
-	}
-	if song.ProfileID == "local" {
-		path := strings.TrimSuffix(song.Path, filepath.Ext(song.Path)) + ".lrc"
-		data, err := os.ReadFile(path)
-		if os.IsNotExist(err) {
-			return "", nil
-		}
-		return string(data), err
-	}
-	if song.ProfileID == "radio" || song.ProfileID == "podcast" {
-		return "", nil
-	}
-	c, err := s.client(song.ProfileID)
-	if err != nil {
-		return "", err
-	}
-	if c.profile.Provider == "synologyAudioStation" {
-		data, err := c.jsonRequest("GET", "/webapi/AudioStation/lyrics.cgi", url.Values{"api": {"SYNO.AudioStation.Lyrics"}, "version": {"2"}, "method": {"getlyrics"}, "id": {song.Path}, "_sid": {c.sessionToken()}}, nil)
-		if err != nil {
-			return "", err
-		}
-		return str(obj(data["data"])["lyrics"]), nil
-	}
-	if c.profile.Provider == "jellyfin" || c.profile.Provider == "emby" {
-		data, err := c.jsonRequest("GET", "/Audio/"+url.PathEscape(song.Path)+"/Lyrics", nil, nil)
-		if err != nil {
-			return "", nil
-		}
-		lines := []string{}
-		for _, raw := range arr(data["Lyrics"]) {
-			line := obj(raw)
-			position := number(line["Start"]) / 1e7
-			lines = append(lines, fmt.Sprintf("[%02d:%05.2f]%s", int(position)/60, float64(int(position)%60)+position-float64(int(position)), str(line["Text"])))
-		}
-		return strings.Join(lines, "\n"), nil
-	}
-	return "", nil
 }
 
 // OpenLink 仅允许打开公开网页和音乐搜索地址。

@@ -17,6 +17,19 @@ let current = new URLSearchParams(location.search).get("lang") || localStorage.g
 export function setLanguage(lang: string): void { current = entries[lang] ? lang : "en"; localStorage.setItem("synomusic.language",current); document.documentElement.lang=current; }
 
 const featureLabels: Record<string, string[]> = {
+  "Like song": ["喜欢这首歌", "喜歡這首歌", "お気に入りに追加", "좋아요에 추가", "Als Favorit markieren", "Ajouter aux favoris"],
+  "Unlike song": ["取消喜欢", "取消喜歡", "お気に入りから削除", "좋아요 취소", "Aus Favoriten entfernen", "Retirer des favoris"],
+  "All sources": ["全部音乐源", "所有音樂來源", "すべての音楽ソース", "모든 음악 소스", "Alle Musikquellen", "Toutes les sources"],
+  "Finding lyrics…": ["正在查找歌词…", "正在尋找歌詞…", "歌詞を検索中…", "가사 찾는 중…", "Liedtext wird gesucht…", "Recherche des paroles…"],
+  "Plain lyrics": ["文本歌词", "文字歌詞", "テキスト歌詞", "텍스트 가사", "Liedtext ohne Zeitmarken", "Paroles sans synchronisation"],
+  "Choose a song to see lyrics": ["选择一首歌曲查看歌词", "選擇歌曲以查看歌詞", "曲を選ぶと歌詞を表示します", "가사를 보려면 곡을 선택하세요", "Wähle einen Titel für den Liedtext", "Choisissez un titre pour voir les paroles"],
+  "Lyrics unavailable. Check your connection and retry.": ["歌词暂时无法加载，请检查网络后重试。", "歌詞暫時無法載入，請檢查網路後重試。", "歌詞を読み込めません。接続を確認して再試行してください。", "가사를 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.", "Liedtext nicht verfügbar. Verbindung prüfen und erneut versuchen.", "Paroles indisponibles. Vérifiez la connexion et réessayez."],
+  "Retry": ["重试", "重試", "再試行", "다시 시도", "Erneut versuchen", "Réessayer"],
+  "Instrumental": ["间奏", "間奏", "間奏", "간주", "Instrumental", "Passage instrumental"],
+  "Lyric settings": ["歌词设置", "歌詞設定", "歌詞設定", "가사 설정", "Liedtext-Einstellungen", "Réglages des paroles"],
+  "Positive offset shows lyrics earlier.": ["正数让歌词提前显示，负数让歌词延后显示。", "正數讓歌詞提早顯示，負數讓歌詞延後顯示。", "正の値で歌詞を早め、負の値で遅らせます。", "양수는 가사를 앞당기고 음수는 늦춥니다.", "Positive Werte zeigen den Text früher, negative später.", "Une valeur positive avance les paroles, une valeur négative les retarde."],
+  "Find online lyrics": ["自动查找在线歌词", "自動尋找線上歌詞", "オンライン歌詞を検索", "온라인 가사 자동 검색", "Online nach Liedtexten suchen", "Rechercher les paroles en ligne"],
+  "When lyrics are missing, send song title, artist, album and duration to LRCLIB. Server credentials are never shared.": ["缺少歌词时，向 LRCLIB 查询歌名、艺术家、专辑和时长。不会发送服务器登录凭据。", "缺少歌詞時，向 LRCLIB 查詢歌名、藝人、專輯及長度。不會傳送伺服器登入憑證。", "歌詞がない場合、曲名・アーティスト・アルバム・長さをLRCLIBに送信します。サーバー認証情報は送信しません。", "가사가 없을 때 곡명, 아티스트, 앨범 및 길이를 LRCLIB에 보냅니다. 서버 로그인 정보는 보내지 않습니다.", "Bei fehlenden Texten werden Titel, Künstler, Album und Dauer an LRCLIB gesendet. Server-Zugangsdaten werden nie geteilt.", "En l’absence de paroles, le titre, l’artiste, l’album et la durée sont envoyés à LRCLIB. Les identifiants du serveur ne sont jamais partagés."],
   "Keyboard shortcuts": ["键盘快捷键", "鍵盤快捷鍵", "キーボードショートカット", "키보드 단축키", "Tastenkürzel", "Raccourcis clavier"],
   "Play / pause": ["播放 / 暂停", "播放 / 暫停", "再生 / 一時停止", "재생 / 일시 정지", "Wiedergabe / Pause", "Lecture / pause"],
   "Volume up": ["增大音量", "提高音量", "音量を上げる", "음량 높이기", "Lauter", "Augmenter le volume"],

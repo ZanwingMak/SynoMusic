@@ -70,27 +70,29 @@ type Playlist struct {
 
 // State 保存无需远端账号的用户资料，凭证单独存入钥匙串。
 type State struct {
-	UpdatedAt int64                `json:"updatedAt"`
-	Cached    []Song               `json:"cached"`
-	Profiles  []Profile            `json:"profiles"`
-	Playlists []Playlist           `json:"playlists"`
-	History   []Song               `json:"history"`
-	Imports   []Song               `json:"imports"`
-	Favorites []string             `json:"favorites"`
-	Settings  map[string]string    `json:"settings"`
-	Lyrics    map[string]string    `json:"lyrics"`
-	Podcasts  []Podcast            `json:"podcasts"`
-	Stats     map[string]SongStats `json:"stats"`
+	UpdatedAt     int64                `json:"updatedAt"`
+	Cached        []Song               `json:"cached"`
+	Profiles      []Profile            `json:"profiles"`
+	Playlists     []Playlist           `json:"playlists"`
+	History       []Song               `json:"history"`
+	Imports       []Song               `json:"imports"`
+	Favorites     []string             `json:"favorites"`
+	FavoriteSongs []Song               `json:"favoriteSongs"`
+	Settings      map[string]string    `json:"settings"`
+	Lyrics        map[string]string    `json:"lyrics"`
+	Podcasts      []Podcast            `json:"podcasts"`
+	Stats         map[string]SongStats `json:"stats"`
 }
 
 // Service 向桌面前端提供类型安全的音乐能力。
 type Service struct {
-	mu         sync.Mutex
-	downloadMu sync.Mutex
-	state      State
-	dir        string
-	clients    map[string]*libraryClient
-	songs      map[string]Song
+	mu            sync.Mutex
+	downloadMu    sync.Mutex
+	state         State
+	dir           string
+	clients       map[string]*libraryClient
+	songs         map[string]Song
+	lyricsRetryAt time.Time
 }
 
 var seekCommand = mygo.NewEvent[float64]("seekCommand")
@@ -193,6 +195,7 @@ func (s *Service) persistLocked() error {
 func (s *Service) Snapshot() (State, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.state.FavoriteSongs = s.favoriteSongsLocked()
 	data, err := json.Marshal(s.state)
 	if err != nil {
 		return State{}, err
@@ -409,10 +412,15 @@ func (s *Service) ToggleFavorite(id string) (bool, error) {
 	for i, v := range s.state.Favorites {
 		if v == id {
 			s.state.Favorites = append(s.state.Favorites[:i], s.state.Favorites[i+1:]...)
+			s.state.FavoriteSongs = s.favoriteSongsLocked()
 			return false, s.saveLocked()
 		}
 	}
+	if _, ok := s.songs[id]; !ok {
+		return false, errors.New("song not found")
+	}
 	s.state.Favorites = append(s.state.Favorites, id)
+	s.state.FavoriteSongs = s.favoriteSongsLocked()
 	return true, s.saveLocked()
 }
 
