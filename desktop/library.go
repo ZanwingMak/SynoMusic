@@ -150,12 +150,12 @@ func (c *libraryClient) request(method, address string, body io.Reader) (*http.R
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "SynoMusic/1.6.7 ("+runtime.GOOS+")")
+	req.Header.Set("User-Agent", "SynoMusic/1.6.8 ("+runtime.GOOS+")")
 	base, _ := url.Parse(c.base)
 	if req.URL.Host == base.Host && req.URL.Scheme == base.Scheme {
 		switch c.profile.Provider {
 		case "jellyfin", "emby":
-			req.Header.Set("X-Emby-Authorization", `MediaBrowser Client="SynoMusic", Device="Desktop", DeviceId="synomusic-desktop", Version="1.6.7"`)
+			req.Header.Set("X-Emby-Authorization", `MediaBrowser Client="SynoMusic", Device="Desktop", DeviceId="synomusic-desktop", Version="1.6.8"`)
 			if c.token != "" {
 				req.Header.Set("X-Emby-Token", c.token)
 			}

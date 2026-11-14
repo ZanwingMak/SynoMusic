@@ -17,6 +17,22 @@ let current = new URLSearchParams(location.search).get("lang") || localStorage.g
 export function setLanguage(lang: string): void { current = entries[lang] ? lang : "en"; localStorage.setItem("synomusic.language",current); document.documentElement.lang=current; }
 
 const featureLabels: Record<string, string[]> = {
+  "Skins": ["皮肤", "外觀主題", "スキン", "스킨", "Designs", "Thèmes"],
+  "Appearance & skins": ["外观与皮肤", "外觀與主題", "外観とスキン", "모양 및 스킨", "Erscheinungsbild & Designs", "Apparence et thèmes"],
+  "Choose your atmosphere. Every skin supports light and dark appearance.": ["选一种喜欢的氛围，每套皮肤都适配浅色与深色。", "選擇喜歡的氛圍，每套主題皆支援淺色與深色。", "好きな雰囲気を選べます。すべてのスキンがライトとダークに対応。", "원하는 분위기를 고르세요. 모든 스킨은 밝은 모드와 어두운 모드를 지원합니다.", "Wähle deine Atmosphäre. Jedes Design unterstützt Hell und Dunkel.", "Choisissez votre ambiance. Chaque thème existe en clair et en sombre."],
+  "Current skin": ["当前皮肤", "目前主題", "現在のスキン", "현재 스킨", "Aktuelles Design", "Thème actuel"],
+  "Studio": ["原木", "原木", "スタジオ", "스튜디오", "Studio", "Studio"],
+  "Graphite": ["石墨", "石墨", "グラファイト", "그래파이트", "Graphit", "Graphite"],
+  "Evergreen": ["松林", "松林", "エバーグリーン", "에버그린", "Waldgrün", "Forêt"],
+  "Sea glass": ["海盐", "海鹽", "シーグラス", "씨글라스", "Meerglas", "Verre marin"],
+  "Rosewood": ["玫瑰木", "玫瑰木", "ローズウッド", "로즈우드", "Rosenholz", "Bois de rose"],
+  "Amber": ["琥珀", "琥珀", "アンバー", "앰버", "Bernstein", "Ambre"],
+  "Warm paper and copper details": ["暖白纸感 · 铜色细节", "暖白紙感 · 銅色細節", "温かな紙と銅のアクセント", "따뜻한 종이와 구리빛 디테일", "Warmes Papier und Kupferdetails", "Papier chaleureux et touches cuivrées"],
+  "Precise lines and brushed graphite": ["利落线条 · 磨砂石墨", "俐落線條 · 霧面石墨", "端正な線とマットな質感", "정돈된 선과 무광 질감", "Klare Linien und mattes Graphit", "Lignes nettes et graphite brossé"],
+  "Soft moss and rounded surfaces": ["柔和苔绿 · 圆润材质", "柔和苔綠 · 圓潤材質", "柔らかな苔色と丸い表面", "부드러운 이끼색과 둥근 표면", "Sanftes Moos und runde Flächen", "Mousse douce et surfaces arrondies"],
+  "Frosted glass and quiet tides": ["雾面玻璃 · 静谧海潮", "霧面玻璃 · 靜謐海潮", "曇りガラスと静かな潮", "반투명 유리와 잔잔한 물결", "Milchglas und ruhige Gezeiten", "Verre dépoli et marées paisibles"],
+  "Rose linen and soft contours": ["玫瑰亚麻 · 柔软轮廓", "玫瑰亞麻 · 柔軟輪廓", "ローズリネンと柔らかな輪郭", "장밋빛 리넨과 부드러운 윤곽", "Rosenleinen und sanfte Konturen", "Lin rosé et contours doux"],
+  "Amber light and record sleeve texture": ["琥珀暖光 · 唱片纸纹", "琥珀暖光 · 唱片紙紋", "琥珀の光とレコードの質感", "호박빛 조명과 레코드 질감", "Bernsteinlicht und Plattenhülle", "Lumière ambrée et grain de pochette"],
   "Like song": ["喜欢这首歌", "喜歡這首歌", "お気に入りに追加", "좋아요에 추가", "Als Favorit markieren", "Ajouter aux favoris"],
   "Unlike song": ["取消喜欢", "取消喜歡", "お気に入りから削除", "좋아요 취소", "Aus Favoriten entfernen", "Retirer des favoris"],
   "All sources": ["全部音乐源", "所有音樂來源", "すべての音楽ソース", "모든 음악 소스", "Alle Musikquellen", "Toutes les sources"],
