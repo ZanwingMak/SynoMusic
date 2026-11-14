@@ -132,7 +132,7 @@ func (s *Service) lyricsRequest(path string, query url.Values, result any) (bool
 	if err != nil {
 		return false, err
 	}
-	req.Header.Set("User-Agent", "SynoMusic Desktop/1.6.8 (https://github.com/ZanwingMak/SynoMusic)")
+	req.Header.Set("User-Agent", "SynoMusic Desktop/1.6.9 (https://github.com/ZanwingMak/SynoMusic)")
 	response, err := (&http.Client{Timeout: 10 * time.Second}).Do(req)
 	if err != nil {
 		return false, errors.New("online lyrics unavailable; check your connection")

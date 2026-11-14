@@ -17,6 +17,8 @@ let current = new URLSearchParams(location.search).get("lang") || localStorage.g
 export function setLanguage(lang: string): void { current = entries[lang] ? lang : "en"; localStorage.setItem("synomusic.language",current); document.documentElement.lang=current; }
 
 const featureLabels: Record<string, string[]> = {
+  "Audio controls": ["音频控制", "音訊控制", "オーディオ操作", "오디오 제어", "Audiosteuerung", "Commandes audio"],
+  "Player views": ["播放视图", "播放檢視", "再生画面", "재생 화면", "Wiedergabeansichten", "Vues du lecteur"],
   "Skins": ["皮肤", "外觀主題", "スキン", "스킨", "Designs", "Thèmes"],
   "Appearance & skins": ["外观与皮肤", "外觀與主題", "外観とスキン", "모양 및 스킨", "Erscheinungsbild & Designs", "Apparence et thèmes"],
   "Choose your atmosphere. Every skin supports light and dark appearance.": ["选一种喜欢的氛围，每套皮肤都适配浅色与深色。", "選擇喜歡的氛圍，每套主題皆支援淺色與深色。", "好きな雰囲気を選べます。すべてのスキンがライトとダークに対応。", "원하는 분위기를 고르세요. 모든 스킨은 밝은 모드와 어두운 모드를 지원합니다.", "Wähle deine Atmosphäre. Jedes Design unterstützt Hell und Dunkel.", "Choisissez votre ambiance. Chaque thème existe en clair et en sombre."],
