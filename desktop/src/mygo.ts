@@ -51,6 +51,16 @@ export interface Profile {
   basePath?: string;
 }
 
+/** QueueSnapshot 保存被替换的队列与当时歌曲，恢复时由用户决定开始播放。 */
+export interface QueueSnapshot {
+  id: string;
+  title: string;
+  createdAt: number;
+  songs: Song[];
+  current: number;
+  position: number;
+}
+
 /** RemotePlaylist 表示音乐服务器上的只读歌单，不修改用户的远端收藏。 */
 export interface RemotePlaylist {
   id: string;
@@ -90,6 +100,7 @@ export interface Song {
   albumGain?: number;
   trackPeak?: number;
   albumPeak?: number;
+  addedAt?: number;
 }
 
 /** SongStats 保存本机评分、有效播放次数与最近播放时间。 */
@@ -113,12 +124,17 @@ export interface State {
   lyrics: Record<string, string>;
   podcasts: Podcast[];
   stats: Record<string, SongStats>;
+  queueHistory: QueueSnapshot[];
 }
 
 // ---- Services ----
 
 /** Service 向桌面前端提供类型安全的音乐能力。 */
 export const Service = {
+  /** ArchiveQueue 只保留最近十次不同队列，不把每次播放进度保存成新历史。 */
+  archiveQueue(snapshot: QueueSnapshot): Promise<QueueSnapshot[]> {
+    return call("Service.ArchiveQueue", snapshot);
+  },
   /** CachedLibrary 恢复最近成功读取的资料库，让网络异常时仍可浏览与播放已下载歌曲。 */
   cachedLibrary(profileID: string): Promise<Song[]> {
     return call("Service.CachedLibrary", profileID);
@@ -203,6 +219,10 @@ export const Service = {
   rateSong(id: string, rating: number): Promise<SongStats> {
     return call("Service.RateSong", id, rating);
   },
+  /** RecentSongs 使用服务端添加顺序，本地只使用真实导入时间，不推测旧条目的日期。 */
+  recentSongs(profileID: string): Promise<Song[]> {
+    return call("Service.RecentSongs", profileID);
+  },
   /** RecordCompletedPlay 仅由达到有效聆听时长的播放器调用，不把拖动进度计为播放。 */
   recordCompletedPlay(id: string): Promise<SongStats> {
     return call("Service.RecordCompletedPlay", id);
@@ -222,6 +242,10 @@ export const Service = {
   /** RemoveProfile 移除配置与钥匙串凭证，保留用户创建的本地歌单。 */
   removeProfile(id: string): Promise<void> {
     return call("Service.RemoveProfile", id);
+  },
+  /** RemoveQueueSnapshot 仅移除队列历史，不影响当前播放和音乐文件。 */
+  removeQueueSnapshot(id: string): Promise<void> {
+    return call("Service.RemoveQueueSnapshot", id);
   },
   /** RevealLocalSong 在系统文件管理器显示已经导入并获授权的音频。 */
   revealLocalSong(id: string): Promise<void> {

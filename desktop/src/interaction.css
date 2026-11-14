@@ -1,0 +1,35 @@
+/* 精选、历史与空态沿用皮肤变量，在侧栏或队列展开时自然换行。 */
+.mix-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:16px;margin:24px 0}
+.mix-card{display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left;padding:24px;min-height:188px;border:1px solid var(--line);border-radius:var(--skin-radius,14px);background:var(--surface);transition:background 180ms,transform 180ms,border-color 180ms}
+.mix-card:hover{background:var(--soft);border-color:var(--accent);transform:translateY(-2px)}
+.mix-card>svg{width:26px;height:26px;stroke-width:1.5;color:var(--accent)}
+.mix-card strong{font-size:17px;font-weight:600}
+.mix-card p{margin:0;color:var(--muted);font-size:12px;line-height:1.6}
+.mix-card small{margin-top:auto;display:flex;align-items:center;gap:7px;font-size:10px;color:var(--accent)}
+.mix-card small svg{width:13px;height:13px}
+.compact-empty{padding:28px 0;color:var(--muted);font-size:12px;line-height:1.7}
+.compact-empty>svg{width:30px;height:30px;color:var(--accent);margin-bottom:10px}
+.compact-empty .actions{margin-top:18px}
+.history-queues{display:grid;gap:8px;margin:18px 0 28px}
+.history-queue{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:8px}
+.history-restore{display:flex;align-items:center;gap:13px;min-width:0;flex:1;text-align:left;padding:8px}
+.history-restore>svg{width:22px;height:22px;color:var(--accent);flex-shrink:0}
+.history-restore>span{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}
+.history-restore strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:550}
+.history-restore small{color:var(--muted);font-size:10px}
+.track-menu>div{position:fixed;z-index:25;max-width:calc(100vw - 24px);overflow-y:auto;overscroll-behavior:contain;animation:none!important;right:auto;top:auto}
+.track-menu summary:focus-visible,.icon-button:focus-visible,.text-link:focus-visible,.queue-item:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.track-number:focus-within input{opacity:1}
+.track-number:focus-within span{opacity:0}
+.table-header>span:last-child{display:block}
+.content h1,.collection-header h1{overflow-wrap:anywhere}
+.setting-row>span{min-width:0;overflow-wrap:anywhere}
+.setting-row .button{flex-shrink:0}
+.modal .form-error:empty{display:none}
+.empty-playlist .actions{margin-top:18px}
+.audio-note[role=status]{min-height:1em}
+@media(prefers-reduced-motion:reduce){.mix-card{transition:none}.mix-card:hover{transform:none}}
+
+button:disabled{cursor:default}
+.track-menu button:disabled{opacity:.45}
+.song-row .album-text:disabled{opacity:.7}

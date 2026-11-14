@@ -16,6 +16,7 @@ func (s *Service) SyncCloud() (bool, error) {
 	snapshot := s.state
 	snapshot.Imports = nil
 	snapshot.Cached = nil
+	snapshot.QueueHistory = nil
 	snapshot.Settings = map[string]string{}
 	for key, value := range s.state.Settings {
 		snapshot.Settings[key] = value
@@ -42,6 +43,7 @@ func (s *Service) SyncCloud() (bool, error) {
 		}
 		incoming.Imports = s.state.Imports
 		incoming.Cached = s.state.Cached
+		incoming.QueueHistory = s.state.QueueHistory
 		incoming.UpdatedAt = remoteDate
 		if incoming.Settings == nil {
 			incoming.Settings = map[string]string{}

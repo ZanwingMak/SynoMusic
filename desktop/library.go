@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -284,6 +285,11 @@ func (c *libraryClient) openMedia(ctx context.Context, song Song, artwork bool, 
 
 // loadSongs 分页拉取完整音乐库，避免只显示首批歌曲。
 func (c *libraryClient) loadSongs() ([]Song, error) {
+	return c.loadSongsOrdered(false)
+}
+
+// loadSongsOrdered 统一正常曲库与最近添加查询，精选保留服务器返回顺序并限制一页。
+func (c *libraryClient) loadSongsOrdered(recent bool) ([]Song, error) {
 	switch c.profile.Provider {
 	case "webDAV":
 		return c.scanWebDAV()
@@ -298,6 +304,11 @@ func (c *libraryClient) loadSongs() ([]Song, error) {
 		switch c.profile.Provider {
 		case "synologyAudioStation":
 			q := url.Values{"api": {"SYNO.AudioStation.Song"}, "version": {"3"}, "method": {"list"}, "library": {"shared"}, "limit": {strconv.Itoa(pageSize)}, "offset": {strconv.Itoa(offset)}, "sort_by": {"title"}, "sort_direction": {"ASC"}, "additional": {"song_tag,song_audio,song_rating"}, "_sid": {c.sessionToken()}}
+			if recent {
+				q.Set("sort_by", "recently_added")
+				q.Set("sort_direction", "DESC")
+				q.Set("limit", "120")
+			}
 			data, err := c.jsonRequest("GET", "/webapi/AudioStation/song.cgi", q, nil)
 			if err != nil {
 				return nil, err
@@ -308,6 +319,11 @@ func (c *libraryClient) loadSongs() ([]Song, error) {
 			items = arr(obj(data["data"])["songs"])
 		case "jellyfin", "emby":
 			q := url.Values{"IncludeItemTypes": {"Audio"}, "Recursive": {"true"}, "Fields": {"MediaSources,Genres,Path"}, "Limit": {strconv.Itoa(pageSize)}, "StartIndex": {strconv.Itoa(offset)}, "SortBy": {"SortName"}, "UserId": {c.userID}}
+			if recent {
+				q.Set("SortBy", "DateCreated")
+				q.Set("SortOrder", "Descending")
+				q.Set("Limit", "120")
+			}
 			if c.profile.LibraryID != "" {
 				q.Set("ParentId", c.profile.LibraryID)
 			}
@@ -335,6 +351,10 @@ func (c *libraryClient) loadSongs() ([]Song, error) {
 				}
 			}
 			q := url.Values{"type": {"10"}, "X-Plex-Container-Start": {strconv.Itoa(offset)}, "X-Plex-Container-Size": {strconv.Itoa(pageSize)}}
+			if recent {
+				q.Set("sort", "addedAt:desc")
+				q.Set("X-Plex-Container-Size", "120")
+			}
 			data, err := c.jsonRequest("GET", "/library/sections/"+url.PathEscape(library)+"/all", q, nil)
 			if err != nil {
 				return nil, err
@@ -350,11 +370,46 @@ func (c *libraryClient) loadSongs() ([]Song, error) {
 				added++
 			}
 		}
-		if len(items) < pageSize || added == 0 {
+		if recent || len(items) < pageSize || added == 0 {
 			break
 		}
 	}
-	sortedSongs(songs)
+	if !recent {
+		sortedSongs(songs)
+	}
+	return songs, nil
+}
+
+// RecentSongs 使用服务端添加顺序，本地只使用真实导入时间，不推测旧条目的日期。
+func (s *Service) RecentSongs(profileID string) ([]Song, error) {
+	if profileID == "local" {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		result := []Song{}
+		for _, song := range s.state.Imports {
+			if song.AddedAt > 0 {
+				result = append(result, song)
+			}
+		}
+		sort.SliceStable(result, func(i, j int) bool { return result[i].AddedAt > result[j].AddedAt })
+		return result, nil
+	}
+	c, err := s.client(profileID)
+	if err != nil {
+		return nil, err
+	}
+	if c.profile.Provider == "webDAV" || c.profile.Provider == "smb" {
+		return nil, errors.New("this music source does not provide added dates")
+	}
+	songs, err := c.loadSongsOrdered(true)
+	if err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, song := range songs {
+		s.songs[song.ID] = song
+	}
 	return songs, nil
 }
 

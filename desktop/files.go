@@ -213,12 +213,14 @@ func (s *Service) importMusicPaths(paths []string) (int, error) {
 	count := 0
 	for _, song := range songs {
 		if !seen[song.ID] {
+			song.AddedAt = time.Now().UnixMilli()
 			s.state.Imports = append(s.state.Imports, song)
 			seen[song.ID] = true
 			count++
 		} else {
 			for index, existing := range s.state.Imports {
 				if existing.ID == song.ID {
+					song.AddedAt = existing.AddedAt
 					s.state.Imports[index] = song
 					break
 				}

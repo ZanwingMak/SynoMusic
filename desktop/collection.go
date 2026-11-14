@@ -13,6 +13,58 @@ type SongStats struct {
 	LastPlayed int64 `json:"lastPlayed"`
 }
 
+// QueueSnapshot 保存被替换的队列与当时歌曲，恢复时由用户决定开始播放。
+type QueueSnapshot struct {
+	ID        string  `json:"id"`
+	Title     string  `json:"title"`
+	CreatedAt int64   `json:"createdAt"`
+	Songs     []Song  `json:"songs"`
+	Current   int     `json:"current"`
+	Position  float64 `json:"position"`
+}
+
+// ArchiveQueue 只保留最近十次不同队列，不把每次播放进度保存成新历史。
+func (s *Service) ArchiveQueue(snapshot QueueSnapshot) ([]QueueSnapshot, error) {
+	if len(snapshot.Songs) == 0 || len(snapshot.Songs) > 10000 || snapshot.Current < 0 || snapshot.Current >= len(snapshot.Songs) {
+		return nil, errors.New("invalid queue snapshot")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	snapshot.ID = newID()
+	snapshot.CreatedAt = time.Now().UnixMilli()
+	result := []QueueSnapshot{snapshot}
+	for _, old := range s.state.QueueHistory {
+		same := len(old.Songs) == len(snapshot.Songs)
+		if same {
+			for index, song := range old.Songs {
+				if song.ID != snapshot.Songs[index].ID {
+					same = false
+					break
+				}
+			}
+		}
+		if !same && len(result) < 10 {
+			result = append(result, old)
+		}
+	}
+	s.state.QueueHistory = result
+	return append([]QueueSnapshot{}, result...), s.saveLocked()
+}
+
+// RemoveQueueSnapshot 仅移除队列历史，不影响当前播放和音乐文件。
+func (s *Service) RemoveQueueSnapshot(id string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	result := []QueueSnapshot{}
+	for _, snapshot := range s.state.QueueHistory {
+		if snapshot.ID != id {
+			result = append(result, snapshot)
+		}
+	}
+	s.state.QueueHistory = result
+	return s.saveLocked()
+}
+
 // PlaylistRule 表示智能歌单的一条可编辑筛选规则。
 type PlaylistRule struct {
 	Field    string `json:"field"`
@@ -124,5 +176,6 @@ func (s *Service) ClearListeningHistory() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.state.History = []Song{}
+	s.state.QueueHistory = []QueueSnapshot{}
 	return s.saveLocked()
 }

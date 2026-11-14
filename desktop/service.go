@@ -58,6 +58,7 @@ type Song struct {
 	AlbumGain   *float64 `json:"albumGain,omitempty"`
 	TrackPeak   float64  `json:"trackPeak,omitempty"`
 	AlbumPeak   float64  `json:"albumPeak,omitempty"`
+	AddedAt     int64    `json:"addedAt,omitempty"`
 }
 
 // Playlist 保存不受数量限制的本地歌单。
@@ -82,6 +83,7 @@ type State struct {
 	Lyrics        map[string]string    `json:"lyrics"`
 	Podcasts      []Podcast            `json:"podcasts"`
 	Stats         map[string]SongStats `json:"stats"`
+	QueueHistory  []QueueSnapshot      `json:"queueHistory"`
 }
 
 // Service 向桌面前端提供类型安全的音乐能力。
@@ -126,6 +128,9 @@ func newService() (*Service, error) {
 	}
 	if s.state.Stats == nil {
 		s.state.Stats = map[string]SongStats{}
+	}
+	if s.state.QueueHistory == nil {
+		s.state.QueueHistory = []QueueSnapshot{}
 	}
 	if s.state.Lyrics == nil {
 		s.state.Lyrics = map[string]string{}
@@ -465,6 +470,10 @@ func (s *Service) SaveLyrics(id string, text string) error {
 
 // UpdateNowPlaying 同步系统媒体控制中心和媒体键状态。
 func (s *Service) UpdateNowPlaying(song Song, playing bool, position float64, rate float64) {
+	if song.ID == "" {
+		mygo.NowPlaying.Clear()
+		return
+	}
 	if rate < 0.5 || rate > 2 {
 		rate = 1
 	}
