@@ -4,4 +4,6 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.js-reveal .reveal{opacity:1;transform:none}}
 
 .client-screen[data-platform=windows]{max-width:100%;border-radius:10px}
-@media(max-width:650px){.client-switch{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:3px}.client-switch>button{min-width:0;padding:9px 4px;font-size:10px}}
+@media(max-width:650px){.client-switch{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));width:100%;gap:3px}.client-switch>button{min-width:0;padding:9px 4px;font-size:10px}}
+
+.client-screen[data-platform=tv] img{aspect-ratio:16/9;object-fit:contain;background:#11170f;border:6px solid #272725;border-radius:14px}

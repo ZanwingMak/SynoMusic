@@ -12,8 +12,8 @@ settings:
     SWIFT_VERSION: "6.0"
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
-    MARKETING_VERSION: "1.6.0"
-    CURRENT_PROJECT_VERSION: "58"
+    MARKETING_VERSION: "1.7.0"
+    CURRENT_PROJECT_VERSION: "66"
     DEVELOPMENT_TEAM: 2Q2LMV7BR6
     CODE_SIGN_STYLE: Automatic
 
@@ -191,6 +191,73 @@ targets:
           CODE_SIGN_IDENTITY: Apple Distribution
           PROVISIONING_PROFILE_SPECIFIER: SynoMusicLive App Store
 
+  SynoMusicTV:
+    type: application
+    platform: tvOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: SynoMusicTV
+      - path: SynoMusic/Models
+      - path: SynoMusic/Synology
+      - path: SynoMusic/Providers
+        excludes: [FolderMusicLibraryClient.swift]
+      - path: SynoMusic/Audio/AudioOptions.swift
+      - path: SynoMusic/Audio/OnlineLyricsClient.swift
+      - path: SynoMusic/Storage/ServerStore.swift
+      - path: SynoMusic/Storage/KeychainStore.swift
+      - path: SynoMusic/Storage/PlaylistStore.swift
+      - path: SynoMusic/Utilities/DemoMode.swift
+      - path: SynoMusic/DesignSystem/L10n.swift
+      - path: SynoMusic/DesignSystem/SupportLocalizations.swift
+      - path: SynoMusic/DesignSystem/PlatformLocalizations.swift
+      - path: SynoMusic/DesignSystem/DemoArtworkView.swift
+      - path: SynoMusic/Features/Radio/RadioAPI.swift
+      - path: SynoMusic/Features/Podcast/PodcastAPI.swift
+      - path: SynoMusic/Features/Podcast/PodcastSubscriptionStore.swift
+    resources:
+      - SynoMusic/Resources/zh-Hans.lproj
+      - SynoMusic/Resources/zh-Hant.lproj
+      - SynoMusic/Resources/en.lproj
+      - SynoMusic/Resources/ja.lproj
+      - SynoMusic/Resources/ko.lproj
+      - SynoMusic/Resources/de.lproj
+      - SynoMusic/Resources/fr.lproj
+    dependencies:
+      - package: SMBClient
+    info:
+      path: SynoMusicTV/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: SynoMusic
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UIBackgroundModes: [audio]
+        NSLocalNetworkUsageDescription: Connect to your authorized music servers on your local network.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+          NSAllowsLocalNetworking: true
+        ITSAppUsesNonExemptEncryption: false
+        NSHumanReadableCopyright: "© 2026 ZHENYING MAI"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.synomusic.SynoMusic
+        SDKROOT: appletvos
+        TVOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "3"
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        MARKETING_VERSION: "1.7.0"
+        CURRENT_PROJECT_VERSION: "66"
+      configs:
+        Debug:
+          CODE_SIGN_STYLE: Automatic
+          CODE_SIGN_IDENTITY: Apple Development
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER: SynoMusic TV App Store
+
   SynoMusicTests:
     type: bundle.unit-test
     platform: iOS
@@ -216,6 +283,14 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
 
 schemes:
+  SynoMusicTV:
+    build:
+      targets:
+        SynoMusicTV: all
+    run:
+      config: Debug
+    archive:
+      config: Release
   SynoMusic:
     build:
       targets:

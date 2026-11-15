@@ -415,8 +415,8 @@ final class AudioStationAPI: @unchecked Sendable {
             let matches = regex.matches(in: raw, range: nsRange)
             guard !matches.isEmpty else { return }
             let lastMatch = matches.last!
-            let textStart = raw.index(raw.startIndex, offsetBy: lastMatch.range.upperBound - lastMatch.range.location + lastMatch.range.location)
-            let lyric = String(raw[textStart...]).trimmingCharacters(in: .whitespaces)
+            guard let timestampRange = Range(lastMatch.range, in: raw) else { return }
+            let lyric = String(raw[timestampRange.upperBound...]).trimmingCharacters(in: .whitespaces)
             for match in matches {
                 guard let minRange = Range(match.range(at: 1), in: raw),
                       let secRange = Range(match.range(at: 2), in: raw) else { continue }
@@ -426,6 +426,7 @@ final class AudioStationAPI: @unchecked Sendable {
                 if let msRange = Range(match.range(at: 3), in: raw) {
                     let msStr = String(raw[msRange])
                     millis = Int(msStr) ?? 0
+                    if msStr.count == 1 { millis *= 100 }
                     if msStr.count == 2 { millis *= 10 }
                 }
                 let ts = Double(minutes * 60 + seconds) + Double(millis) / 1000.0

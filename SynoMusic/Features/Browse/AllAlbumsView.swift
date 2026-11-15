@@ -8,10 +8,13 @@ struct AllAlbumsView: View {
     @State private var isLoading: Bool = false
     @State private var error: String?
     @State private var sortBy: SortOption = .name
-    private let columns = [
-        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: Metrics.m),
-        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: Metrics.m)
-    ]
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    /// iPad 用自适应封面列，紧凑窗口保留两列而不依赖整块屏幕尺寸。
+    private var columns: [GridItem] {
+        horizontalSizeClass == .regular
+            ? [GridItem(.adaptive(minimum: 170, maximum: 260), spacing: Metrics.l)]
+            : [GridItem(.flexible(), spacing: Metrics.m), GridItem(.flexible(), spacing: Metrics.m)]
+    }
 
     enum SortOption: String, CaseIterable, Identifiable {
         case name, recently_added, artist, year

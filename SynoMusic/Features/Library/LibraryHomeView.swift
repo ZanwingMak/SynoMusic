@@ -147,10 +147,13 @@ struct LibraryHomeView: View {
 
 /// 首页启动恢复骨架屏：展示即将出现的专辑结构，避免闪出空态。
 private struct LibraryHomeSkeleton: View {
-    private let columns = [
-        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: Metrics.m),
-        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: Metrics.m)
-    ]
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    /// iPad 用自适应封面列，紧凑窗口保留两列而不依赖整块屏幕尺寸。
+    private var columns: [GridItem] {
+        horizontalSizeClass == .regular
+            ? [GridItem(.adaptive(minimum: 170, maximum: 260), spacing: Metrics.l)]
+            : [GridItem(.flexible(), spacing: Metrics.m), GridItem(.flexible(), spacing: Metrics.m)]
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Metrics.l) {
@@ -495,10 +498,13 @@ private struct FeaturedAlbumCard: View {
 private struct AlbumGrid: View {
     let albums: [Album]
     @EnvironmentObject private var session: AppSession
-    private let columns = [
-        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: Metrics.m),
-        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: Metrics.m)
-    ]
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    /// iPad 用自适应封面列，紧凑窗口保留两列而不依赖整块屏幕尺寸。
+    private var columns: [GridItem] {
+        horizontalSizeClass == .regular
+            ? [GridItem(.adaptive(minimum: 170, maximum: 260), spacing: Metrics.l)]
+            : [GridItem(.flexible(), spacing: Metrics.m), GridItem(.flexible(), spacing: Metrics.m)]
+    }
 
     var body: some View {
         LazyVGrid(columns: columns, spacing: Metrics.l) {

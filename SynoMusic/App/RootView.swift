@@ -44,10 +44,7 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.18), value: theme.currentID)
         .tint(theme.current.accent(in: colorScheme))
         .background(Theme.background.ignoresSafeArea())
-        .sheet(isPresented: $showFullPlayer) {
-            FullPlayerView(isPresented: $showFullPlayer)
-                .presentationDragIndicator(.visible)
-        }
+        .adaptivePlayerPresentation(isPresented: $showFullPlayer)
         .sheet(isPresented: $showSupport) { SupportView() }
         .onChange(of: playback.currentSong?.id) { oldID, newID in
             if newID == nil {

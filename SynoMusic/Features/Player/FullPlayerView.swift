@@ -32,6 +32,7 @@ struct FullPlayerView: View {
     @State private var draftLyricFontSize: Double = 18
     @State private var draftLyricAutoScroll: Bool = true
     @State private var draftLyricDelay: Double = 0
+    @State private var widePane = "lyrics"
 
     /// 创建全屏播放器，并在调试参数要求时预展开右上角菜单。
     init(isPresented: Binding<Bool>) {
@@ -50,6 +51,9 @@ struct FullPlayerView: View {
             let artSide = min(geo.size.width - Metrics.xl * 2, visualHeight)
             ZStack(alignment: .top) {
                 background
+                if geo.size.width >= 700 {
+                    widePlayer(size: geo.size)
+                } else {
                 VStack(spacing: 0) {
                     topBar
                         .frame(height: 52)
@@ -69,6 +73,7 @@ struct FullPlayerView: View {
                         .padding(.bottom, max(Metrics.s, geo.safeAreaInsets.bottom))
                 }
                 .padding(.top, Metrics.l)
+                }
                 if showPlayerMenu {
                     PlayerTopMenuOverlay(
                         isPresented: $showPlayerMenu,
@@ -117,7 +122,7 @@ struct FullPlayerView: View {
                 .padding(.vertical, 10)
                 .background(Color.black.opacity(0.75), in: Capsule())
                 .padding(.horizontal, Metrics.m)
-                .padding(.top, 6)
+                .padding(.top, 70)
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
@@ -186,6 +191,81 @@ struct FullPlayerView: View {
                 SongResearchSheet(song: song, coverURL: session.musicClient?.songCoverURL(song: song))
                     .presentationDetents([.medium, .large])
             }
+        }
+    }
+
+    /// 宽屏播放器同时呈现封面、控制和歌词/队列，横竖屏及窗口缩放均按可用空间布局。
+    private func widePlayer(size: CGSize) -> some View {
+        VStack(spacing: 20) {
+            topBar.frame(height: 52)
+            HStack(spacing: 36) {
+                VStack(spacing: 14) {
+                    Spacer(minLength: 0)
+                    wideArtwork(side: min(400, (size.width - 112) * 0.45, max(160, size.height - 390)))
+                    trackInfo.frame(minHeight: 80)
+                    progressSection.frame(height: 56)
+                    controlBar.frame(height: 86)
+                    bottomTools.frame(height: 48)
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: 480)
+                VStack(spacing: 18) {
+                    Picker("正在播放".t, selection: $widePane) {
+                        Text("歌词".t).tag("lyrics")
+                        Text("队列".t).tag("queue")
+                    }
+                    .pickerStyle(.segmented)
+                    if widePane == "lyrics" {
+                        LyricsPanel(lines: playback.lyrics, currentIndex: lyricPreviewCurrentIndex, isLoading: playback.isFetchingLyrics, fontSize: max(24, lyricPreviewFontSize), autoScroll: lyricPreviewAutoScroll, onSeek: { playback.seek(to: $0) })
+                    } else {
+                        wideQueue
+                    }
+                }
+                .padding(24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 28))
+            }
+            .frame(maxWidth: 1180, maxHeight: .infinity)
+            .padding(.horizontal, 36)
+            .padding(.bottom, 24)
+        }
+        .padding(.top, 12)
+    }
+
+    /// 宽屏封面始终保留展示位置，歌词切换只影响右侧面板。
+    @ViewBuilder private func wideArtwork(side: CGFloat) -> some View {
+        if playbackSettings.playerArtworkStyle == .vinyl {
+            VinylHero(song: playback.currentSong, side: side, isPlaying: playback.isPlaying && !playback.isBuffering)
+        } else {
+            CoverHero(song: playback.currentSong, side: side, isPlaying: playback.isPlaying && !playback.isBuffering)
+        }
+    }
+
+    /// 内联队列保持当前曲目标识与点击播放，完整排序编辑仍可从队列工具打开。
+    private var wideQueue: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    ForEach(Array(playback.queue.enumerated()), id: \.offset) { index, song in
+                        Button { playback.playItem(at: index) } label: {
+                            HStack(spacing: 14) {
+                                Text("\(index + 1)").font(.caption.monospacedDigit()).frame(width: 24)
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(song.title).font(.headline).lineLimit(2)
+                                    Text(song.artist ?? "").font(.caption).foregroundStyle(.white.opacity(0.6)).lineLimit(1)
+                                }
+                                Spacer(minLength: 0)
+                                if index == playback.currentIndex { Image(systemName: "waveform") }
+                            }
+                            .foregroundStyle(index == playback.currentIndex ? Theme.accent : .white)
+                            .padding(16)
+                            .background(.white.opacity(index == playback.currentIndex ? 0.1 : 0.03), in: RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain).id(index)
+                    }
+                }
+            }
+            .onAppear { proxy.scrollTo(playback.currentIndex, anchor: .center) }
         }
     }
 
@@ -957,7 +1037,7 @@ extension FullPlayerView {
 
     /// 按指定延迟重算当前歌词行，用于设置面板打开期间的实时预览。
     private func currentLyricIndex(using delay: Double) -> Int? {
-        guard !playback.lyrics.isEmpty else { return nil }
+        guard let first = playback.lyrics.first, first.timestamp >= 0 else { return nil }
         let lyricClock = playback.currentTime + delay
         var lo = 0
         var hi = playback.lyrics.count - 1
@@ -1278,12 +1358,11 @@ private struct LyricsPanel: View {
                         VStack(spacing: 14) {
                             ForEach(Array(lines.enumerated()), id: \.element.id) { idx, line in
                                 Button {
-                                    Haptics.tap()
-                                    onSeek(line.timestamp)
+                                    if line.timestamp >= 0 { Haptics.tap(); onSeek(line.timestamp) }
                                 } label: {
                                     Text(line.text.isEmpty ? "♪" : line.text)
                                         .font(.system(size: fontSize, weight: idx == currentIndex ? .semibold : .regular, design: .rounded))
-                                        .foregroundStyle(idx == currentIndex ? .white : .white.opacity(0.5))
+                                        .foregroundStyle(idx == currentIndex ? .white : .white.opacity(line.timestamp < 0 ? 0.8 : 0.5))
                                         .multilineTextAlignment(.center)
                                         .frame(maxWidth: .infinity)
                                         .padding(.horizontal, 14)
@@ -1296,6 +1375,7 @@ private struct LyricsPanel: View {
                                         }
                                 }
                                 .buttonStyle(.plain)
+                                .disabled(line.timestamp < 0)
                                 .id(idx)
                                 .animation(.easeInOut(duration: 0.25), value: currentIndex)
                             }

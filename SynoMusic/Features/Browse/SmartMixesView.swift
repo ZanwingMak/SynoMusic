@@ -9,9 +9,13 @@ struct SmartMixesView: View {
     @EnvironmentObject private var reviewMode: AppReviewMode
 
     @State private var loadingMixID: String?
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showServerPrompt = false
 
-    private let columns = [GridItem(.flexible()), GridItem(.flexible())]
+    /// 宽屏采用多列入口，分屏时维持可读的触控卡片。
+    private var columns: [GridItem] {
+        horizontalSizeClass == .regular ? [GridItem(.adaptive(minimum: 220, maximum: 340), spacing: Metrics.m)] : [GridItem(.flexible()), GridItem(.flexible())]
+    }
 
     var body: some View {
         ScrollView {

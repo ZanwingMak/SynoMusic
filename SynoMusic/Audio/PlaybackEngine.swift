@@ -7,42 +7,6 @@ import UIKit
 import ActivityKit
 #endif
 
-/// 重复模式。
-enum RepeatMode: String, CaseIterable {
-    case off, all, one
-}
-
-/// 音质设置。
-enum AudioQuality: String, CaseIterable, Identifiable {
-    case original     // raw 流，不转码
-    case high         // 320 kbps mp3
-    case standard     // 128 kbps mp3
-
-    var id: String { rawValue }
-
-    /// 用于内置多语言查表的中文标题 key。
-    var titleKey: String {
-        switch self {
-        case .original: return "原始音质"
-        case .high: return "高品质 320kbps"
-        case .standard: return "标准 128kbps"
-        }
-    }
-
-    var title: String {
-        titleKey
-    }
-
-    /// 对应 streamURL 的 format 参数。
-    var streamFormat: String {
-        switch self {
-        case .original: return "raw"
-        case .high: return "mp3"
-        case .standard: return "mp3"
-        }
-    }
-}
-
 /// 一次队列替换前的快照，用于在浏览页回看之前的播放上下文。
 struct PlaybackQueueSnapshot: Identifiable, Hashable, Codable {
     let id: UUID
@@ -1396,8 +1360,9 @@ final class PlaybackEngine: ObservableObject {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 
+    /// 只定位具有真实时间戳的歌词，纯文本保持可阅读状态。
     private func updateCurrentLyric() {
-        guard !lyrics.isEmpty else {
+        guard let first = lyrics.first, first.timestamp >= 0 else {
             currentLyricIndex = nil; return
         }
         // 二分定位最后一个 timestamp <= currentTime 的行。

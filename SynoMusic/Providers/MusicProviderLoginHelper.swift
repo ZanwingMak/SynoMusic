@@ -47,9 +47,13 @@ enum MusicProviderLoginHelper {
         case .smb:
             if let report { await report("正在读取文件夹...") }
             if profile.musicLibraryID?.hasPrefix("file:") == true {
+                #if os(tvOS)
+                throw CocoaError(.fileReadUnsupportedScheme)
+                #else
                 let client = FolderMusicLibraryClient(profile: profile)
                 try await client.authenticate(bookmark: password)
                 return MusicProviderLoginResult(musicClient: client, profile: profile)
+                #endif
             }
             let client = SMBNetworkMusicLibraryClient(profile: profile)
             try await client.authenticate(password: password)

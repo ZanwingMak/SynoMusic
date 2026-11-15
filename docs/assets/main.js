@@ -39,7 +39,7 @@
       button.tabIndex = button.dataset.client === platform ? 0 : -1;
     });
     document.querySelector('#client-preview').setAttribute('aria-labelledby', 'tab-' + platform);
-    document.querySelector('#platform-label').textContent = platform === 'mac' ? 'macOS 13+' : platform === 'windows' ? 'Windows 10 / 11 · Preview' : platform === 'iphone' ? 'iOS 17+' : 'iPadOS 17+';
+    document.querySelector('#platform-label').textContent = platform === 'mac' ? 'macOS 13+' : platform === 'windows' ? 'Windows 10 / 11 · Preview' : platform === 'iphone' ? 'iOS 17+' : platform === 'tv' ? 'tvOS 17+ · TestFlight' : 'iPadOS 17+ · 1.7 TestFlight';
     document.querySelector('#client-title').innerHTML = text(platform + 'Title');
     document.querySelector('#client-description').textContent = text(platform + 'Body');
     const list = document.querySelector('#client-highlights');
@@ -53,12 +53,12 @@
     area.replaceChildren();
     const link = document.createElement('a');
     link.className = 'button dark';
-    link.href = ['mac', 'windows'].includes(platform) ? release : appStore;
+    link.href = platform === 'tv' ? 'https://github.com/ZanwingMak/SynoMusic/releases' : ['mac', 'windows'].includes(platform) ? release : appStore;
     link.textContent = text(platform + 'Button');
     area.append(link);
     document.querySelector('#client-screen').dataset.platform = platform;
     const screenshot = document.querySelector('#client-image');
-    screenshot.alt = 'SynoMusic for ' + (platform === 'mac' ? 'Mac' : platform === 'windows' ? 'Windows' : platform === 'iphone' ? 'iPhone' : 'iPad');
+    screenshot.alt = 'SynoMusic for ' + (platform === 'mac' ? 'Mac' : platform === 'windows' ? 'Windows' : platform === 'iphone' ? 'iPhone' : platform === 'tv' ? 'Apple TV' : 'iPad');
     image(screenshot, platform + '-library.png');
   }
 
@@ -115,7 +115,7 @@
       button.addEventListener('keydown', event => {
         if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
         event.preventDefault();
-        const options = ['mac', 'windows', 'iphone', 'ipad'];
+        const options = ['mac', 'windows', 'iphone', 'ipad', 'tv'];
         const index = (options.indexOf(platform) + (event.key === 'ArrowRight' ? 1 : options.length - 1)) % options.length;
         showClient(options[index]);
         document.querySelector('#tab-' + options[index]).focus();

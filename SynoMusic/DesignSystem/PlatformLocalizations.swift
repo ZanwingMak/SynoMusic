@@ -1,0 +1,74 @@
+import Foundation
+
+/// iPad 与电视新增界面的七语言文案。
+extension L10n {
+    /// 将相同键的多语言条目转换成共享查找表。
+    static let platformAdditions: [String: [String: String]] = {
+        let languages = ["en", "zh-Hant", "ja", "ko", "de", "fr"]
+        let rows: [[String]] = [
+            ["你的音乐，你的空间。", "Your music. Your space.", "你的音樂，你的空間。", "あなたの音楽、あなたの空間。", "나의 음악, 나의 공간.", "Deine Musik. Dein Raum.", "Votre musique. Votre espace."],
+            ["演示资料库", "Demo library", "示範資料庫", "デモライブラリ", "데모 보관함", "Demo-Mediathek", "Bibliothèque de démo"],
+            ["播放全部", "Play all", "播放全部", "すべて再生", "모두 재생", "Alle wiedergeben", "Tout lire"],
+            ["随机播放", "Shuffle", "隨機播放", "シャッフル", "임의 재생", "Zufällig", "Aléatoire"],
+            ["全部歌曲", "All songs", "全部歌曲", "すべての曲", "모든 곡", "Alle Titel", "Tous les titres"],
+            ["上一首", "Previous track", "上一首", "前の曲", "이전 곡", "Vorheriger Titel", "Titre précédent"],
+            ["下一首", "Next track", "下一首", "次の曲", "다음 곡", "Nächster Titel", "Titre suivant"],
+            ["暂停", "Pause", "暫停", "一時停止", "일시 정지", "Pause", "Pause"],
+            ["音乐库", "Music library", "音樂庫", "音楽ライブラリ", "음악 보관함", "Musikmediathek", "Bibliothèque musicale"],
+            ["喜欢的音乐，都在这里", "All your favorites, together", "喜歡的音樂，都在這裡", "お気に入りの音楽をひとつに", "좋아하는 음악을 한곳에", "Deine Favoriten an einem Ort", "Tous vos favoris réunis"],
+            ["每一刻，都有合适的旋律", "Music for every moment", "每一刻，都有合適的旋律", "どんな瞬間にも音楽を", "모든 순간에 어울리는 음악", "Musik für jeden Moment", "Une musique pour chaque instant"],
+            ["没有找到匹配的歌曲。", "No matching tracks found.", "找不到符合的歌曲。", "一致する曲が見つかりません。", "일치하는 곡이 없습니다.", "Keine passenden Titel gefunden.", "Aucun titre correspondant."],
+            ["没有找到结果", "No results found", "找不到結果", "検索結果がありません", "검색 결과 없음", "Keine Ergebnisse", "Aucun résultat"],
+            ["从歌单移除", "Remove from playlist", "從歌單移除", "プレイリストから削除", "재생목록에서 제거", "Aus Playlist entfernen", "Retirer de la playlist"],
+            ["睡眠定时", "Sleep timer", "睡眠計時", "スリープタイマー", "수면 타이머", "Schlaftimer", "Minuterie de veille"],
+            ["播放进度", "Playback position", "播放進度", "再生位置", "재생 위치", "Wiedergabeposition", "Position de lecture"],
+            ["跟随歌词", "Follow lyrics", "跟隨歌詞", "歌詞に追従", "가사 따라가기", "Liedtext folgen", "Suivre les paroles"],
+            ["发现服务器", "Discovered servers", "探索伺服器", "検出されたサーバー", "검색된 서버", "Gefundene Server", "Serveurs détectés"],
+            ["登录 Plex", "Sign in to Plex", "登入 Plex", "Plexにサインイン", "Plex 로그인", "Bei Plex anmelden", "Se connecter à Plex"],
+            ["移除服务器", "Remove server", "移除伺服器", "サーバーを削除", "서버 제거", "Server entfernen", "Retirer le serveur"],
+            ["已订阅", "Subscribed", "已訂閱", "購読中", "구독 중", "Abonniert", "Abonné"],
+            ["开启", "On", "開啟", "オン", "켜짐", "Ein", "Activé"],
+            ["所有功能免费开放。赞助完全自愿，不解锁额外功能，也不会自动续费。", "All features are free. Support is optional, unlocks no extra features, and never renews automatically.", "所有功能免費開放。贊助完全自願，不解鎖額外功能，也不會自動續費。", "すべての機能が無料です。任意の支援で追加機能が解放されることや自動更新はありません。", "모든 기능은 무료입니다. 후원은 선택이며 추가 기능을 잠금 해제하거나 자동 갱신되지 않습니다.", "Alle Funktionen sind kostenlos. Unterstützung ist freiwillig, schaltet nichts frei und verlängert sich nie automatisch.", "Toutes les fonctions sont gratuites. Le soutien est facultatif, ne débloque rien et n’est jamais renouvelé automatiquement."],
+            ["我的音乐", "My music", "我的音樂", "マイミュージック", "내 음악", "Meine Musik", "Ma musique"],
+            ["未连接服务器", "No server connected", "未連接伺服器", "サーバー未接続", "연결된 서버 없음", "Kein Server verbunden", "Aucun serveur connecté"],
+            ["连接自己的音乐服务器", "Connect your own music server", "連接自己的音樂伺服器", "自分の音楽サーバーに接続", "나만의 음악 서버 연결", "Eigenen Musikserver verbinden", "Connectez votre serveur musical"],
+            ["体验演示资料库", "Explore the demo library", "體驗示範資料庫", "デモライブラリを体験", "데모 보관함 체험", "Demo-Mediathek entdecken", "Explorer la bibliothèque de démo"],
+            ["搜索音乐库", "Search your music library", "搜尋音樂庫", "ライブラリを検索", "음악 보관함 검색", "Musikmediathek durchsuchen", "Rechercher dans la bibliothèque"],
+            ["搜索歌曲、艺术家、专辑", "Songs, artists, albums", "搜尋歌曲、藝人、專輯", "曲・アーティスト・アルバム", "곡, 아티스트, 앨범", "Titel, Künstler, Alben", "Titres, artistes, albums"],
+            ["输入关键词，查找你的音乐。", "Enter a keyword to find your music.", "輸入關鍵字，尋找你的音樂。", "キーワードを入力して音楽を検索。", "키워드로 음악을 찾아보세요.", "Mit einem Suchbegriff Musik finden.", "Saisissez un mot-clé pour retrouver votre musique."],
+            ["长按查看歌曲操作", "Press and hold for track actions", "長按查看歌曲操作", "長押しで曲の操作を表示", "길게 눌러 곡 작업 보기", "Für Titelaktionen gedrückt halten", "Maintenez pour les actions du titre"],
+            ["加入队列", "Add to queue", "加入佇列", "キューに追加", "대기열에 추가", "Zur Warteschlange hinzufügen", "Ajouter à la file"],
+            ["刷新资料库", "Refresh library", "重新整理資料庫", "ライブラリを更新", "보관함 새로고침", "Mediathek aktualisieren", "Actualiser la bibliothèque"],
+            ["播放速度", "Playback speed", "播放速度", "再生速度", "재생 속도", "Wiedergabegeschwindigkeit", "Vitesse de lecture"],
+            ["音质设置对下一首歌曲生效。", "Audio quality applies to the next track.", "音質設定將套用到下一首歌曲。", "音質は次の曲から適用されます。", "음질은 다음 곡부터 적용됩니다.", "Audioqualität gilt ab dem nächsten Titel.", "La qualité audio s’applique au prochain titre."],
+            ["在线歌词", "Online lyrics", "線上歌詞", "オンライン歌詞", "온라인 가사", "Online-Liedtexte", "Paroles en ligne"],
+            ["缺少歌词时查询 LRCLIB，仅发送歌曲资料，不发送服务器凭据。", "When lyrics are missing, query LRCLIB using song details. Server credentials are never shared.", "缺少歌詞時查詢 LRCLIB，僅傳送歌曲資料，不傳送伺服器憑證。", "歌詞がない場合は曲の情報でLRCLIBを検索します。サーバー認証情報は送りません。", "가사가 없으면 곡 정보로 LRCLIB을 조회합니다. 서버 인증 정보는 보내지 않습니다.", "Bei fehlenden Texten werden nur Titeldaten an LRCLIB gesendet, keine Server-Zugangsdaten.", "En l’absence de paroles, seules les informations du titre sont envoyées à LRCLIB, jamais les identifiants du serveur."],
+            ["用手机扫描二维码打开", "Scan with your phone to open", "用手機掃描 QR 碼開啟", "スマートフォンでスキャンして開く", "휴대폰으로 스캔하여 열기", "Mit dem Smartphone scannen", "Scannez avec votre téléphone"],
+            ["服务器地址", "Server address", "伺服器位址", "サーバーアドレス", "서버 주소", "Serveradresse", "Adresse du serveur"],
+            ["密码 / 访问令牌", "Password / access token", "密碼 / 存取權杖", "パスワード / アクセストークン", "암호 / 액세스 토큰", "Passwort / Zugriffstoken", "Mot de passe / jeton d’accès"],
+            ["音乐库 ID / 共享路径（可选）", "Library ID / share path (optional)", "音樂庫 ID / 共享路徑（選填）", "ライブラリID / 共有パス（任意）", "보관함 ID / 공유 경로(선택)", "Mediathek-ID / Freigabepfad (optional)", "ID de bibliothèque / chemin partagé (facultatif)"],
+            ["请输入有效的服务器地址。", "Enter a valid server address.", "請輸入有效的伺服器位址。", "有効なサーバーアドレスを入力してください。", "유효한 서버 주소를 입력하세요.", "Bitte eine gültige Serveradresse eingeben.", "Saisissez une adresse serveur valide."],
+            ["没有发现可用的音乐服务器。", "No available music server found.", "找不到可用的音樂伺服器。", "利用可能な音楽サーバーがありません。", "사용 가능한 음악 서버가 없습니다.", "Kein verfügbarer Musikserver gefunden.", "Aucun serveur musical disponible."],
+            ["用手机扫描二维码完成 Plex 授权。", "Scan with your phone to authorize Plex.", "用手機掃描 QR 碼完成 Plex 授權。", "スマートフォンでスキャンしてPlexを認証してください。", "휴대폰으로 스캔하여 Plex를 인증하세요.", "Mit dem Smartphone scannen und Plex autorisieren.", "Scannez avec votre téléphone pour autoriser Plex."],
+            ["等待授权…", "Waiting for authorization…", "等待授權…", "認証を待っています…", "인증 대기 중…", "Warten auf Autorisierung…", "En attente d’autorisation…"],
+            ["授权已过期，请返回后重试。", "Authorization expired. Go back and try again.", "授權已過期，請返回後重試。", "認証が期限切れです。戻って再試行してください。", "인증이 만료되었습니다. 돌아가서 다시 시도하세요.", "Autorisierung abgelaufen. Zurückgehen und erneut versuchen.", "Autorisation expirée. Revenez en arrière et réessayez."],
+            ["长按歌曲并选择喜欢，即可在这里找到。", "Press and hold a track and choose Like to find it here.", "長按歌曲並選擇喜歡，即可在此找到。", "曲を長押ししてお気に入りに追加すると表示されます。", "곡을 길게 눌러 좋아요를 선택하면 여기에 표시됩니다.", "Titel gedrückt halten und als Favorit markieren.", "Maintenez un titre et ajoutez-le aux favoris pour le retrouver ici."],
+            ["浏览自己的音乐收藏，选择歌曲开始聆听。", "Browse your collection and choose a track to listen.", "瀏覽自己的收藏，選擇歌曲開始聆聽。", "コレクションから曲を選んで聴き始めましょう。", "보관함에서 곡을 선택해 들어보세요.", "Sammlung durchsuchen und einen Titel auswählen.", "Parcourez votre collection et choisissez un titre."],
+            ["当前音乐源未提供这些资料。", "This music source does not provide this information.", "目前音樂來源未提供這些資料。", "この音楽ソースはこの情報を提供しません。", "이 음악 소스는 해당 정보를 제공하지 않습니다.", "Diese Musikquelle liefert diese Informationen nicht.", "Cette source ne fournit pas ces informations."],
+            ["只移除本机歌单，原始音乐文件会保留。", "Only the local playlist is removed. Original audio files are kept.", "僅移除本機歌單，原始音樂檔案會保留。", "ローカルのプレイリストのみ削除し、音楽ファイルは残します。", "기기의 재생목록만 제거하며 원본 파일은 유지합니다.", "Nur die lokale Playlist wird entfernt. Audiodateien bleiben erhalten.", "Seule la playlist locale sera retirée. Les fichiers audio seront conservés."],
+            ["歌词可用时会显示在这里。", "Lyrics appear here when available.", "歌詞可用時會顯示在此。", "歌詞がある場合にここに表示されます。", "가사가 있으면 여기에 표시됩니다.", "Verfügbare Liedtexte erscheinen hier.", "Les paroles apparaissent ici lorsqu’elles sont disponibles."],
+            ["新歌单名称", "New playlist name", "新歌單名稱", "新しいプレイリスト名", "새 재생목록 이름", "Name der neuen Playlist", "Nom de la nouvelle playlist"],
+            ["新建并添加", "Create and add", "新增並加入", "作成して追加", "만들고 추가", "Erstellen und hinzufügen", "Créer et ajouter"],
+            ["清空历史", "Clear history", "清空記錄", "履歴を消去", "기록 지우기", "Verlauf leeren", "Effacer l’historique"],
+            ["从队列移除", "Remove from queue", "從佇列移除", "キューから削除", "대기열에서 제거", "Aus Warteschlange entfernen", "Retirer de la file"],
+            ["返回", "Back", "返回", "戻る", "뒤로", "Zurück", "Retour"],
+            ["循环", "Repeat", "循環", "リピート", "반복", "Wiederholen", "Répéter"],
+            ["直播", "Live", "直播", "ライブ", "라이브", "Live", "En direct"],
+            ["我的订阅", "My subscriptions", "我的訂閱", "購読中", "내 구독", "Meine Abonnements", "Mes abonnements"],
+            ["全部功能免费开放", "All features are free", "所有功能免費開放", "すべての機能が無料", "모든 기능 무료", "Alle Funktionen kostenlos", "Toutes les fonctions sont gratuites"],
+        ]
+        var result: [String: [String: String]] = [:]
+        for row in rows { for (index, code) in languages.enumerated() { result[code, default: [:]][row[0]] = row[index + 1] } }
+        return result
+    }()
+}

@@ -84,11 +84,8 @@ final class OnlineLyricsClient: @unchecked Sendable {
             .map { String($0).trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
         guard !texts.isEmpty else { return [] }
-        let total = duration > 0 ? duration : Double(texts.count * 4)
-        let step = max(2, total / Double(max(texts.count, 1)))
-        return texts.enumerated().map { index, text in
-            LyricLine(timestamp: Double(index) * step, text: text)
-        }
+        // 纯文本没有可信时间轴，负值明确标记为不可同步、不可点击跳转。
+        return texts.map { LyricLine(timestamp: -1, text: $0) }
     }
 
     /// 用于宽松匹配的归一化字符串。

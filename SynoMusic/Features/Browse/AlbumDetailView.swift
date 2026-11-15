@@ -6,6 +6,7 @@ struct AlbumDetailView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var reviewMode: AppReviewMode
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     let album: Album
     @State private var songs: [Song] = []
@@ -37,21 +38,24 @@ struct AlbumDetailView: View {
     }
 
     private var header: some View {
-        VStack(spacing: Metrics.m) {
+        let layout = horizontalSizeClass == .regular
+            ? AnyLayout(HStackLayout(alignment: .center, spacing: 32))
+            : AnyLayout(VStackLayout(spacing: Metrics.m))
+        return layout {
             CoverArt(
                 url: session.musicClient?.albumCoverURL(album: album),
                 cornerRadius: Theme.cornerHero,
                 fallbackSeed: album.id,
                 lookup: CoverLookupQuery(title: album.name, artist: album.artist, album: album.name)
             )
-            .frame(width: albumCoverSide, height: albumCoverSide)
+            .frame(width: horizontalSizeClass == .regular ? 220 : 200, height: horizontalSizeClass == .regular ? 220 : 200)
             .shadow(color: .black.opacity(0.25), radius: 28, y: 16)
             .padding(.top, Metrics.l)
 
-            VStack(spacing: 4) {
+            VStack(alignment: horizontalSizeClass == .regular ? .leading : .center, spacing: 8) {
                 Text(album.name)
                     .font(.nocTitle)
-                    .multilineTextAlignment(.center)
+                    .multilineTextAlignment(horizontalSizeClass == .regular ? .leading : .center)
                 Text(album.displayArtist)
                     .font(.nocBody)
                     .foregroundStyle(.secondary)
@@ -62,11 +66,7 @@ struct AlbumDetailView: View {
                 }
             }
         }
-    }
-
-    /// 根据屏幕高度限制专辑封面边长，避免竖屏封面挤压标题区。
-    private var albumCoverSide: CGFloat {
-        min(220, UIScreen.main.bounds.height * 0.28)
+        .frame(maxWidth: .infinity, alignment: horizontalSizeClass == .regular ? .leading : .center)
     }
 
     private var actions: some View {

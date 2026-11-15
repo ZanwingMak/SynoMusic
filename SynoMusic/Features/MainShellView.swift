@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// 主框架：底部 Tab + 浮动迷你播放器。
 struct MainShellView: View {
@@ -9,12 +10,16 @@ struct MainShellView: View {
     @EnvironmentObject private var navigation: AppNavigationState
     @EnvironmentObject private var reviewMode: AppReviewMode
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Binding var showFullPlayer: Bool
 
     @State private var showQueueSheet: Bool = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
+            if horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad {
+                IPadShellView(showFullPlayer: $showFullPlayer)
+            } else {
             TabView(selection: $navigation.selectedTab) {
                 NavigationStack {
                     LibraryHomeView()
@@ -80,6 +85,7 @@ struct MainShellView: View {
                 .padding(.horizontal, Metrics.s)
                 .padding(.bottom, Metrics.miniPlayerBottomOffset)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
             }
         }
         .onAppear {
@@ -192,7 +198,7 @@ struct QueueSheet: View {
 }
 
 /// 标记当前视图树已经由外层容器统一处理了迷你播放器底部预留。
-private struct MiniPlayerReservationHandledKey: EnvironmentKey {
+struct MiniPlayerReservationHandledKey: EnvironmentKey {
     static let defaultValue = false
 }
 

@@ -6,6 +6,7 @@ struct BrowseRootView: View {
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var reviewMode: AppReviewMode
     @EnvironmentObject private var navigation: AppNavigationState
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showServerPrompt = false
 
     private var categories: [(label: String, icon: String, route: BrowseRoute, gradient: [Color])] {
@@ -32,7 +33,7 @@ struct BrowseRootView: View {
 
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Metrics.m) {
+            LazyVGrid(columns: horizontalSizeClass == .regular ? [GridItem(.adaptive(minimum: 220, maximum: 340), spacing: Metrics.m)] : [GridItem(.flexible()), GridItem(.flexible())], spacing: Metrics.m) {
                 ForEach(categories, id: \.label) { cat in
                     categoryEntry(cat)
                 }
