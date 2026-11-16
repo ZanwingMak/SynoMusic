@@ -68,7 +68,7 @@ struct FullPlayerView: View {
                         .frame(height: 56)
                     controlBar
                         .frame(height: 92)
-                    bottomTools
+                    bottomTools()
                         .frame(height: 48)
                         .padding(.bottom, max(Metrics.s, geo.safeAreaInsets.bottom))
                 }
@@ -205,7 +205,7 @@ struct FullPlayerView: View {
                     trackInfo.frame(minHeight: 80)
                     progressSection.frame(height: 56)
                     controlBar.frame(height: 86)
-                    bottomTools.frame(height: 48)
+                    bottomTools(showsWideLayout: true).frame(height: 48)
                     Spacer(minLength: 0)
                 }
                 .frame(maxWidth: 480)
@@ -430,9 +430,10 @@ struct FullPlayerView: View {
                 Image(systemName: "chevron.down")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(.white)
-                    .frame(width: 38, height: 38)
+                    .frame(width: 44, height: 44)
                     .background(.white.opacity(0.12), in: Circle())
             }
+            .accessibilityLabel("收起播放器".t)
             Spacer()
             VStack(spacing: 2) {
                 Text("正在播放".t).font(.nocLabel).foregroundStyle(.white.opacity(0.6))
@@ -809,6 +810,8 @@ extension FullPlayerView {
                 onEditingChanged: handleSeekEditingChanged
             )
             .tint(.white)
+            .accessibilityLabel("播放进度".t)
+            .accessibilityValue(format(isSeeking ? seekDraft : playback.currentTime))
             HStack {
                 Text(format(isSeeking ? seekDraft : playback.currentTime))
                 Spacer()
@@ -856,6 +859,8 @@ extension FullPlayerView {
                         Image(systemName: "text.badge.plus")
                             .font(.system(size: 22, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.75))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("加入歌单".t)
@@ -869,11 +874,13 @@ extension FullPlayerView {
                             .foregroundStyle(playlists.isFavorite(song) ? Color(red: 1, green: 0.32, blue: 0.45) : .white.opacity(0.75))
                             .scaleEffect(playlists.isFavorite(song) ? 1.1 : 1.0)
                             .animation(.spring(response: 0.3, dampingFraction: 0.55), value: playlists.isFavorite(song))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(playlists.isFavorite(song) ? "取消喜欢".t : "喜欢".t)
                 }
-                .frame(width: 82, alignment: .trailing)
+                .frame(width: 102, alignment: .trailing)
             }
         }
         .padding(.horizontal, Metrics.l)
@@ -890,9 +897,11 @@ extension FullPlayerView {
             .lineLimit(1)
     }
 
+    /// 播放控制使用动作名称供辅助技术朗读。
     private var controlBar: some View {
         HStack(spacing: 36) {
             CircleIconButton(systemName: "backward.fill", size: 52) { playback.previous() }
+                .accessibilityLabel("上一首".t)
             Button {
                 Haptics.soft()
                 playback.togglePlayPause()
@@ -908,11 +917,14 @@ extension FullPlayerView {
                 }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel((playback.isPlaying ? "暂停" : "播放").t)
             CircleIconButton(systemName: "forward.fill", size: 52) { playback.next() }
+                .accessibilityLabel("下一首".t)
         }
     }
 
-    private var bottomTools: some View {
+    /// 工具栏提供真实动作与开关状态，宽屏歌词按钮定位到右侧歌词面板。
+    private func bottomTools(showsWideLayout: Bool = false) -> some View {
         HStack(spacing: 0) {
             bottomToolButton {
                 playback.toggleShuffle()
@@ -920,6 +932,8 @@ extension FullPlayerView {
                 Image(systemName: "shuffle")
                     .foregroundStyle(playback.isShuffling ? Theme.accent : .white.opacity(0.75))
             }
+            .accessibilityLabel("随机播放".t)
+            .accessibilityValue((playback.isShuffling ? "开启" : "关闭").t)
             bottomToolButton {
                 showSleep = true
             } label: {
@@ -931,22 +945,28 @@ extension FullPlayerView {
                     }
                 }
             }
+            .accessibilityLabel("睡眠定时".t)
+            .accessibilityValue((sleepActive ? "开启" : "关闭").t)
             bottomToolButton {
-                withAnimation(.easeInOut(duration: 0.2)) { showLyrics.toggle() }
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    if showsWideLayout { widePane = "lyrics" } else { showLyrics.toggle() }
+                }
             } label: {
-                Image(systemName: showLyrics ? "music.note" : "quote.bubble.fill")
-                    .foregroundStyle(.white.opacity(0.85))
+                Image(systemName: !showsWideLayout && showLyrics ? "music.note" : "quote.bubble.fill")
+                    .foregroundStyle(showsWideLayout && widePane == "lyrics" ? Theme.accent : .white.opacity(0.85))
                     .frame(width: 28, height: 28)
             }
+            .accessibilityLabel((showsWideLayout || !showLyrics ? "歌词" : "封面").t)
             if shouldShowDownloadActions {
                 bottomToolButton {
                     handleBottomDownloadTap()
                 } label: {
                     downloadToolIcon
                 }
+                .accessibilityLabel(currentDownloadStatus == .completed || currentDownloadStatus == .downloading || currentDownloadStatus == .pending ? "下载管理".t : "下载歌曲".t)
             }
             AirPlayButton()
-                .frame(width: 36, height: 36)
+                .frame(width: 44, height: 44)
                 .frame(maxWidth: .infinity)
             bottomToolButton {
                 showQueue = true
@@ -954,12 +974,15 @@ extension FullPlayerView {
                 Image(systemName: "list.bullet")
                     .foregroundStyle(.white.opacity(0.85))
             }
+            .accessibilityLabel("播放队列".t)
             bottomToolButton {
                 playback.cycleRepeatMode()
             } label: {
                 Image(systemName: repeatIcon)
                     .foregroundStyle(playback.repeatMode == .off ? .white.opacity(0.75) : Theme.accent)
             }
+            .accessibilityLabel("循环".t)
+            .accessibilityValue(repeatDescription.t)
         }
         .font(.system(size: 18, weight: .semibold))
         .padding(.horizontal, Metrics.xl)
@@ -1016,10 +1039,20 @@ extension FullPlayerView {
             action()
         } label: {
             label()
-                .frame(width: 36, height: 36)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
+    }
+
+    /// 精确描述当前循环模式，避免系统图标名称把关闭状态误读为单曲循环。
+    private var repeatDescription: String {
+        switch playback.repeatMode {
+        case .off: "关闭"
+        case .all: "列表循环"
+        case .one: "单曲循环"
+        }
     }
 
     private var repeatIcon: String {

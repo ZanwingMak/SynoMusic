@@ -33,6 +33,7 @@ struct AddToPlaylistSheet: View {
                                 .foregroundStyle(.primary)
                             Spacer()
                         }
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
