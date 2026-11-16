@@ -2,7 +2,7 @@
   const supported = ['en', 'zh-Hans', 'zh-Hant', 'ja', 'ko', 'de', 'fr'];
   const imageLocales = { en: 'en-US', 'zh-Hans': 'zh-Hans', 'zh-Hant': 'zh-Hant', ja: 'ja', ko: 'ko', de: 'de-DE', fr: 'fr-FR' };
   const appStore = 'https://apps.apple.com/app/id6784094020';
-  const release = 'https://github.com/ZanwingMak/SynoMusic/releases/tag/v1.6.11';
+  const release = 'https://github.com/ZanwingMak/SynoMusic/releases/tag/v1.6.12';
   let translations = {};
   let language = 'en';
   let platform = 'mac';
@@ -39,7 +39,7 @@
       button.tabIndex = button.dataset.client === platform ? 0 : -1;
     });
     document.querySelector('#client-preview').setAttribute('aria-labelledby', 'tab-' + platform);
-    document.querySelector('#platform-label').textContent = platform === 'mac' ? 'macOS 13+' : platform === 'windows' ? 'Windows 10 / 11 · Preview' : platform === 'iphone' ? 'iOS 17+' : platform === 'tv' ? 'tvOS 17+ · TestFlight' : 'iPadOS 17+ · 1.7 TestFlight';
+    document.querySelector('#platform-label').textContent = platform === 'mac' ? 'macOS 13+ · 1.6.12' : platform === 'windows' ? 'Windows 10 / 11 · 1.6.12' : platform === 'iphone' ? 'iOS 17+' : platform === 'tv' ? 'tvOS 17+ · TestFlight' : 'iPadOS 17+ · 1.7 TestFlight';
     document.querySelector('#client-title').innerHTML = text(platform + 'Title');
     document.querySelector('#client-description').textContent = text(platform + 'Body');
     const list = document.querySelector('#client-highlights');

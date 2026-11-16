@@ -57,11 +57,11 @@
     "macTitle": "Your library.<br>A proper home on Mac.",
     "macBody": "Built with MyGo around the way you use your Mac. A familiar sidebar, generous album views, a persistent player and room for the queue and lyrics.",
     "macHighlights": [
-      "Native menus and keyboard shortcuts",
+      "Menu bar player and native keyboard shortcuts",
       "System media keys and Control Center",
       "Local files, server sources and offline downloads"
     ],
-    "macButton": "Download Mac preview ↗",
+    "macButton": "Download for Mac ↗",
     "macIntel": "Intel Mac ↗",
     "iphoneTitle": "A little closer<br>to your music.",
     "iphoneBody": "A native SwiftUI player for all the little moments: synchronized lyrics, background playback, AirPlay and Lock Screen controls.",
@@ -83,10 +83,10 @@
     "windowsBody": "A familiar desktop workspace with a native Windows title bar, Ctrl shortcuts and system media controls. Connect your servers, import local music, and keep your queue and lyrics close.",
     "windowsHighlights": [
       "Windows Credential Manager",
-      "System media keys and keyboard shortcuts",
+      "System tray player and media keys",
       "x64 and ARM64 installers"
     ],
-    "windowsButton": "Download Windows preview ↗",
+    "windowsButton": "Download for Windows ↗",
     "tvTitle": "Your music,<br>in the living room.",
     "tvBody": "SynoMusic for Apple TV is in TestFlight internal testing. Connect your own music server, explore with Siri Remote and enjoy a player designed for the big screen.",
     "tvHighlights": [
@@ -154,11 +154,11 @@
     "macTitle": "你的资料库，<br>在 Mac 上自在安放。",
     "macBody": "基于 MyGo，围绕 Mac 的使用习惯而设计。熟悉的侧栏、舒展的专辑视图、常驻播放器，还有留给队列与歌词的空间。",
     "macHighlights": [
-      "原生菜单与键盘快捷键",
+      "菜单栏播放器与原生快捷键",
       "系统媒体键与控制中心",
       "本地文件、服务器音乐源与离线下载"
     ],
-    "macButton": "下载 Mac 预览版 ↗",
+    "macButton": "下载 Mac 客户端 ↗",
     "macIntel": "Intel Mac 版 ↗",
     "iphoneTitle": "和喜爱的音乐，<br>再靠近一点。",
     "iphoneBody": "为生活里的片刻而生的原生 SwiftUI 播放器：同步歌词、后台播放、AirPlay 与锁屏控制，随时相伴。",
@@ -180,10 +180,10 @@
     "windowsBody": "保留 Windows 原生标题栏、Ctrl 快捷键和系统媒体控制。连接音乐服务器、导入本地音乐，让队列与歌词始终触手可及。",
     "windowsHighlights": [
       "Windows 凭据管理器安全保存凭据",
-      "系统媒体键与键盘快捷键",
+      "系统托盘播放器与媒体键",
       "提供 x64 与 ARM64 安装包"
     ],
-    "windowsButton": "下载 Windows 预览版 ↗",
+    "windowsButton": "下载 Windows 客户端 ↗",
     "tvTitle": "让自己的音乐，<br>填满客厅。",
     "tvBody": "Apple TV 客户端已进入 TestFlight 内部测试。连接自己的音乐服务器，用 Siri Remote 探索曲库，在专为电视设计的播放器中享受音乐。",
     "tvHighlights": [
@@ -251,11 +251,11 @@
     "macTitle": "你的資料庫，<br>在 Mac 上自在安放。",
     "macBody": "以 MyGo 打造，圍繞 Mac 的使用習慣而設計。熟悉的側欄、舒展的專輯檢視、常駐播放器，還有留給佇列與歌詞的空間。",
     "macHighlights": [
-      "原生選單與鍵盤快速鍵",
+      "選單列播放器與原生快捷鍵",
       "系統媒體鍵與控制中心",
       "本機檔案、伺服器音樂來源與離線下載"
     ],
-    "macButton": "下載 Mac 預覽版 ↗",
+    "macButton": "下載 Mac 用戶端 ↗",
     "macIntel": "Intel Mac 版 ↗",
     "iphoneTitle": "和喜愛的音樂，<br>再靠近一點。",
     "iphoneBody": "為生活裡的片刻而生的原生 SwiftUI 播放器：同步歌詞、背景播放、AirPlay 與鎖定畫面控制，隨時相伴。",
@@ -277,10 +277,10 @@
     "windowsBody": "保留 Windows 原生標題列、Ctrl 快捷鍵和系統媒體控制。連接音樂伺服器、匯入本機音樂，讓佇列與歌詞隨手可得。",
     "windowsHighlights": [
       "Windows 認證管理員安全儲存憑證",
-      "系統媒體鍵與鍵盤快捷鍵",
+      "系統匣播放器與媒體鍵",
       "提供 x64 與 ARM64 安裝程式"
     ],
-    "windowsButton": "下載 Windows 預覽版 ↗",
+    "windowsButton": "下載 Windows 用戶端 ↗",
     "tvTitle": "讓自己的音樂，<br>填滿客廳。",
     "tvBody": "Apple TV 客戶端已進入 TestFlight 內部測試。連接自己的音樂伺服器，以 Siri Remote 探索曲庫，在專為電視設計的播放器中享受音樂。",
     "tvHighlights": [
@@ -348,11 +348,11 @@
     "macTitle": "自分のライブラリに、<br>Mac らしい居場所を。",
     "macBody": "Mac での使い方を中心に、MyGo で開発しました。慣れ親しんだサイドバー、ゆったりしたアルバム表示、常設プレーヤー。キューと歌詞にも、十分な場所を。",
     "macHighlights": [
-      "ネイティブメニューとキーボードショートカット",
+      "メニューバープレイヤーとネイティブショートカット",
       "システムのメディアキーとコントロールセンター",
       "ローカルファイル、サーバー音源、オフラインダウンロード"
     ],
-    "macButton": "Mac プレビューを入手 ↗",
+    "macButton": "Mac 版をダウンロード ↗",
     "macIntel": "Intel Mac 版 ↗",
     "iphoneTitle": "大切な音楽を、<br>もう少し近くに。",
     "iphoneBody": "日々の小さな時間に寄り添う、SwiftUI のネイティブプレーヤー。同期歌詞、バックグラウンド再生、AirPlay、ロック画面での操作に対応しています。",
@@ -374,10 +374,10 @@
     "windowsBody": "Windows 標準のタイトルバー、Ctrl ショートカット、メディア操作に対応。サーバーやローカルの音楽を、キューと歌詞とともに楽しめます。",
     "windowsHighlights": [
       "Windows 資格情報マネージャー",
-      "システムメディアキーとショートカット",
+      "システムトレイの再生操作とメディアキー",
       "x64・ARM64 インストーラー"
     ],
-    "windowsButton": "Windows プレビューを入手 ↗",
+    "windowsButton": "Windows 版をダウンロード ↗",
     "tvTitle": "自分の音楽を、<br>リビングでも。",
     "tvBody": "Apple TV版はTestFlight内部テスト中です。自分の音楽サーバーに接続し、Siri Remoteでライブラリを探して、大画面向けプレーヤーを楽しめます。",
     "tvHighlights": [
@@ -445,11 +445,11 @@
     "macTitle": "나의 보관함을,<br>Mac다운 공간에.",
     "macBody": "Mac을 사용하는 방식에 맞춰 MyGo로 만들었습니다. 익숙한 사이드바, 여유로운 앨범 보기, 항상 곁에 있는 플레이어. 대기열과 가사에도 넉넉한 공간을 마련했습니다.",
     "macHighlights": [
-      "네이티브 메뉴와 키보드 단축키",
+      "메뉴 막대 플레이어와 기본 단축키",
       "시스템 미디어 키와 제어 센터",
       "로컬 파일, 서버 음악 소스, 오프라인 다운로드"
     ],
-    "macButton": "Mac 미리 보기 다운로드 ↗",
+    "macButton": "Mac용 다운로드 ↗",
     "macIntel": "Intel Mac용 ↗",
     "iphoneTitle": "좋아하는 음악을<br>조금 더 가까이.",
     "iphoneBody": "일상의 작은 순간을 위한 SwiftUI 네이티브 플레이어. 동기화 가사, 백그라운드 재생, AirPlay, 잠금 화면 제어를 지원합니다.",
@@ -471,10 +471,10 @@
     "windowsBody": "Windows 기본 제목 표시줄과 Ctrl 단축키, 시스템 미디어 제어를 지원합니다. 서버와 로컬 음악을 연결하고 대기열과 가사를 가까이 두세요.",
     "windowsHighlights": [
       "Windows 자격 증명 관리자",
-      "시스템 미디어 키와 키보드 단축키",
+      "시스템 트레이 플레이어와 미디어 키",
       "x64 및 ARM64 설치 프로그램"
     ],
-    "windowsButton": "Windows 미리 보기 다운로드 ↗",
+    "windowsButton": "Windows용 다운로드 ↗",
     "tvTitle": "거실에서도<br>나의 음악을.",
     "tvBody": "Apple TV 앱은 TestFlight 내부 테스트 중입니다. 자신의 음악 서버에 연결하고 Siri Remote로 보관함을 둘러보며 큰 화면을 위해 설계한 플레이어를 즐기세요.",
     "tvHighlights": [
@@ -542,11 +542,11 @@
     "macTitle": "Deine Mediathek.<br>Auf dem Mac zu Hause.",
     "macBody": "Mit MyGo entwickelt — so, wie du deinen Mac nutzt. Eine vertraute Seitenleiste, großzügige Albumansichten, ein dauerhaft sichtbarer Player und Platz für Warteschlange und Liedtexte.",
     "macHighlights": [
-      "Native Menüs und Tastaturkurzbefehle",
+      "Menüleisten-Player und native Tastenkürzel",
       "System-Medientasten und Kontrollzentrum",
       "Lokale Dateien, Serverquellen und Offline-Downloads"
     ],
-    "macButton": "Mac-Vorschau laden ↗",
+    "macButton": "Für Mac laden ↗",
     "macIntel": "Für Intel-Macs ↗",
     "iphoneTitle": "Deiner Musik<br>ein bisschen näher.",
     "iphoneBody": "Ein nativer SwiftUI-Player für die kleinen Momente: synchronisierte Liedtexte, Hintergrundwiedergabe, AirPlay und Steuerung auf dem Sperrbildschirm.",
@@ -568,10 +568,10 @@
     "windowsBody": "Mit nativer Windows-Titelleiste, Strg-Tastenkürzeln und Mediensteuerung. Verbinde Server und lokale Musik und behalte Warteschlange und Liedtexte im Blick.",
     "windowsHighlights": [
       "Windows-Anmeldeinformationsverwaltung",
-      "Medientasten und Tastenkürzel",
+      "Infobereich-Player und Medientasten",
       "Installationsprogramme für x64 und ARM64"
     ],
-    "windowsButton": "Windows-Vorschau laden ↗",
+    "windowsButton": "Für Windows laden ↗",
     "tvTitle": "Deine Musik.<br>Auch im Wohnzimmer.",
     "tvBody": "SynoMusic für Apple TV befindet sich im internen TestFlight-Test. Verbinde deinen Musikserver, navigiere mit Siri Remote und genieße einen Player für den großen Bildschirm.",
     "tvHighlights": [
@@ -639,11 +639,11 @@
     "macTitle": "Votre bibliothèque.<br>Bien chez elle sur Mac.",
     "macBody": "Développé avec MyGo autour de vos habitudes sur Mac. Une barre latérale familière, des albums bien mis en valeur, un lecteur toujours présent et de la place pour la file d’attente et les paroles.",
     "macHighlights": [
-      "Menus natifs et raccourcis clavier",
+      "Lecteur dans la barre des menus et raccourcis natifs",
       "Touches multimédias du système et Centre de contrôle",
       "Fichiers locaux, sources serveur et téléchargements hors ligne"
     ],
-    "macButton": "Télécharger l’aperçu Mac ↗",
+    "macButton": "Télécharger pour Mac ↗",
     "macIntel": "Pour Mac Intel ↗",
     "iphoneTitle": "Un peu plus près<br>de votre musique.",
     "iphoneBody": "Un lecteur natif SwiftUI pour les petits moments du quotidien : paroles synchronisées, lecture en arrière-plan, AirPlay et commandes sur l’écran verrouillé.",
@@ -665,10 +665,10 @@
     "windowsBody": "Une barre de titre Windows native, des raccourcis Ctrl et les commandes multimédias du système. Retrouvez serveurs, musique locale, file et paroles dans un même espace.",
     "windowsHighlights": [
       "Gestionnaire d’identifiants Windows",
-      "Touches multimédias et raccourcis clavier",
+      "Lecteur dans la zone de notification et touches multimédias",
       "Installateurs x64 et ARM64"
     ],
-    "windowsButton": "Télécharger l’aperçu Windows ↗",
+    "windowsButton": "Télécharger pour Windows ↗",
     "tvTitle": "Votre musique,<br>dans le salon.",
     "tvBody": "SynoMusic pour Apple TV est en test interne sur TestFlight. Connectez votre serveur, explorez avec Siri Remote et profitez d’un lecteur conçu pour le grand écran.",
     "tvHighlights": [
