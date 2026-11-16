@@ -7,9 +7,6 @@
 :root[data-skin] .button.primary {color:var(--on-accent);box-shadow:inset 0 1px var(--edge),0 4px 10px color-mix(in srgb,var(--accent) 12%,transparent)}
 :root[data-skin] .source-select {background:var(--glass);border-color:var(--edge);border-radius:var(--skin-radius)}
 :root[data-skin] .button,:root[data-skin] .nav-item,:root[data-skin] .search-field {border-radius:calc(var(--skin-radius)*.7)}
-:root[data-skin] .collection-shortcuts>button {border-radius:var(--skin-radius)}
-:root[data-skin] .listening-banner {background:var(--soft);border-radius:calc(var(--skin-radius)*1.45)}
-:root[data-skin] .banner-copy h2 {color:var(--text)}
 :root[data-skin] .album-cover,:root[data-skin] .album-card img,:root[data-skin] .expanded-cover {border-radius:var(--skin-radius)}
 :root[data-skin] .album-card img {object-fit:cover}
 :root[data-skin] .expanded-cover>img {border-radius:inherit}
@@ -26,11 +23,9 @@
 :root[data-skin=evergreen] .expanded-player::after {background:linear-gradient(145deg,var(--stage-scrim) 20%,transparent 180%)}
 :root[data-skin=seaglass] .toolbar,:root[data-skin=seaglass] .player-bar {backdrop-filter:blur(45px) saturate(.75)}
 :root[data-skin=seaglass] .sidebar {background:linear-gradient(135deg,var(--glass),var(--sidebar))}
-:root[data-skin=rosewood] .collection-shortcuts>button {background:linear-gradient(135deg,var(--glass),var(--soft));border-color:var(--edge)}
 :root[data-skin=rosewood] .nav-item.selected {border-radius:100px}
 :root[data-skin=rosewood] .nav-item.selected::before {left:8px;top:18px;bottom:18px}
 :root[data-skin=amber] .sidebar {background-image:repeating-linear-gradient(90deg,transparent 0 28px,color-mix(in srgb,var(--text) 3%,transparent) 28px 29px)}
-:root[data-skin=amber] .listening-banner {border:1px solid var(--line);box-shadow:inset 0 0 0 5px var(--bg),var(--shadow)}
 :root[data-skin=amber] .quality-tags>span {border-radius:2px}
 .skin-settings {container-type:inline-size;max-width:900px;margin:0 0 34px;scroll-margin-top:25px}
 .skin-settings-heading {display:flex;gap:20px;align-items:center;justify-content:space-between;margin-bottom:20px}

@@ -167,7 +167,7 @@ const featureLabels: Record<string, string[]> = {
   "Remove download": ["移除下载", "移除下載", "ダウンロードを削除", "다운로드 제거", "Download entfernen", "Retirer le téléchargement"],
   "Download removed": ["下载已移除", "下載已移除", "ダウンロードを削除しました", "다운로드를 제거했습니다", "Download entfernt", "Téléchargement retiré"],
   "No downloads yet": ["还没有下载音乐，可从歌曲的更多菜单下载。", "尚未下載音樂，可從歌曲的更多選單下載。", "曲のメニューから音楽をダウンロードできます。", "곡의 더 보기 메뉴에서 음악을 다운로드하세요.", "Lade Musik über das Titelmenü herunter.", "Téléchargez de la musique depuis le menu d’un titre."],
-  "No favorites yet": ["点击歌曲旁的爱心，即可收藏喜欢的音乐。", "點擊歌曲旁的愛心，即可收藏喜愛的音樂。", "曲のハートを押してお気に入りに追加できます。", "곡 옆의 하트를 눌러 좋아요에 추가하세요.", "Markiere Titel mit dem Herz als Favoriten.", "Ajoutez des favoris avec le cœur à côté d’un titre."],
+  "No favorites yet": ["还没有喜欢的歌曲", "尚未收藏歌曲", "お気に入りはまだありません", "아직 좋아요한 곡이 없습니다", "Noch keine Favoriten", "Aucun favori pour le moment"],
   "No listening history yet": ["播放过的歌曲会出现在这里。", "播放過的歌曲會顯示在這裡。", "再生した曲がここに表示されます。", "재생한 곡이 여기에 표시됩니다.", "Abgespielte Titel erscheinen hier.", "Les titres écoutés apparaîtront ici."],
   "This playlist is empty": ["这张歌单暂时没有歌曲。", "這張歌單暫時沒有歌曲。", "このプレイリストには曲がありません。", "이 재생목록은 비어 있습니다.", "Diese Playlist ist leer.", "Cette playlist est vide."],
   "Playback position": ["播放进度", "播放進度", "再生位置", "재생 위치", "Wiedergabeposition", "Position de lecture"],
@@ -576,6 +576,13 @@ const featureLabels: Record<string, string[]> = {
     "Résultats de recherche"
   ]
 };
+Object.assign(featureLabels, {
+  "Continue listening": ["继续聆听", "繼續聆聽", "続きから聴く", "이어서 듣기", "Weiterhören", "Reprendre l’écoute"],
+  "From your library": ["来自资料库", "來自資料庫", "ライブラリから", "보관함에서", "Aus deiner Mediathek", "Dans votre bibliothèque"],
+  "See all": ["查看全部", "顯示全部", "すべて表示", "모두 보기", "Alle anzeigen", "Tout afficher"],
+  "Close to tray": ["关闭窗口时收至托盘", "關閉視窗時縮至選單列", "閉じるときにトレイへ収納", "창을 닫으면 트레이로 최소화", "Beim Schließen im Infobereich behalten", "Réduire dans la barre des menus à la fermeture"],
+  "Keep music playing when you close the window. Reopen it from the system tray or menu bar.": ["关闭窗口后继续播放，可从菜单栏或系统托盘重新打开。", "關閉視窗後繼續播放，可從選單列或系統匣重新開啟。", "ウインドウを閉じても再生を続けます。メニューバーやトレイから再表示できます。", "창을 닫아도 재생을 계속합니다. 메뉴 막대나 시스템 트레이에서 다시 열 수 있습니다.", "Die Musik läuft nach dem Schließen weiter. Das Fenster lässt sich über Menüleiste oder Infobereich wieder öffnen.", "La lecture continue après la fermeture. Rouvrez la fenêtre depuis la barre des menus ou la zone de notification."]
+});
 const featureLanguages = ["zh-Hans","zh-Hant","ja","ko","de","fr"];
 
 /** 按英文键查询本地化文案，缺失时回退到英文。 */

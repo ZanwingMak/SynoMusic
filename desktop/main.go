@@ -40,6 +40,15 @@ func main() {
 	mygo.Bind(service)
 	mygo.Protocol.Handle("music", http.HandlerFunc(service.serveMedia))
 	mygo.App.WhenReady(func() {
+		setupTray(service)
+		playbackItems := []*mygo.MenuItem{
+			{Label: "Play / Pause", Accelerator: "CmdOrCtrl+P", Click: func(*mygo.MenuItem, *mygo.Window) { playbackCommand.Broadcast("toggle") }},
+			{Label: "Next Track", Accelerator: "CmdOrCtrl+Right", Click: func(*mygo.MenuItem, *mygo.Window) { playbackCommand.Broadcast("next") }},
+			{Label: "Previous Track", Accelerator: "CmdOrCtrl+Left", Click: func(*mygo.MenuItem, *mygo.Window) { playbackCommand.Broadcast("previous") }},
+		}
+		if desktopTray != nil {
+			playbackItems = append(playbackItems, mygo.Separator(), desktopTray.controls)
+		}
 		mygo.App.SetMenu(mygo.NewMenu([]*mygo.MenuItem{
 			{Role: mygo.RoleAppMenu},
 			{Label: "File", Submenu: []*mygo.MenuItem{
@@ -49,11 +58,7 @@ func main() {
 				mygo.Separator(), {Role: mygo.RoleClose},
 			}},
 			{Role: mygo.RoleEditMenu},
-			{Label: "Playback", Submenu: []*mygo.MenuItem{
-				{Label: "Play / Pause", Accelerator: "CmdOrCtrl+P", Click: func(*mygo.MenuItem, *mygo.Window) { playbackCommand.Broadcast("toggle") }},
-				{Label: "Next Track", Accelerator: "CmdOrCtrl+Right", Click: func(*mygo.MenuItem, *mygo.Window) { playbackCommand.Broadcast("next") }},
-				{Label: "Previous Track", Accelerator: "CmdOrCtrl+Left", Click: func(*mygo.MenuItem, *mygo.Window) { playbackCommand.Broadcast("previous") }},
-			}},
+			{Label: "Playback", Submenu: playbackItems},
 			{Role: mygo.RoleViewMenu}, {Role: mygo.RoleWindowMenu},
 		}))
 		openWindow()
@@ -96,9 +101,9 @@ func openWindow() {
 	}
 	mainWindow = mygo.NewWindow(mygo.WindowOptions{Title: "SynoMusic", Width: 1420, Height: 920, MinWidth: 980, MinHeight: 680,
 		TitleBarStyle: titleBar, TitleBarHeight: 54, BackgroundColor: "light-dark(#f7f6f3, #1a1c1b)", URL: "/"})
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" || desktopTray != nil {
 		mainWindow.OnClose(func(event *mygo.CloseEvent) {
-			if !quitting {
+			if !quitting && (desktopTray != nil && desktopTray.closeToTray || desktopTray == nil && runtime.GOOS == "darwin") {
 				event.PreventDefault()
 				mainWindow.Hide()
 			}

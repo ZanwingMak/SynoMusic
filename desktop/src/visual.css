@@ -39,7 +39,7 @@
     --edge:#ffffff16;--shadow:0 18px 55px #11151030;
   }
 }
-.sidebar {background:linear-gradient(155deg,var(--glass),transparent 80%),var(--sidebar)}
+.sidebar {background:var(--sidebar)}
 .brand-mark {border-radius:10px;box-shadow:inset 0 1px #fff4,0 5px 12px #723e2520}
 .brand {letter-spacing:-.7px}
 .source-select {background:var(--glass);border:1px solid var(--edge);box-shadow:none}
@@ -52,8 +52,8 @@
 .search-field {border-radius:9px;background:var(--glass);transition:border-color 180ms ease}
 .search-field:focus-within {border-color:var(--accent)}
 .content {padding-top:32px}
-.page-heading h1 {font-size:clamp(27px,2.6vw,37px);letter-spacing:-1.4px}
-.eyebrow {letter-spacing:1.8px;font-size:8px}
+.page-heading h1 {font-size:clamp(26px,2.6vw,32px);letter-spacing:-.8px}
+.eyebrow {letter-spacing:.8px;font-size:10px}
 .button {border-radius:9px;min-height:35px}
 .button.primary {color:#fffaf3;box-shadow:inset 0 1px #ffffff30,0 4px 10px #5e34261a}
 .button.primary:hover {filter:brightness(1.08)}
@@ -61,9 +61,9 @@
 .album-card {gap:7px;border-radius:12px}
 .album-cover {border-radius:12px;isolation:isolate}
 .album-card img {border-radius:12px;box-shadow:0 7px 17px #151b1510;transition:transform 400ms var(--motion-ease),filter 300ms ease}
-.album-card:hover img {transform:translateY(-5px) scale(1.015);filter:brightness(1.035)}
-.album-card strong {font-size:12px;letter-spacing:-.15px}
-.album-card>span {font-size:10px}
+.album-card:hover img {transform:translateY(-2px) scale(1.008);filter:brightness(1.035)}
+.album-card strong {font-size:13px;letter-spacing:-.15px;line-height:1.4}
+.album-card>span {font-size:11px;line-height:1.4}
 .cover-play {width:38px;height:38px;right:11px;bottom:11px;backdrop-filter:blur(16px);color:#35362f}
 .codec {top:10px;left:10px;font-size:7px;border-radius:4px;color:#fff;background:#24282065}
 .song-row {border-bottom-color:color-mix(in srgb,var(--line) 55%,transparent);border-radius:7px}
@@ -72,17 +72,71 @@
 .song-info img,.queue-item img {box-shadow:0 2px 7px #151b1510}
 .detail-panel {background:linear-gradient(150deg,var(--glass),transparent),var(--surface)}
 .queue-row.current {box-shadow:inset 0 0 0 1px var(--edge)}
-.listening-banner {min-height:252px;border-radius:18px;background:var(--soft);border:1px solid var(--edge);isolation:isolate;box-shadow:0 10px 30px #32352808}
-.listening-banner::after {content:"";position:absolute;inset:0;background:linear-gradient(100deg,var(--hero-scrim),transparent);z-index:-1}
-.banner-copy {padding:30px 32px}
-.banner-copy h2,[data-appearance=dark] .banner-copy h2 {color:var(--text);font-size:clamp(24px,2.7vw,35px);letter-spacing:-1px;max-width:390px}
-.banner-copy>p {color:var(--muted)}
-.pill {background:var(--glass);border-color:var(--edge);color:var(--text);font-size:9px;padding:6px 10px;backdrop-filter:blur(16px)}
-.button.glass {background:var(--glass);border-color:var(--edge);color:var(--text)}
-.banner-record {z-index:0;transform:rotate(-8deg) translateY(7px)}
-.banner-record img {width:min(80%,205px);border-radius:9px;box-shadow:12px 17px 35px #18221838;transform:translateX(-26px)}
-.vinyl {right:5%;width:200px;height:200px;box-shadow:12px 14px 25px #18221830}
-.vinyl::after {content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 30deg,transparent,#ffffff17,transparent 40%,#ffffff12,transparent 80%)}
+/* 首页以真实播放记录与专辑封面建立层级，避免装饰干扰选歌。 */
+.library-home {container-type:inline-size}
+.library-heading {display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin:0 0 26px}
+.source-eyebrow {font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.4}
+.library-heading h1 {font-size:30px;letter-spacing:-.9px;font-weight:650;line-height:1.2}
+.library-summary {display:flex;flex-wrap:wrap;gap:0;font-size:12px;color:var(--muted);margin-top:10px}
+.library-summary>span+span::before {content:"·";padding:0 9px;color:var(--muted)}
+.library-heading>.actions {margin:0;flex-shrink:0;gap:8px}
+.library-session {display:grid;grid-template-columns:minmax(0,1.22fr) minmax(0,1fr);gap:24px;padding:23px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--surface) 65%,var(--bg));margin-bottom:14px}
+.session-feature {display:grid;grid-template-columns:148px minmax(0,1fr);gap:22px;align-items:center;min-width:0}
+.session-art {position:relative;display:block;aspect-ratio:1;border-radius:8px;overflow:hidden;padding:0;box-shadow:0 3px 12px color-mix(in srgb,var(--text) 9%,transparent)}
+.session-art img {display:block;width:100%;height:100%;transition:transform 260ms var(--motion-ease)}
+.session-art>span {position:absolute;inset:0;display:grid;place-items:center;background:#16181738;color:#fff;opacity:0;transition:opacity 180ms ease}
+.session-art>span svg {width:28px;height:28px;fill:currentColor;stroke-width:1}
+.session-art:hover>span,.session-art:focus-visible>span {opacity:1}
+.session-art:hover img {transform:scale(1.025)}
+.session-copy {min-width:0}
+.session-caption {font-size:11px;color:var(--muted);margin:0 0 10px}
+.session-copy h2 {font-size:22px;line-height:1.25;letter-spacing:-.55px;font-weight:650;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.session-artist {display:block;max-width:100%;padding:0;margin-top:8px;font-size:12px;color:var(--text);white-space:nowrap;text-overflow:ellipsis;overflow:hidden;text-align:left}
+.session-artist:hover {text-decoration:underline;text-underline-offset:3px}
+.session-album {font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+.session-bottom {display:flex;align-items:center;gap:12px;margin-top:17px;flex-wrap:wrap}
+.session-play {background:var(--soft);font-size:11px;min-height:30px;padding:6px 11px;border:0;color:var(--text);gap:7px}
+.session-play svg {width:13px;height:13px;fill:currentColor;stroke-width:1}
+.session-format {display:flex;align-items:center;gap:9px;color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums}
+.session-format>span:first-child:not(:last-child) {font-size:8px;letter-spacing:.5px;border:1px solid var(--line);border-radius:3px;padding:2px 4px}
+.session-history {border-left:1px solid var(--line);padding-left:24px;min-width:0;align-self:stretch}
+.session-history-heading {display:flex;align-items:center;justify-content:space-between;margin:-5px 0 3px}
+.session-history-heading h3 {font-size:11px;font-weight:500;color:var(--muted)}
+.session-history-heading .icon-button {width:26px;height:26px}
+.session-history-heading svg {width:14px;height:14px}
+.session-track {display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;padding:7px 5px;border-radius:6px;text-align:left;transition:background-color 150ms ease}
+.session-track:hover {background:var(--soft)}
+.session-track-art {position:relative;width:36px;height:36px;overflow:hidden;border-radius:4px}
+.session-track-art img {display:block;width:100%;height:100%}
+.session-track-art svg {position:absolute;inset:0;margin:auto;width:15px;height:15px;color:#fff;fill:currentColor;opacity:0;filter:drop-shadow(0 1px 3px #0008)}
+.session-track:hover img {filter:brightness(.65)}
+.session-track:hover svg {opacity:1}
+.session-track>span:nth-child(2) {display:grid;gap:4px;min-width:0}
+.session-track strong {font-size:12px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session-track small {font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session-track time {font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.session-empty {font-size:12px;color:var(--muted);margin-top:38px;line-height:1.7}
+.library-home .section-title {margin:28px 0 17px}
+.library-home .section-title h2 {font-size:18px;font-weight:650;letter-spacing:-.3px}
+.library-home .section-title>button {display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
+.library-home .section-title>button:hover {color:var(--text)}
+.library-home .section-title>button svg {width:13px;height:13px}
+.setting-note {font-size:11px;color:var(--muted);line-height:1.7;margin:10px 0 25px;max-width:620px}
+@container(max-width:700px) {
+ .library-session {grid-template-columns:1fr;gap:20px}
+ .session-feature {grid-template-columns:140px minmax(0,1fr)}
+ .session-history {border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:15px}
+ .session-history:has(.session-empty) {display:none}
+ .session-copy h2 {font-size:23px}
+}
+@container(max-width:470px) {
+ .library-heading {display:block}
+ .library-heading>.actions {margin-top:18px}
+ .library-session {padding:18px}
+ .session-feature {grid-template-columns:110px minmax(0,1fr);gap:17px}
+ .session-copy h2 {font-size:19px}
+ .session-bottom {margin-top:12px}
+}
 .ambient-art {position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:-1;isolation:isolate}
 .ambient-art img {position:absolute;width:78%;height:130%;left:-15%;top:-20%;object-fit:cover;filter:blur(65px) saturate(.85);opacity:.45;transform:rotate(-15deg) scale(1.15);animation:ambient-drift 24s ease-in-out infinite alternate;animation-delay:var(--ambient-phase,0s);animation-play-state:paused}
 .ambient-art img+img {left:auto;right:-30%;top:5%;opacity:.3;transform:rotate(160deg) scale(1.2);animation-name:ambient-counter;animation-duration:30s}
@@ -160,7 +214,6 @@
 @media(max-width:1150px) {
   .expanded-content {padding:20px 40px 28px;gap:55px}
   .album-grid {grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
-  .banner-copy {padding:27px}
   .expanded-track-heading h1 {font-size:27px}
 }
 @media(max-height:740px) {
@@ -174,10 +227,10 @@
 }
 @media(prefers-reduced-motion:reduce),(pointer:coarse) {
   .expanded-cover {transform:none}
-  .album-card:hover img {transform:none}
+  .album-card:hover img,.session-art:hover img {transform:none}
 }
 @media(prefers-reduced-motion:reduce) {
   .ambient-art img,.playback-indicator>span {animation:none!important}
-  .expanded-cover,.cover-sheen,.album-card img {transition:none!important}
+  .expanded-cover,.cover-sheen,.album-card img,.session-art img,.session-art>span {transition:none!important}
   .lyric-line.current {transform:none}
 }

@@ -455,9 +455,17 @@ func (s *Service) RecordPlay(song Song) error {
 // SaveSettings 保存用户偏好，不因购买状态改变任何设置。
 func (s *Service) SaveSettings(settings map[string]string) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	previous := s.state.Settings
 	s.state.Settings = settings
-	return s.saveLocked()
+	err := s.saveLocked()
+	if err != nil {
+		s.state.Settings = previous
+	}
+	s.mu.Unlock()
+	if err == nil {
+		updateTrayPreferences(settings["language"], settings["closeToTray"] != "false")
+	}
+	return err
 }
 
 // SaveLyrics 保存每首歌的自定义 LRC 或纯文本歌词。
@@ -470,6 +478,7 @@ func (s *Service) SaveLyrics(id string, text string) error {
 
 // UpdateNowPlaying 同步系统媒体控制中心和媒体键状态。
 func (s *Service) UpdateNowPlaying(song Song, playing bool, position float64, rate float64) {
+	updateTrayPlayback(song, playing)
 	if song.ID == "" {
 		mygo.NowPlaying.Clear()
 		return
