@@ -6,6 +6,7 @@ extension L10n {
     static let platformAdditions: [String: [String: String]] = {
         let languages = ["en", "zh-Hant", "ja", "ko", "de", "fr"]
         let rows: [[String]] = [
+            ["共享歌曲", "Shared songs", "共享歌曲", "共有曲", "공유 곡", "Geteilte Titel", "Titres partagés"],
             ["你的音乐，你的空间。", "Your music. Your space.", "你的音樂，你的空間。", "あなたの音楽、あなたの空間。", "나의 음악, 나의 공간.", "Deine Musik. Dein Raum.", "Votre musique. Votre espace."],
             ["演示资料库", "Demo library", "示範資料庫", "デモライブラリ", "데모 보관함", "Demo-Mediathek", "Bibliothèque de démo"],
             ["播放全部", "Play all", "播放全部", "すべて再生", "모두 재생", "Alle wiedergeben", "Tout lire"],

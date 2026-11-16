@@ -83,6 +83,11 @@ struct Playlist: Identifiable, Hashable, Codable, Sendable {
     let songCount: Int?
     let isSmart: Bool
     let owner: String?
+
+    /// 本地化 Audio Station 的系统歌单名称，服务器标识和自建名称保持原样。
+    @MainActor var displayName: String {
+        name == "SYNO_AUDIO_SHARED_SONGS" || name == "__SYNO_AUDIO_SHARED_SONGS__" ? "共享歌曲".t : name
+    }
 }
 
 /// 文件夹节点（用于按文件路径浏览）。

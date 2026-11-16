@@ -25,7 +25,7 @@ struct AllPlaylistsView: View {
                                     .frame(width: 44, height: 44)
                                     .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(p.name).font(.nocBody.weight(.medium))
+                                    Text(p.displayName).font(.nocBody.weight(.medium))
                                     if let c = p.songCount {
                                         Text("\(c) " + "首歌".t).font(.nocLabel).foregroundStyle(.secondary)
                                     }

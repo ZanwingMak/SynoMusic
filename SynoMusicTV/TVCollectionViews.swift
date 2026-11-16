@@ -63,7 +63,7 @@ struct TVDestination: View {
         case .playlists: "我的歌单".t
         case .playlist(let id): playlists.playlist(id)?.name ?? "我的歌单".t
         case .serverPlaylists: "服务器歌单".t
-        case .remotePlaylist(let playlist): playlist.name
+        case .remotePlaylist(let playlist): playlist.displayName
         case .genres: "流派".t
         case .genre(let genre): genre
         case .folders: "文件夹".t
@@ -186,7 +186,7 @@ struct TVDestination: View {
 
     private var remoteGrid: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 340, maximum: 500), spacing: 28)], spacing: 28) {
-            ForEach(remotes) { playlist in TVNavigationCard(title: playlist.name, subtitle: "\(playlist.songCount ?? 0) " + "首歌".t, symbol: "music.note.list", route: .remotePlaylist(playlist)) }
+            ForEach(remotes) { playlist in TVNavigationCard(title: playlist.displayName, subtitle: "\(playlist.songCount ?? 0) " + "首歌".t, symbol: "music.note.list", route: .remotePlaylist(playlist)) }
             if remotes.isEmpty { Text("暂无播放列表".t).foregroundStyle(.secondary) }
         }
     }

@@ -17,6 +17,7 @@ let current = new URLSearchParams(location.search).get("lang") || localStorage.g
 export function setLanguage(lang: string): void { current = entries[lang] ? lang : "en"; localStorage.setItem("synomusic.language",current); document.documentElement.lang=current; }
 
 const featureLabels: Record<string, string[]> = {
+  "Shared songs": ["共享歌曲", "共享歌曲", "共有曲", "공유 곡", "Geteilte Titel", "Titres partagés"],
   "cannot connect to the music server": ["无法连接音乐服务器，请检查地址、网络和端口。", "無法連接音樂伺服器，請檢查位址、網路及連接埠。", "音楽サーバーに接続できません。アドレス・ネットワーク・ポートを確認してください。", "음악 서버에 연결할 수 없습니다. 주소, 네트워크와 포트를 확인하세요.", "Keine Verbindung zum Musikserver. Adresse, Netzwerk und Port prüfen.", "Connexion au serveur impossible. Vérifiez l’adresse, le réseau et le port."],
   "Audio Station login failed; check account, permissions and OTP": ["Audio Station 登录失败，请检查账号、权限和验证码。", "Audio Station 登入失敗，請檢查帳號、權限及驗證碼。", "Audio Stationにログインできません。アカウント・権限・OTPを確認してください。", "Audio Station 로그인에 실패했습니다. 계정, 권한과 OTP를 확인하세요.", "Audio-Station-Anmeldung fehlgeschlagen. Konto, Berechtigungen und OTP prüfen.", "Échec de connexion à Audio Station. Vérifiez le compte, les droits et le code OTP."],
   "server authentication failed": ["服务器认证失败，请检查账号或访问令牌。", "伺服器驗證失敗，請檢查帳號或存取權杖。", "サーバー認証に失敗しました。アカウントやトークンを確認してください。", "서버 인증에 실패했습니다. 계정 또는 토큰을 확인하세요.", "Server-Anmeldung fehlgeschlagen. Konto oder Zugriffstoken prüfen.", "Authentification refusée. Vérifiez le compte ou le jeton d’accès."],

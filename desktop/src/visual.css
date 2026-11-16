@@ -55,8 +55,6 @@
 .page-heading h1 {font-size:clamp(26px,2.6vw,32px);letter-spacing:-.8px}
 .eyebrow {letter-spacing:.8px;font-size:10px}
 .button {border-radius:9px;min-height:35px}
-.button.primary {color:#fffaf3;box-shadow:inset 0 1px #ffffff30,0 4px 10px #5e34261a}
-.button.primary:hover {filter:brightness(1.08)}
 .album-grid {gap:27px 20px;grid-template-columns:repeat(auto-fill,minmax(146px,1fr))}
 .album-card {gap:7px;border-radius:12px}
 .album-cover {border-radius:12px;isolation:isolate}

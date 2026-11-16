@@ -4,9 +4,8 @@
 .sidebar>.brand,.sidebar>.source-select,.sidebar>.nav-label,.sidebar>.add-playlist,.sidebar>.sidebar-bottom,.sidebar>.nav-item {flex-shrink:0}
 .sidebar .sidebar-bottom {margin-top:0}
 :root[data-skin] .brand-mark {background:var(--accent);color:var(--on-accent);border-radius:var(--skin-radius);box-shadow:inset 0 1px var(--edge),0 5px 13px color-mix(in srgb,var(--accent) 16%,transparent)}
-:root[data-skin] .button.primary {color:var(--on-accent);box-shadow:inset 0 1px var(--edge),0 4px 10px color-mix(in srgb,var(--accent) 12%,transparent)}
 :root[data-skin] .source-select {background:var(--glass);border-color:var(--edge);border-radius:var(--skin-radius)}
-:root[data-skin] .button,:root[data-skin] .nav-item,:root[data-skin] .search-field {border-radius:calc(var(--skin-radius)*.7)}
+:root[data-skin] .button:not(.primary),:root[data-skin] .nav-item,:root[data-skin] .search-field {border-radius:calc(var(--skin-radius)*.7)}
 :root[data-skin] .album-cover,:root[data-skin] .album-card img,:root[data-skin] .expanded-cover {border-radius:var(--skin-radius)}
 :root[data-skin] .album-card img {object-fit:cover}
 :root[data-skin] .expanded-cover>img {border-radius:inherit}

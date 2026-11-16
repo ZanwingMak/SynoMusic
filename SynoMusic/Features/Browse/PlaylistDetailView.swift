@@ -19,14 +19,14 @@ struct PlaylistDetailView: View {
                     ErrorStateView(title: "加载失败".t, message: err) { Task { await load() } }.frame(height: 200)
                 } else {
                     SongListSection(songs: songs) { idx in
-                        playback.play(queue: songs, startAt: idx, honoringShuffle: false, contextTitle: playlist.name)
+                        playback.play(queue: songs, startAt: idx, honoringShuffle: false, contextTitle: playlist.displayName)
                     }
                 }
             }
             .padding(.horizontal, Metrics.l)
         }
         .background(Color(.systemBackground).ignoresSafeArea())
-        .navigationTitle(playlist.name)
+        .navigationTitle(playlist.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
     }
@@ -48,7 +48,7 @@ struct PlaylistDetailView: View {
             .padding(.top, Metrics.l)
 
             VStack(spacing: 4) {
-                Text(playlist.name).font(.nocTitle)
+                Text(playlist.displayName).font(.nocTitle)
                 if let c = playlist.songCount {
                     Text("\(c) " + "首歌".t + " · " + (playlist.isSmart ? "智能列表".t : "普通列表".t))
                         .font(.nocCaption)
@@ -62,13 +62,13 @@ struct PlaylistDetailView: View {
         HStack(spacing: Metrics.m) {
             Button {
                 playback.isShuffling = false
-                playback.play(queue: songs, startAt: 0, honoringShuffle: false, contextTitle: playlist.name)
+                playback.play(queue: songs, startAt: 0, honoringShuffle: false, contextTitle: playlist.displayName)
             } label: { Label("播放".t, systemImage: "play.fill") }
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(songs.isEmpty)
             Button {
                 playback.isShuffling = true
-                playback.play(queue: songs.shuffled(), startAt: 0, honoringShuffle: false, contextTitle: playlist.name)
+                playback.play(queue: songs.shuffled(), startAt: 0, honoringShuffle: false, contextTitle: playlist.displayName)
             } label: { Label("随机".t, systemImage: "shuffle") }
                 .buttonStyle(SecondaryButtonStyle())
                 .disabled(songs.isEmpty)
