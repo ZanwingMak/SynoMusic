@@ -135,7 +135,7 @@ struct ServerEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消".t) { dismiss() }
+                    Button { dismiss() } label: { Label("取消".t, systemImage: "xmark") }
                 }
             }
             .alert(
@@ -1126,11 +1126,11 @@ private struct WebDAVDirectoryPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消".t) { onCancel() }
+                    Button { onCancel() } label: { Label("取消".t, systemImage: "xmark") }
                 }
                 ToolbarItemGroup(placement: .primaryAction) {
-                    Button("根目录".t) { currentPath = "/" }
-                    Button("上级".t) { currentPath = parentPath }
+                    Button { currentPath = "/" } label: { Label("根目录".t, systemImage: "folder") }
+                    Button { currentPath = parentPath } label: { Label("上级".t, systemImage: "arrow.up") }
                         .disabled(currentPath == "/")
                 }
             }
@@ -1199,7 +1199,7 @@ private struct PlexServerPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消".t) { onCancel() }
+                    Button { onCancel() } label: { Label("取消".t, systemImage: "xmark") }
                 }
             }
         }
@@ -1288,7 +1288,7 @@ private struct PlexLibraryPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消".t) { onCancel() }
+                    Button { onCancel() } label: { Label("取消".t, systemImage: "xmark") }
                 }
             }
         }
@@ -1350,7 +1350,7 @@ private struct PlexPinAuthSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消".t) { onCancel() }
+                    Button { onCancel() } label: { Label("取消".t, systemImage: "xmark") }
                 }
             }
         }

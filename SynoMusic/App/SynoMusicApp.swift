@@ -3,6 +3,13 @@ import SwiftUI
 /// 应用入口：装配根环境对象并展示首屏。
 @main
 struct SynoMusicApp: App {
+    var body: some Scene {
+        WindowGroup { SynoMusicSceneContent() }
+    }
+}
+
+/// 在视图生命周期内装配共享状态，避免场景的延迟构造闭包读取主线程对象。
+private struct SynoMusicSceneContent: View {
     @Environment(\.scenePhase) private var scenePhase
     /// 服务器仓库：管理已配置的群晖服务器列表与凭证。
     @StateObject private var serverStore = ServerStore()
@@ -35,76 +42,73 @@ struct SynoMusicApp: App {
     /// App Store 审核模式：审核账号登录后使用 mock 数据。
     @StateObject private var reviewMode = AppReviewMode()
 
-    var body: some Scene {
-        WindowGroup {
-            RootView()
-                .environmentObject(serverStore)
-                .environmentObject(playback)
-                .environmentObject(session)
-                .environmentObject(playlists)
-                .environmentObject(downloads)
-                .environmentObject(localImports)
-                .environmentObject(theme)
-                .environmentObject(lm)
-                .environmentObject(playbackSettings)
-                .environmentObject(podcastStore)
-                .environmentObject(songUserDataStore)
-                .environmentObject(navigation)
-                .environmentObject(purchaseStore)
-                .environmentObject(cloudSync)
-                .environmentObject(reviewMode)
-                .onAppear {
-                    migrateUnlockedPlayback()
-                    playback.applyPlaybackSettings(playbackSettings)
-                    playback.downloadManager = downloads
-                    cloudSync.configure(
-                        serverStore: serverStore,
-                        playlistStore: playlists,
-                        themeManager: theme,
-                        playbackSettings: playbackSettings,
-                        podcastStore: podcastStore,
-                        songUserDataStore: songUserDataStore,
-                        playbackEngine: playback
-                    )
+    var body: some View {
+        RootView()
+            .environmentObject(serverStore)
+            .environmentObject(playback)
+            .environmentObject(session)
+            .environmentObject(playlists)
+            .environmentObject(downloads)
+            .environmentObject(localImports)
+            .environmentObject(theme)
+            .environmentObject(lm)
+            .environmentObject(playbackSettings)
+            .environmentObject(podcastStore)
+            .environmentObject(songUserDataStore)
+            .environmentObject(navigation)
+            .environmentObject(purchaseStore)
+            .environmentObject(cloudSync)
+            .environmentObject(reviewMode)
+            .onAppear {
+                migrateUnlockedPlayback()
+                playback.applyPlaybackSettings(playbackSettings)
+                playback.downloadManager = downloads
+                cloudSync.configure(
+                    serverStore: serverStore,
+                    playlistStore: playlists,
+                    themeManager: theme,
+                    playbackSettings: playbackSettings,
+                    podcastStore: podcastStore,
+                    songUserDataStore: songUserDataStore,
+                    playbackEngine: playback
+                )
+                cloudSync.scheduleAutomaticPull()
+                cloudSync.scheduleOccasionalSync()
+            }
+            .task {
+                await purchaseStore.start()
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active {
                     cloudSync.scheduleAutomaticPull()
                     cloudSync.scheduleOccasionalSync()
                 }
-                .task {
-                    await purchaseStore.start()
-                }
-                .onChange(of: scenePhase) { _, phase in
-                    if phase == .active {
-                        cloudSync.scheduleAutomaticPull()
-                        cloudSync.scheduleOccasionalSync()
-                    }
-                }
-                .onReceive(serverStore.objectWillChange) { _ in
-                    cloudSync.scheduleAutomaticPush()
-                }
-                .onReceive(playlists.objectWillChange) { _ in
-                    cloudSync.scheduleAutomaticPush()
-                }
-                .onReceive(theme.objectWillChange) { _ in
-                    cloudSync.scheduleAutomaticPush()
-                }
-                .onReceive(playbackSettings.objectWillChange) { _ in
-                    cloudSync.scheduleAutomaticPush()
-                }
-                .onReceive(podcastStore.objectWillChange) { _ in
-                    cloudSync.scheduleAutomaticPush()
-                }
-                .onReceive(songUserDataStore.objectWillChange) { _ in
-                    cloudSync.scheduleAutomaticPush()
-                }
+            }
+            .onReceive(serverStore.objectWillChange) { _ in
+                cloudSync.scheduleAutomaticPush()
+            }
+            .onReceive(playlists.objectWillChange) { _ in
+                cloudSync.scheduleAutomaticPush()
+            }
+            .onReceive(theme.objectWillChange) { _ in
+                cloudSync.scheduleAutomaticPush()
+            }
+            .onReceive(playbackSettings.objectWillChange) { _ in
+                cloudSync.scheduleAutomaticPush()
+            }
+            .onReceive(podcastStore.objectWillChange) { _ in
+                cloudSync.scheduleAutomaticPush()
+            }
+            .onReceive(songUserDataStore.objectWillChange) { _ in
+                cloudSync.scheduleAutomaticPush()
+            }
 
-                .tint(theme.current.accent(in: .dark))
-                .preferredColorScheme(theme.appearance.colorScheme)
-                // 只对语言变化重建整树（翻译值仅在 body 重算时才会刷新）；
-                // 主题强调色由 RootView / MainShellView 订阅刷新，避免切换主题就跳回首页。
-                .id(lm.current.rawValue)
-        }
+            .tint(theme.current.accent(in: .dark))
+            .preferredColorScheme(theme.appearance.colorScheme)
+            // 只对语言变化重建整树（翻译值仅在 body 重算时才会刷新）；
+            // 主题强调色由 RootView / MainShellView 订阅刷新，避免切换主题就跳回首页。
+            .id(lm.current.rawValue)
     }
-
     /// 升级到全部功能开放后，恢复旧版曾被付费限制关闭的后台播放。
     private func migrateUnlockedPlayback() {
         let key = "syno.unlockedPlaybackMigrated"

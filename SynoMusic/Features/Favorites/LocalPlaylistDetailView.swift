@@ -108,7 +108,7 @@ struct LocalPlaylistDetailView: View {
     @ViewBuilder
     private var trailingMenu: some View {
         if isEditing {
-            Button("完成".t) { exitEdit() }
+            Button { exitEdit() } label: { Label("完成".t, systemImage: "checkmark") }
         } else if !snapshots.isEmpty {
             Menu {
                 Button { enterEdit() } label: { Label("批量编辑".t, systemImage: "checklist") }
@@ -127,7 +127,7 @@ struct LocalPlaylistDetailView: View {
                     } label: { Label("删除歌单".t, systemImage: "minus.circle") }
                 }
             } label: {
-                Image(systemName: "ellipsis.circle")
+                Label("更多".t, systemImage: "ellipsis.circle")
             }
         }
     }

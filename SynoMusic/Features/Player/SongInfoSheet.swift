@@ -41,7 +41,7 @@ struct SongInfoSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("完成".t) { dismiss() }
+                    Button { dismiss() } label: { Label("完成".t, systemImage: "checkmark") }
                 }
             }
         }
@@ -102,10 +102,10 @@ struct SongEditSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消".t) { dismiss() }
+                    Button { dismiss() } label: { Label("取消".t, systemImage: "xmark") }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存".t) { showConfirm = true }
+                    Button { showConfirm = true } label: { Label("保存".t, systemImage: "checkmark") }
                 }
             }
             .alert("保存修改？".t, isPresented: $showConfirm) {

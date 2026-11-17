@@ -67,11 +67,8 @@ enum Metrics {
     /// 迷你播放器高度。
     static let miniPlayerHeight: CGFloat = 64
 
-    /// 迷你播放器相对屏幕底部的原始悬浮距离，用于贴近 TabBar 上方。
-    static let miniPlayerBottomOffset: CGFloat = 52
-
     /// 滚动内容需要为迷你播放器预留的底部空间。
-    static let miniPlayerReservedHeight: CGFloat = miniPlayerHeight + miniPlayerBottomOffset + 12
+    static let miniPlayerReservedHeight: CGFloat = miniPlayerHeight + 12
 
     /// 列表行最小高度（满足 44pt 触控要求）。
     static let listRowMin: CGFloat = 56

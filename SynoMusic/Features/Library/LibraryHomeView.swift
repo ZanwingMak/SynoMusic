@@ -83,13 +83,19 @@ struct LibraryHomeView: View {
         Button {
             Task { await syncCloudFromHome() }
         } label: {
-            if isSyncingCloud {
-                ProgressView()
-                    .controlSize(.small)
-                    .tint(theme.current.accent(in: colorScheme))
-            } else {
-                toolbarIcon(systemImage: "arrow.triangle.2.circlepath.icloud")
+            Label {
+                Text("iCloud 云同步".t)
+            } icon: {
+                if isSyncingCloud {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(theme.current.accent(in: colorScheme))
+                } else {
+                    Image(systemName: "arrow.triangle.2.circlepath.icloud")
+                }
             }
+            .font(.system(size: 19, weight: .semibold))
+            .foregroundStyle(theme.current.accent(in: colorScheme))
         }
         .disabled(isSyncingCloud)
         .accessibilityLabel("iCloud 云同步".t)
@@ -102,17 +108,16 @@ struct LibraryHomeView: View {
             Haptics.tap()
             showSupport = true
         } label: {
-            toolbarIcon(systemImage: "gift")
+            toolbarLabel("感谢赞助开发".t, systemImage: "gift")
         }
         .accessibilityLabel("感谢赞助开发".t)
         .buttonStyle(.plain)
     }
 
-    /// 统一首页工具栏图标的大小、字重和主题颜色。
-    private func toolbarIcon(systemImage: String) -> some View {
-        Image(systemName: systemImage)
+    /// 同时提供工具栏标题和图标，让系统适配横向、竖向及溢出菜单。
+    private func toolbarLabel(_ title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
             .font(.system(size: 19, weight: .semibold))
-            .frame(width: 24, height: 24)
             .foregroundStyle(theme.current.accent(in: colorScheme))
     }
 
@@ -136,7 +141,7 @@ struct LibraryHomeView: View {
     /// 带轻触反馈的导航栏图标入口。
     private func toolbarLink(value: BrowseRoute, systemImage: String, label: String) -> some View {
         NavigationLink(value: value) {
-            toolbarIcon(systemImage: systemImage)
+            toolbarLabel(label, systemImage: systemImage)
                 .accessibilityLabel(label)
         }
         .simultaneousGesture(TapGesture().onEnded { Haptics.tap() })
@@ -414,6 +419,9 @@ private struct QuickActions: View {
 }
 
 private struct ActionCard: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .headline) private var cardWidth: CGFloat = 146
+    @ScaledMetric(relativeTo: .headline) private var cardHeight: CGFloat = 104
     let title: String
     let subtitle: String
     let icon: String
@@ -429,11 +437,15 @@ private struct ActionCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 Spacer()
                 Text(title).font(.nocSection).foregroundStyle(.white)
-                Text(subtitle).font(.nocLabel).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(subtitle).font(.nocLabel).foregroundStyle(.white.opacity(0.85))
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(Metrics.m)
         }
-        .frame(width: 146, height: 104)
+        .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: Theme.cornerCard, style: .continuous))
         .shadow(color: gradient.first?.opacity(0.3) ?? .clear, radius: 12, y: 6)
     }

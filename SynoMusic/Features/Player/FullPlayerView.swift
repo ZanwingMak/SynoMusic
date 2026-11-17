@@ -12,6 +12,7 @@ struct FullPlayerView: View {
     @EnvironmentObject private var navigation: AppNavigationState
     @EnvironmentObject private var playbackSettings: PlaybackSettings
     @EnvironmentObject private var reviewMode: AppReviewMode
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Binding var isPresented: Bool
     @State private var showLyrics = false
     @State private var showQueue = false
@@ -47,33 +48,13 @@ struct FullPlayerView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let visualHeight = min(max(geo.size.height * 0.34, 250), 330)
-            let artSide = min(geo.size.width - Metrics.xl * 2, visualHeight)
             ZStack(alignment: .top) {
                 background
-                if geo.size.width >= 700 {
-                    widePlayer(size: geo.size)
-                } else {
-                VStack(spacing: 0) {
-                    topBar
-                        .frame(height: 52)
-                        .zIndex(10)
-                    Spacer(minLength: 8)
-                    playbackVisual(artSide: artSide)
-                        .frame(height: visualHeight)
-                    Spacer(minLength: 10)
-                    trackInfo
-                        .frame(height: 86, alignment: .center)
-                    progressSection
-                        .frame(height: 56)
-                    controlBar
-                        .frame(height: 92)
-                    bottomTools()
-                        .frame(height: 48)
-                        .padding(.bottom, max(Metrics.s, geo.safeAreaInsets.bottom))
+                VStack(spacing: Metrics.s) {
+                    topBar.frame(minHeight: 52).zIndex(10)
+                    adaptivePlayerContent(geometry: geo)
                 }
-                .padding(.top, Metrics.l)
-                }
+                .padding(.top, Metrics.s)
                 if showPlayerMenu {
                     PlayerTopMenuOverlay(
                         isPresented: $showPlayerMenu,
@@ -196,40 +177,87 @@ struct FullPlayerView: View {
 
     /// 宽屏播放器同时呈现封面、控制和歌词/队列，横竖屏及窗口缩放均按可用空间布局。
     private func widePlayer(size: CGSize) -> some View {
-        VStack(spacing: 20) {
-            topBar.frame(height: 52)
-            HStack(spacing: 36) {
-                VStack(spacing: 14) {
-                    Spacer(minLength: 0)
-                    wideArtwork(side: min(400, (size.width - 112) * 0.45, max(160, size.height - 390)))
-                    trackInfo.frame(minHeight: 80)
-                    progressSection.frame(height: 56)
-                    controlBar.frame(height: 86)
-                    bottomTools(showsWideLayout: true).frame(height: 48)
-                    Spacer(minLength: 0)
-                }
+        HStack(spacing: 24) {
+            playerControls(size: CGSize(width: min(480, (size.width - 72) / 2), height: max(0, size.height - 76)), showsSidePanel: true)
                 .frame(maxWidth: 480)
-                VStack(spacing: 18) {
-                    Picker("正在播放".t, selection: $widePane) {
-                        Text("歌词".t).tag("lyrics")
-                        Text("队列".t).tag("queue")
-                    }
-                    .pickerStyle(.segmented)
-                    if widePane == "lyrics" {
-                        LyricsPanel(lines: playback.lyrics, currentIndex: lyricPreviewCurrentIndex, isLoading: playback.isFetchingLyrics, fontSize: max(24, lyricPreviewFontSize), autoScroll: lyricPreviewAutoScroll, onSeek: { playback.seek(to: $0) })
+            playerSidePanel
+        }
+        .frame(maxWidth: 1180, maxHeight: .infinity)
+        .padding(.horizontal, 24)
+        .padding(.bottom, Metrics.s)
+    }
+
+    /// 按当前容器尺寸与系统折叠区域重排；仅半折叠时使用原生分区避开折痕。
+    @ViewBuilder private func adaptivePlayerContent(geometry: GeometryProxy) -> some View {
+        if #available(iOS 27.1, *), geometry.reservedRegions(kind: .division).contains(where: \.isActive) {
+            ArrangementView {
+                playerSidePanel
+            } secondary: {
+                GeometryReader { pane in
+                    playerControls(size: pane.size, showsSidePanel: true)
+                }
+            }
+            .arrangementViewStyle(.split)
+            .padding(.horizontal, Metrics.s)
+        } else if geometry.size.width >= 700 {
+            widePlayer(size: geometry.size)
+        } else {
+            playerControls(size: CGSize(width: geometry.size.width, height: max(0, geometry.size.height - 68)), showsSidePanel: false)
+        }
+    }
+
+    /// 进度与传输控件始终可达；低矮窗口只滚动封面和曲目信息。
+    private func playerControls(size: CGSize, showsSidePanel: Bool) -> some View {
+        let artSide = max(80, min(size.width - 48, 340, size.height - 310))
+        return VStack(spacing: Metrics.s) {
+            ScrollView {
+                VStack(spacing: Metrics.m) {
+                    if size.height < 420 && !dynamicTypeSize.isAccessibilitySize {
+                        HStack(spacing: Metrics.s) {
+                            wideArtwork(side: artSide)
+                            trackInfo
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.horizontal, Metrics.l)
                     } else {
-                        wideQueue
+                        if showsSidePanel {
+                            wideArtwork(side: artSide).frame(height: artSide)
+                        } else {
+                            playbackVisual(artSide: artSide).frame(height: max(artSide, 160))
+                        }
+                        trackInfo
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                .padding(24)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 28))
+                .padding(.vertical, Metrics.s)
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: 1180, maxHeight: .infinity)
-            .padding(.horizontal, 36)
-            .padding(.bottom, 24)
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(maxHeight: .infinity)
+            progressSection.frame(height: 56)
+            controlBar.frame(height: 76)
+            bottomTools(showsWideLayout: showsSidePanel).frame(height: 48)
         }
-        .padding(.top, 12)
+        .padding(.bottom, Metrics.s)
+    }
+
+    /// 歌词与队列共享独立面板，折叠变化保留当前选项及播放器状态。
+    private var playerSidePanel: some View {
+        VStack(spacing: Metrics.m) {
+            Picker("正在播放".t, selection: $widePane) {
+                Text("歌词".t).tag("lyrics")
+                Text("队列".t).tag("queue")
+            }
+            .pickerStyle(.segmented)
+            if widePane == "lyrics" {
+                LyricsPanel(lines: playback.lyrics, currentIndex: lyricPreviewCurrentIndex, isLoading: playback.isFetchingLyrics, fontSize: max(24, lyricPreviewFontSize), autoScroll: lyricPreviewAutoScroll, onSeek: { playback.seek(to: $0) })
+            } else {
+                wideQueue
+            }
+        }
+        .padding(Metrics.m)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 24))
     }
 
     /// 宽屏封面始终保留展示位置，歌词切换只影响右侧面板。
@@ -504,6 +532,7 @@ private struct PlayerTopMenuOverlay: View {
     let onRate: (Int) -> Void
     let onDelete: () -> Void
     @State private var showRating = false
+    @State private var menuHeight: CGFloat = 44
 
     private let menuWidth: CGFloat = 224
 
@@ -514,19 +543,27 @@ private struct PlayerTopMenuOverlay: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color.black.opacity(0.001)
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture { dismiss() }
+        GeometryReader { geometry in
+            ZStack(alignment: .topTrailing) {
+                Color.black.opacity(0.001)
+                    .ignoresSafeArea()
+                    .contentShape(Rectangle())
+                    .onTapGesture { dismiss() }
 
-            PlayerGlassMenu {
-                menuContent
+                PlayerGlassMenu {
+                    ScrollView {
+                        menuContent
+                            .fixedSize(horizontal: false, vertical: true)
+                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { menuHeight = $0 }
+                    }
+                    .scrollBounceBehavior(.basedOnSize)
+                    .frame(height: min(menuHeight, max(44, geometry.size.height - Metrics.l - 64)))
+                }
+                .frame(width: menuWidth)
+                .padding(.top, Metrics.l + 48)
+                .padding(.trailing, Metrics.l)
+                .transition(.scale(scale: 0.86, anchor: .topTrailing).combined(with: .opacity))
             }
-            .frame(width: menuWidth)
-            .padding(.top, Metrics.l + 48)
-            .padding(.trailing, Metrics.l)
-            .transition(.scale(scale: 0.86, anchor: .topTrailing).combined(with: .opacity))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         .onDisappear { showRating = false }
@@ -823,15 +860,23 @@ extension FullPlayerView {
         .padding(.horizontal, Metrics.l)
     }
 
+    /// 辅助字号时纵向排列曲目信息与操作，给标题和艺术家完整的换行空间。
     private var trackInfo: some View {
-        HStack(alignment: .center, spacing: Metrics.m) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Metrics.s))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: Metrics.m))
+        return layout {
             VStack(alignment: .leading, spacing: 6) {
                 MarqueeTitleText(text: playback.currentSong?.title ?? "")
-                HStack(spacing: 8) {
+                let artistLayout = dynamicTypeSize.isAccessibilitySize
+                    ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+                    : AnyLayout(HStackLayout(spacing: 8))
+                artistLayout {
                     Text(playback.currentSong?.artist ?? "")
                         .font(.nocBody)
                         .foregroundStyle(.white.opacity(0.75))
-                        .lineLimit(1)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                        .fixedSize(horizontal: false, vertical: true)
                     qualityBadge
                 }
             }
@@ -850,7 +895,7 @@ extension FullPlayerView {
                     }
                 }
             }
-            Spacer()
+            if !dynamicTypeSize.isAccessibilitySize { Spacer(minLength: 0) }
             if let song = playback.currentSong {
                 HStack(spacing: 14) {
                     Button {
@@ -1212,35 +1257,46 @@ private struct CoverHero: View {
 }
 
 private struct MarqueeTitleText: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .title2) private var titleHeight: CGFloat = 34
     let text: String
 
+    /// 辅助字号和减少动态效果模式显示完整静态标题，普通字号使用可缩放的跑马灯容器。
     var body: some View {
-        GeometryReader { proxy in
-            let shouldScroll = text.count > 18
-            let estimatedWidth = CGFloat(text.count) * 13
-            let travel = max(estimatedWidth - proxy.size.width + 44, 0)
-            TimelineView(.animation(paused: !shouldScroll || travel <= 0)) { timeline in
-                let offset = marqueeOffset(date: timeline.date, travel: travel)
-                HStack(spacing: 44) {
-                    titleText
-                    if shouldScroll {
-                        titleText
+        Group {
+            if dynamicTypeSize.isAccessibilitySize || reduceMotion {
+                titleText
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                GeometryReader { proxy in
+                    let shouldScroll = text.count > 18
+                    let estimatedWidth = CGFloat(text.count) * 13 * titleHeight / 34
+                    let travel = max(estimatedWidth - proxy.size.width + 44, 0)
+                    TimelineView(.animation(paused: !shouldScroll || travel <= 0)) { timeline in
+                        let offset = marqueeOffset(date: timeline.date, travel: travel)
+                        HStack(spacing: 44) {
+                            titleText.fixedSize(horizontal: true, vertical: false)
+                            if shouldScroll {
+                                titleText.fixedSize(horizontal: true, vertical: false)
+                            }
+                        }
+                        .offset(x: -offset)
                     }
                 }
-                .offset(x: -offset)
+                .frame(height: titleHeight)
+                .clipped()
             }
         }
-        .frame(height: 34)
-        .clipped()
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel(text)
     }
 
+    /// 使用语义字体，让标题随系统字号缩放。
     private var titleText: some View {
         Text(text)
             .font(.system(.title2, design: .rounded).weight(.bold))
             .foregroundStyle(.white)
-            .lineLimit(1)
-            .fixedSize(horizontal: true, vertical: false)
     }
 
     /// 按时间计算跑马灯偏移，开头和结尾都保留短暂停顿。
@@ -1497,10 +1553,10 @@ private struct LyricSettingsSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("取消".t) { onCancel() }
+                    Button { onCancel() } label: { Label("取消".t, systemImage: "xmark") }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("保存".t) { onSave() }
+                    Button { onSave() } label: { Label("保存".t, systemImage: "checkmark") }
                         .fontWeight(.semibold)
                 }
             }
@@ -1651,7 +1707,7 @@ private struct SongResearchSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("完成".t) { dismiss() }
+                    Button { dismiss() } label: { Label("完成".t, systemImage: "checkmark") }
                 }
             }
         }
@@ -1772,9 +1828,12 @@ private struct QueuePanel: View {
             .navigationBarTitleDisplayMode(.inline)
             .tint(theme.current.accent(in: .dark))
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { dismiss() } label: { Label("关闭".t, systemImage: "xmark") }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(isEditingQueue ? "完成".t : "编辑".t) {
-                        toggleQueueEditing()
+                    Button { toggleQueueEditing() } label: {
+                        Label(isEditingQueue ? "完成".t : "编辑".t, systemImage: isEditingQueue ? "checkmark" : "pencil")
                     }
                 }
             }

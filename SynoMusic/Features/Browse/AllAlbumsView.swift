@@ -63,7 +63,7 @@ struct AllAlbumsView: View {
                         }
                     }
                 } label: {
-                    Image(systemName: "arrow.up.arrow.down")
+                    Label("排序".t, systemImage: "arrow.up.arrow.down")
                 }
             }
         }

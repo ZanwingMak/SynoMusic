@@ -79,10 +79,10 @@ struct AddToPlaylistSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消".t) { dismiss() }
+                    Button { dismiss() } label: { Label("取消".t, systemImage: "xmark") }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("加入".t) { apply() }.disabled(selected.isEmpty)
+                    Button { apply() } label: { Label("加入".t, systemImage: "plus") }.disabled(selected.isEmpty)
                 }
             }
             .onAppear {
@@ -126,17 +126,17 @@ struct AddToPlaylistSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消".t) { showCreate = false }
+                    Button { showCreate = false } label: { Label("取消".t, systemImage: "xmark") }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("创建并选择".t) {
+                    Button {
 
                         let p = playlists.create(name: newName, colorIndex: newColor)
                         selected.insert(p.id)
                         newName = ""
                         newColor = 1
                         showCreate = false
-                    }
+                    } label: { Label("创建并选择".t, systemImage: "plus") }
                     .disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }

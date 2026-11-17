@@ -84,7 +84,7 @@ struct AllSongsView: View {
                     Picker("排序".t, selection: $sortBy) {
                         ForEach(SortOption.allCases) { o in Text(o.labelKey.t).tag(o) }
                     }
-                } label: { Image(systemName: "arrow.up.arrow.down") }
+                } label: { Label("排序".t, systemImage: "arrow.up.arrow.down") }
             }
         }
         .onChange(of: sortBy) { _, _ in Task { await reload() } }

@@ -87,15 +87,15 @@ struct LocalPlaylistsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消".t) { reset() }
+                    Button { reset() } label: { Label("取消".t, systemImage: "xmark") }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("创建".t) {
+                    Button {
 
                         playlists.create(name: newName, colorIndex: newColor)
                         Haptics.success()
                         reset()
-                    }
+                    } label: { Label("创建".t, systemImage: "plus") }
                     .disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }

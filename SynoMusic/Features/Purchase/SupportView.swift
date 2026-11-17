@@ -55,7 +55,7 @@ struct SupportView: View {
             .navigationTitle("支持开发".t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { Button("完成".t) { dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) { Button { dismiss() } label: { Label("完成".t, systemImage: "checkmark") } }
             }
             .task { await purchase.loadProductsIfNeeded() }
             .alert("感谢支持".t, isPresented: $showThanks) {

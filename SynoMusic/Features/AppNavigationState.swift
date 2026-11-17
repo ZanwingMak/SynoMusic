@@ -20,6 +20,8 @@ enum SettingsRoute: Hashable {
 @MainActor
 final class AppNavigationState: ObservableObject {
     @Published var selectedTab: MainTab
+    @Published var libraryPath = NavigationPath()
+    @Published var searchPath = NavigationPath()
     @Published var browsePath = NavigationPath()
     @Published var settingsPath = NavigationPath()
     @Published var addServerRequestID: UUID?

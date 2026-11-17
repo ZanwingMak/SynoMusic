@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// 主框架：底部 Tab + 浮动迷你播放器。
+/// 自适应主框架：同一导航树支持手机、宽屏与运行中的折叠变化。
 struct MainShellView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
@@ -14,81 +14,22 @@ struct MainShellView: View {
     @Binding var showFullPlayer: Bool
 
     @State private var showQueueSheet: Bool = false
+    @State private var sidebarSection: PadSection? = .library
+    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+    @State private var compactColumn: NavigationSplitViewColumn = .detail
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            if horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad {
-                IPadShellView(showFullPlayer: $showFullPlayer)
-            } else {
-            TabView(selection: $navigation.selectedTab) {
-                NavigationStack {
-                    LibraryHomeView()
-                        .browseRoutes(reserveMiniPlayer: playback.currentSong != nil)
+        GeometryReader { geometry in
+            let showsSidebar = horizontalSizeClass == .regular && geometry.size.width >= 740
+            playerTabs(hidesTabBar: showsSidebar)
+                .onChange(of: showsSidebar, initial: true) { _, expanded in
+                    columnVisibility = expanded ? .all : .automatic
                 }
-                    .reserveMiniPlayer(visible: playback.currentSong != nil)
-                    .tabItem { Label("资料库".t, systemImage: "rectangle.stack.fill") }
-                    .tag(MainTab.library)
-
-                NavigationStack(path: $navigation.browsePath) {
-                    BrowseRootView()
-                        .browseRoutes(reserveMiniPlayer: playback.currentSong != nil)
-                }
-                    .tabItem { Label("浏览".t, systemImage: "square.grid.2x2.fill") }
-                    .tag(MainTab.browse)
-
-                NavigationStack {
-                    SearchView()
-                        .browseRoutes(reserveMiniPlayer: playback.currentSong != nil)
-                }
-                    .reserveMiniPlayer(visible: playback.currentSong != nil)
-                    .tabItem { Label("搜索".t, systemImage: "magnifyingglass") }
-                    .tag(MainTab.search)
-
-                NavigationStack(path: $navigation.settingsPath) {
-                    SettingsView()
-                        .navigationDestination(for: SettingsRoute.self) { route in
-                            switch route {
-                            case .downloads:
-                                serverDependentDestination {
-                                    DownloadsListView()
-
-                                }
-                                .reserveMiniPlayer(visible: playback.currentSong != nil)
-                            case .login(let profile):
-                                LoginView(profile: profile)
-                                    .reserveMiniPlayer(visible: playback.currentSong != nil)
-                            case .widgets:
-                                WidgetManagerView()
-
-                                .reserveMiniPlayer(visible: playback.currentSong != nil)
-                            case .localImports:
-                                serverDependentDestination {
-                                    LocalImportView()
-
-                                }
-                                .reserveMiniPlayer(visible: playback.currentSong != nil)
-                            }
-                        }
-                }
-                    .tabItem { Label("设置".t, systemImage: "gearshape.fill") }
-                    .tag(MainTab.settings)
-            }
-            .tint(theme.current.accent(in: colorScheme))
-
-            // 迷你播放器悬浮在 TabBar 之上：用 ZStack 浮，避免被 TabBar 覆盖；
-            // 内容让位由页面级 safeAreaInset 处理，深层页面也会保留可滚动空间。
-            if playback.currentSong != nil {
-                MiniPlayerBar(
-                    onTap: { showFullPlayer = true },
-                    onQueue: { showQueueSheet = true }
-                )
-                .padding(.horizontal, Metrics.s)
-                .padding(.bottom, Metrics.miniPlayerBottomOffset)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-            }
         }
+        .environment(\.miniPlayerReservationHandled, true)
+        .onChange(of: navigation.selectedTab) { _, tab in syncSidebar(with: tab) }
         .onAppear {
+            syncSidebar(with: navigation.selectedTab)
             playback.apiClient = session.client
             playback.musicClient = session.musicClient
             playback.setHistoryScope(for: session.musicClient?.profile)
@@ -113,6 +54,125 @@ struct MainShellView: View {
         .animation(.easeInOut(duration: 0.18), value: theme.currentID)
         .sheet(isPresented: $showQueueSheet) {
             QueueSheet().presentationDetents([.medium, .large])
+        }
+    }
+
+    /// 将播放条交给系统 Tab 容器定位，使竖向栏和安全区变化不再依赖固定底部高度。
+    @ViewBuilder private func playerTabs(hidesTabBar: Bool) -> some View {
+        if #available(iOS 26.1, *) {
+            tabs(hidesTabBar: hidesTabBar).tabViewBottomAccessory(isEnabled: playback.currentSong != nil) {
+                miniPlayer
+            }
+        } else if #available(iOS 26.0, *) {
+            tabs(hidesTabBar: hidesTabBar).tabViewBottomAccessory {
+                if playback.currentSong != nil { miniPlayer }
+            }
+        } else {
+            tabs(hidesTabBar: hidesTabBar)
+        }
+    }
+
+    /// 各标签的导航树保持同一身份；标签容器放在最外层，保留系统工具栏和搜索栏。
+    private func tabs(hidesTabBar: Bool) -> some View {
+        TabView(selection: $navigation.selectedTab) {
+            navigationColumns(showsSidebar: hidesTabBar) {
+                NavigationStack(path: $navigation.libraryPath) {
+                    LibraryHomeView()
+                        .browseRoutes(reserveMiniPlayer: playback.currentSong != nil)
+                }
+            }
+            .toolbar(hidesTabBar ? .hidden : .automatic, for: .tabBar)
+            .tabItem { Label("资料库".t, systemImage: "rectangle.stack.fill") }
+            .tag(MainTab.library)
+
+            navigationColumns(showsSidebar: hidesTabBar) {
+                NavigationStack(path: $navigation.browsePath) {
+                    BrowseRootView()
+                        .browseRoutes(reserveMiniPlayer: playback.currentSong != nil)
+                }
+            }
+            .toolbar(hidesTabBar ? .hidden : .automatic, for: .tabBar)
+            .tabItem { Label("浏览".t, systemImage: "square.grid.2x2.fill") }
+            .tag(MainTab.browse)
+
+            navigationColumns(showsSidebar: hidesTabBar) {
+                NavigationStack(path: $navigation.searchPath) {
+                    SearchView()
+                        .browseRoutes(reserveMiniPlayer: playback.currentSong != nil)
+                }
+            }
+            .toolbar(hidesTabBar ? .hidden : .automatic, for: .tabBar)
+            .tabItem { Label("搜索".t, systemImage: "magnifyingglass") }
+            .tag(MainTab.search)
+
+            navigationColumns(showsSidebar: hidesTabBar) {
+                NavigationStack(path: $navigation.settingsPath) {
+                    SettingsView()
+                        .navigationDestination(for: SettingsRoute.self) { route in
+                            switch route {
+                            case .downloads:
+                                serverDependentDestination { DownloadsListView() }
+                                    .reserveMiniPlayer(visible: playback.currentSong != nil)
+                            case .login(let profile):
+                                LoginView(profile: profile)
+                                    .reserveMiniPlayer(visible: playback.currentSong != nil)
+                            case .widgets:
+                                WidgetManagerView()
+                                    .reserveMiniPlayer(visible: playback.currentSong != nil)
+                            case .localImports:
+                                serverDependentDestination { LocalImportView() }
+                                    .reserveMiniPlayer(visible: playback.currentSong != nil)
+                            }
+                        }
+                }
+            }
+            .toolbar(hidesTabBar ? .hidden : .automatic, for: .tabBar)
+            .tabItem { Label("设置".t, systemImage: "gearshape.fill") }
+            .tag(MainTab.settings)
+        }
+        .tint(theme.current.accent(in: colorScheme))
+    }
+
+    /// 在每个稳定标签内使用系统分栏，避免外层分栏吞掉子页面的导航与搜索工具栏。
+    private func navigationColumns<Content: View>(showsSidebar: Bool, @ViewBuilder content: () -> Content) -> some View {
+        NavigationSplitView(columnVisibility: $columnVisibility, preferredCompactColumn: $compactColumn) {
+            AdaptiveLibrarySidebar(selection: sidebarSelection(isExpanded: showsSidebar))
+        } detail: {
+            content()
+                .modifier(LegacyPlayerInset(onExpand: { showFullPlayer = true }, onQueue: { showQueueSheet = true }))
+        }
+        .navigationSplitViewStyle(.balanced)
+    }
+
+    /// 展开、播放与队列按钮独立响应，系统负责播放器附件的实际位置。
+    private var miniPlayer: some View {
+        MiniPlayerBar(usesSystemContainer: true, onTap: { showFullPlayer = true }, onQueue: { showQueueSheet = true })
+    }
+
+    /// 宽屏侧栏复用手机标签和现有路由，不再更换整个内容框架。
+    private func sidebarSelection(isExpanded: Bool) -> Binding<PadSection?> {
+        Binding(get: { sidebarSection }, set: { section in
+            guard let section else { return }
+            sidebarSection = section
+            compactColumn = .detail
+            if !isExpanded { columnVisibility = .detailOnly }
+            navigation.selectedTab = section.tab
+            if let route = section.route {
+                navigation.browsePath = NavigationPath([route])
+            } else if section == .browse {
+                navigation.browsePath = NavigationPath()
+            }
+        })
+    }
+
+    /// 同步快捷操作请求，同时保留浏览分类对应的侧栏选中项。
+    private func syncSidebar(with tab: MainTab) {
+        guard sidebarSection?.tab != tab else { return }
+        switch tab {
+        case .library: sidebarSection = .library
+        case .browse: sidebarSection = .browse
+        case .search: sidebarSection = .search
+        case .settings: sidebarSection = .settings
         }
     }
 
@@ -180,12 +240,12 @@ struct QueueSheet: View {
             .tint(theme.current.accent(in: colorScheme))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(isEditingQueue ? "完成".t : "编辑".t) {
-                        toggleQueueEditing()
+                    Button { toggleQueueEditing() } label: {
+                        Label(isEditingQueue ? "完成".t : "编辑".t, systemImage: isEditingQueue ? "checkmark" : "pencil")
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("完成".t) { dismiss() }
+                    Button { dismiss() } label: { Label("完成".t, systemImage: "checkmark") }
                 }
             }
         }
@@ -233,6 +293,28 @@ private struct MiniPlayerReservationModifier: ViewModifier {
                     Color.clear
                         .frame(height: Metrics.miniPlayerReservedHeight)
                         .allowsHitTesting(false)
+                }
+            }
+        }
+    }
+}
+
+/// iOS 17–25 使用页面安全区承载播放条，避免猜测系统标签栏的尺寸。
+private struct LegacyPlayerInset: ViewModifier {
+    @EnvironmentObject private var playback: PlaybackEngine
+    let onExpand: () -> Void
+    let onQueue: () -> Void
+
+    /// 旧系统为当前标签预留播放条的真实高度，新系统交由 Tab 附件处理。
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+        } else {
+            content.safeAreaInset(edge: .bottom, spacing: 0) {
+                if playback.currentSong != nil {
+                    MiniPlayerBar(onTap: onExpand, onQueue: onQueue)
+                        .padding(.horizontal, Metrics.s)
+                        .padding(.vertical, Metrics.s)
                 }
             }
         }

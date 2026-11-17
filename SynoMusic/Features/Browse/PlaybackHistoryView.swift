@@ -24,10 +24,10 @@ struct PlaybackHistoryView: View {
         .navigationTitle("历史记录".t)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("清除".t) {
+                Button {
                     playback.clearPlaybackHistory()
                     Haptics.success()
-                }
+                } label: { Label("清除".t, systemImage: "trash") }
                 .disabled(playback.playedHistory.isEmpty && playback.queueHistory.isEmpty)
             }
         }

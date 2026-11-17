@@ -26,7 +26,7 @@ struct SleepTimerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("完成".t) { isPresented = false }
+                    Button { isPresented = false } label: { Label("完成".t, systemImage: "checkmark") }
                 }
             }
             .sheet(isPresented: $showCustomDuration) { customDurationPicker }
@@ -166,7 +166,7 @@ struct SleepTimerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消".t) { showCustomDuration = false }
+                    Button { showCustomDuration = false } label: { Label("取消".t, systemImage: "xmark") }
                 }
             }
         }
@@ -210,7 +210,7 @@ struct SleepTimerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消".t) { showDeadline = false }
+                    Button { showDeadline = false } label: { Label("取消".t, systemImage: "xmark") }
                 }
             }
         }
