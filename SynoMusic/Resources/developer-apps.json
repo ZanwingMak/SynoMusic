@@ -1,0 +1,117 @@
+{
+  "strings": {
+    "en": {
+      "更多作品": "More from this developer",
+      "同一位开发者，用心做的其他 App。": "A few more apps from the same developer.",
+      "在 App Store 查看": "View on the App Store",
+      "在 Apple TV 的 App Store 搜索": "Search the App Store on Apple TV",
+      "推荐作品": "Recommended apps"
+    },
+    "zh-Hant": {
+      "更多作品": "更多作品",
+      "同一位开发者，用心做的其他 App。": "同一位開發者，用心做的其他 App。",
+      "在 App Store 查看": "在 App Store 查看",
+      "在 Apple TV 的 App Store 搜索": "在 Apple TV 的 App Store 搜尋",
+      "推荐作品": "推薦作品"
+    },
+    "ja": {
+      "更多作品": "この開発者のほかのアプリ",
+      "同一位开发者，用心做的其他 App。": "同じ開発者が手がけたアプリをご紹介。",
+      "在 App Store 查看": "App Store で見る",
+      "在 Apple TV 的 App Store 搜索": "Apple TV の App Store で検索",
+      "推荐作品": "おすすめのアプリ"
+    },
+    "ko": {
+      "更多作品": "개발자의 다른 앱",
+      "同一位开发者，用心做的其他 App。": "같은 개발자가 만든 다른 앱도 만나보세요.",
+      "在 App Store 查看": "App Store에서 보기",
+      "在 Apple TV 的 App Store 搜索": "Apple TV의 App Store에서 검색",
+      "推荐作品": "추천 앱"
+    },
+    "de": {
+      "更多作品": "Weitere Apps dieses Entwicklers",
+      "同一位开发者，用心做的其他 App。": "Weitere Apps vom selben Entwickler.",
+      "在 App Store 查看": "Im App Store ansehen",
+      "在 Apple TV 的 App Store 搜索": "Im App Store auf Apple TV suchen",
+      "推荐作品": "App-Empfehlungen"
+    },
+    "fr": {
+      "更多作品": "Autres apps du développeur",
+      "同一位开发者，用心做的其他 App。": "Découvrez d’autres apps du même développeur.",
+      "在 App Store 查看": "Voir sur l’App Store",
+      "在 Apple TV 的 App Store 搜索": "Rechercher dans l’App Store sur Apple TV",
+      "推荐作品": "Apps recommandées"
+    }
+  },
+  "apps": [
+    {
+      "id": "6784522025",
+      "name": "RollKeep",
+      "icon": "DeveloperRollKeep",
+      "platforms": [
+        "iOS"
+      ],
+      "summary": {
+        "zh-Hans": "滑动整理照片，把空间留给值得保留的瞬间。",
+        "zh-Hant": "滑動整理照片，把空間留給值得保留的瞬間。",
+        "en": "Review photos with a swipe. Make room for the moments worth keeping.",
+        "ja": "スワイプで写真を整理。残したい瞬間のために空きを。",
+        "ko": "스와이프로 사진을 정리하고 소중한 순간을 위한 공간을 만드세요.",
+        "de": "Fotos per Wischgeste sichten. Platz für bleibende Momente schaffen.",
+        "fr": "Triez vos photos d’un geste et gardez de la place pour vos souvenirs."
+      }
+    },
+    {
+      "id": "6806893112",
+      "name": "Kanata",
+      "icon": "DeveloperKanata",
+      "platforms": [
+        "iOS",
+        "tvOS"
+      ],
+      "summary": {
+        "zh-Hans": "自己的影片与剧集，在手机、平板和电视上继续看。",
+        "zh-Hant": "自己的影片與影集，在手機、平板和電視上繼續看。",
+        "en": "Your own films and series, ready on iPhone, iPad and Apple TV.",
+        "ja": "自分の映画やドラマを iPhone、iPad、Apple TV で。",
+        "ko": "내 영화와 시리즈를 iPhone, iPad, Apple TV에서 이어 보세요.",
+        "de": "Eigene Filme und Serien auf iPhone, iPad und Apple TV ansehen.",
+        "fr": "Vos films et séries sur iPhone, iPad et Apple TV."
+      }
+    },
+    {
+      "id": "6792962753",
+      "name": "MeloGo",
+      "icon": "DeveloperMeloGo",
+      "platforms": [
+        "iOS"
+      ],
+      "summary": {
+        "zh-Hans": "轻装听歌，专注播放设备里的本地音乐。",
+        "zh-Hant": "輕鬆聽歌，專注播放裝置裡的本機音樂。",
+        "en": "A simple player for the music files you keep on your device.",
+        "ja": "デバイス内の音楽ファイルを、シンプルに楽しむプレーヤー。",
+        "ko": "기기에 저장한 음악 파일을 간편하게 즐기는 플레이어.",
+        "de": "Ein schlichter Player für die Musikdateien auf deinem Gerät.",
+        "fr": "Un lecteur simple pour les fichiers musicaux de votre appareil."
+      }
+    },
+    {
+      "id": "6821692076",
+      "name": "Nightfall",
+      "icon": "DeveloperNightfall",
+      "platforms": [
+        "tvOS"
+      ],
+      "summary": {
+        "zh-Hans": "让雨声、海浪与自然画面，陪你慢下来。",
+        "zh-Hant": "讓雨聲、海浪與自然畫面，陪你慢下來。",
+        "en": "Slow down with rain, waves and nature scenes on Apple TV.",
+        "ja": "雨音、波音、自然の映像とともに、Apple TV でひと息。",
+        "ko": "Apple TV에서 빗소리, 파도와 자연 풍경으로 쉬어 가세요.",
+        "de": "Mit Regen, Wellen und Naturbildern auf Apple TV zur Ruhe kommen.",
+        "fr": "Ralentissez avec la pluie, les vagues et la nature sur Apple TV."
+      }
+    }
+  ]
+}

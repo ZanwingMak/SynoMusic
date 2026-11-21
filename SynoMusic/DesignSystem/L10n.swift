@@ -67,7 +67,8 @@ final class LanguageManager: ObservableObject {
     func t(_ key: String) -> String {
         let code = current.lookupCode
         if code == AppLanguage.zhHans.rawValue { return key }
-        return L10n.platformAdditions[code]?[key]
+        return DeveloperAppCatalog.shared.strings[code]?[key]
+            ?? L10n.platformAdditions[code]?[key]
             ?? L10n.supportTable[code]?[key]
             ?? L10n.table[code]?[key]
             ?? L10n.release155Additions[code]?[key]

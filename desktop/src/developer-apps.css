@@ -1,0 +1,13 @@
+.developer-apps{margin:36px 0 28px;padding-top:28px;border-top:1px solid var(--line)}
+.developer-apps-heading h2{margin:0 0 8px}
+.developer-apps-heading p{margin:0 0 20px;color:var(--muted);font-size:12px;line-height:1.6}
+.developer-apps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px}
+.developer-app-card{display:flex;gap:14px;align-items:flex-start;text-align:left;padding:18px;border:1px solid var(--line);border-radius:var(--skin-radius,12px);background:var(--surface);color:var(--text);transition:background .18s,border-color .18s}
+.developer-app-card:hover{background:var(--soft);border-color:var(--accent)}
+.developer-app-card:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.developer-app-card img{flex:none;border-radius:12px;object-fit:cover}
+.developer-app-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:7px}
+.developer-app-copy strong{font-size:14px;font-weight:650}
+.developer-app-copy>span{font-size:12px;color:var(--muted);line-height:1.6;overflow-wrap:anywhere}
+.developer-app-copy small{font-size:10px;color:var(--muted);line-height:1.5}
+.developer-app-arrow{font-size:16px;color:var(--muted)}

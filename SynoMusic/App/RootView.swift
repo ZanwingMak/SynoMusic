@@ -14,6 +14,7 @@ struct RootView: View {
     @State private var showFullPlayer: Bool = false
     @State private var isAutoLogging: Bool = false
     @State private var showSupport = false
+    @State private var showDeveloperApps = false
 
     /// 仅 DEBUG：`-demo` 启动参数直接进入主框架，便于演示。
     private var isDemo: Bool {
@@ -46,6 +47,12 @@ struct RootView: View {
         .background(Theme.background.ignoresSafeArea())
         .adaptivePlayerPresentation(isPresented: $showFullPlayer)
         .sheet(isPresented: $showSupport) { SupportView() }
+        .sheet(isPresented: $showDeveloperApps) {
+            NavigationStack {
+                DeveloperAppsView()
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成".t) { showDeveloperApps = false } } }
+            }
+        }
         .onChange(of: playback.currentSong?.id) { oldID, newID in
             if newID == nil {
                 showFullPlayer = false
@@ -170,6 +177,8 @@ struct RootView: View {
     private func handleDeepLink(_ url: URL) {
         let target = url.host ?? url.pathComponents.dropFirst().first
         switch target {
+        case "apps":
+            showDeveloperApps = true
         case "support":
             showSupport = true
         case "smart-mixes":

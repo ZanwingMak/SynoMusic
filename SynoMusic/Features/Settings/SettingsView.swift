@@ -537,6 +537,13 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section("关于".t) {
+            if !DeveloperAppCatalog.availableApps.isEmpty {
+                NavigationLink {
+                    DeveloperAppsView().reserveMiniPlayer(visible: playback.currentSong != nil)
+                } label: {
+                    themedLabel("更多作品".t, systemImage: "square.stack.3d.up")
+                }
+            }
             HStack {
                 themedLabel("版本".t, systemImage: "number.circle")
                 Spacer()

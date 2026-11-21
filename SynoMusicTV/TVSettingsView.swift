@@ -13,6 +13,7 @@ struct TVSettingsView: View {
     @State private var editing: ServerProfile?
     @State private var deleting: ServerProfile?
     @State private var legalLink: TVPublicLink?
+    @State private var showDeveloperApps = false
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 32) {
@@ -58,10 +59,14 @@ struct TVSettingsView: View {
                     Button("服务条款".t) { legalLink = TVPublicLink(title: "服务条款", address: "https://zanwingmak.github.io/SynoMusic/terms.html") }
                 }
                 Text("所有功能免费开放。赞助完全自愿，不解锁额外功能，也不会自动续费。".t).font(.system(size: 22)).foregroundStyle(.secondary)
-                Text("SynoMusic · 1.7.0").font(.system(size: 18)).foregroundStyle(.tertiary)
+                Button { showDeveloperApps = true } label: {
+                    Label("更多作品".t, systemImage: "square.stack.3d.up")
+                }
+                Text("SynoMusic · " + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.7.1")).font(.system(size: 18)).foregroundStyle(.tertiary)
             }.frame(maxWidth: 1400, alignment: .leading).padding(.horizontal, 64).padding(.bottom, 60).frame(maxWidth: .infinity)
         }.scrollClipDisabled()
         .sheet(isPresented: $addServer) { TVServerEditor().tvControls() }
+        .sheet(isPresented: $showDeveloperApps) { DeveloperAppsView().tvControls() }
         .sheet(item: $editing) { TVServerEditor(profile: $0).tvControls() }
         .sheet(item: $legalLink) { link in VStack(spacing: 32) { Text(link.title.t).font(.title); TVQRCode(text: link.address).frame(width: 300, height: 300); Text(link.address).font(.system(size: 24)); Text("用手机扫描二维码打开".t).foregroundStyle(.secondary); Button("完成".t) { legalLink = nil } }.padding(60).tvControls() }
         .confirmationDialog("移除服务器".t, isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible) {
