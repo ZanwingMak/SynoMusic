@@ -9,7 +9,7 @@
     "heroDescription": "The music you’ve collected. The albums you come back to. A beautiful place to hear them all — on iPhone, iPad, Mac, Windows and Apple TV.",
     "iosDownload": "Get for iPhone & iPad ↗",
     "macDiscover": "Meet SynoMusic for Mac ↗",
-    "heroNote": "All features are free in 1.6. Desktop previews are available; the iOS update is currently in internal TestFlight.",
+    "heroNote": "Every feature is free. Supporting development is always optional.",
     "stageCaption": "A little less noise. A little more music.",
     "stageFootnote": "Your own music, beautifully connected.",
     "sourcesLead": "Bring the library you love.",
@@ -48,7 +48,7 @@
     "q5": "Where can I get help or contribute?",
     "a5": "Report an issue or join the discussion on our public GitHub repository.",
     "closingTitle": "Make room for<br>your music.",
-    "macDownload": "Download Mac preview ↗",
+    "macDownload": "Download for Mac ↗",
     "footerLine": "A home for the music you call your own.",
     "privacy": "Privacy",
     "terms": "Terms",
@@ -72,10 +72,10 @@
     ],
     "iphoneButton": "Get on the App Store ↗",
     "ipadTitle": "Give your albums<br>a little more room.",
-    "ipadBody": "The 1.7 TestFlight build gives iPad a library sidebar, adaptive album grids and persistent playback controls. Open a spacious full-screen player with artwork and lyrics side by side.",
+    "ipadBody": "A library sidebar, adaptive album grids and persistent playback controls make room for your collection on iPad. Open a spacious full-screen player with artwork and lyrics side by side.",
     "ipadHighlights": [
       "iPadOS 17 and later",
-      "Library sidebar and adaptive album grids in 1.7 TestFlight",
+      "Library sidebar and adaptive album grids",
       "Artwork, lyrics and queue in a spacious player"
     ],
     "ipadButton": "Get for iPad ↗",
@@ -88,13 +88,13 @@
     ],
     "windowsButton": "Download for Windows ↗",
     "tvTitle": "Your music,<br>in the living room.",
-    "tvBody": "SynoMusic for Apple TV is in TestFlight internal testing. Connect your own music server, explore with Siri Remote and enjoy a player designed for the big screen.",
+    "tvBody": "SynoMusic for Apple TV is available on the App Store. Connect your own music server, explore with Siri Remote and enjoy a player designed for the big screen.",
     "tvHighlights": [
-      "tvOS 17 and later · TestFlight internal testing",
+      "tvOS 17 and later · App Store",
       "Synology, Plex, Jellyfin, Emby, WebDAV and SMB",
       "Lyrics, favorites, playlists, queue and sleep timer"
     ],
-    "tvButton": "Follow the release ↗"
+    "tvButton": "Get on the App Store ↗"
   },
   "zh-Hans": {
     "navExperience": "聆听体验",
@@ -106,7 +106,7 @@
     "heroDescription": "悉心收藏的音乐，一再重温的专辑。在 iPhone、iPad、Mac、Windows 和 Apple TV 上，为它们找到一个美好的归处。",
     "iosDownload": "下载 iPhone 与 iPad 版 ↗",
     "macDiscover": "认识 Mac 版 SynoMusic ↗",
-    "heroNote": "1.6 起全功能免费。桌面预览版已发布，iOS 新版目前通过 TestFlight 内部测试提供。",
+    "heroNote": "全部功能免费开放，赞助开发始终由你自愿选择。",
     "stageCaption": "少一些纷扰，多一些音乐。",
     "stageFootnote": "让自己的音乐，自在相连。",
     "sourcesLead": "带上你喜爱的音乐资料库。",
@@ -145,7 +145,7 @@
     "q5": "在哪里获取帮助或参与贡献？",
     "a5": "欢迎在公开的 GitHub 仓库反馈问题、参与讨论。",
     "closingTitle": "为自己的音乐，<br>留一点空间。",
-    "macDownload": "下载 Mac 预览版 ↗",
+    "macDownload": "下载 Mac 客户端 ↗",
     "footerLine": "给自己珍爱的音乐，一个家。",
     "privacy": "隐私政策",
     "terms": "服务条款",
@@ -169,10 +169,10 @@
     ],
     "iphoneButton": "前往 App Store 下载 ↗",
     "ipadTitle": "让喜爱的专辑，<br>有更舒展的空间。",
-    "ipadBody": "1.7 TestFlight 测试版为 iPad 带来资料库侧栏、自适应专辑网格和常驻播放条。展开全屏播放器，封面与歌词各得其所。",
+    "ipadBody": "资料库侧栏、自适应专辑网格和常驻播放条，让 iPad 上的音乐收藏更好逛。展开全屏播放器，封面与歌词各得其所。",
     "ipadHighlights": [
       "支持 iPadOS 17 及更新版本",
-      "1.7 TestFlight：资料库侧栏与自适应专辑网格",
+      "资料库侧栏与自适应专辑网格",
       "宽屏封面、歌词与队列布局"
     ],
     "ipadButton": "下载 iPad 版 ↗",
@@ -185,13 +185,13 @@
     ],
     "windowsButton": "下载 Windows 客户端 ↗",
     "tvTitle": "让自己的音乐，<br>填满客厅。",
-    "tvBody": "Apple TV 客户端已进入 TestFlight 内部测试。连接自己的音乐服务器，用 Siri Remote 探索曲库，在专为电视设计的播放器中享受音乐。",
+    "tvBody": "Apple TV 客户端已在 App Store 上架。连接自己的音乐服务器，用 Siri Remote 探索曲库，在专为电视设计的播放器中享受音乐。",
     "tvHighlights": [
-      "支持 tvOS 17 及更新版本 · TestFlight 内部测试",
+      "支持 tvOS 17 及更新版本 · App Store",
       "支持群晖、Plex、Jellyfin、Emby、WebDAV 与 SMB",
       "歌词、收藏、歌单、队列与睡眠定时"
     ],
-    "tvButton": "关注发布进度 ↗"
+    "tvButton": "在 App Store 下载 ↗"
   },
   "zh-Hant": {
     "navExperience": "聆聽體驗",
@@ -203,7 +203,7 @@
     "heroDescription": "悉心收藏的音樂，一再重溫的專輯。在 iPhone、iPad、Mac、Windows 和 Apple TV 上，為它們找到美好的歸處。",
     "iosDownload": "下載 iPhone 與 iPad 版 ↗",
     "macDiscover": "認識 Mac 版 SynoMusic ↗",
-    "heroNote": "1.6 起全功能免費。桌面預覽版已發布，iOS 新版目前透過 TestFlight 內部測試提供。",
+    "heroNote": "全部功能免費開放，贊助開發始終由你自願選擇。",
     "stageCaption": "少一些紛擾，多一些音樂。",
     "stageFootnote": "讓自己的音樂，自在相連。",
     "sourcesLead": "帶上你喜愛的音樂資料庫。",
@@ -242,7 +242,7 @@
     "q5": "在哪裡取得協助或參與貢獻？",
     "a5": "歡迎在公開的 GitHub 儲存庫回報問題、參與討論。",
     "closingTitle": "為自己的音樂，<br>留一點空間。",
-    "macDownload": "下載 Mac 預覽版 ↗",
+    "macDownload": "下載 Mac 客戶端 ↗",
     "footerLine": "給自己珍愛的音樂，一個家。",
     "privacy": "隱私權政策",
     "terms": "服務條款",
@@ -266,10 +266,10 @@
     ],
     "iphoneButton": "前往 App Store 下載 ↗",
     "ipadTitle": "讓喜愛的專輯，<br>有更舒展的空間。",
-    "ipadBody": "1.7 TestFlight 測試版為 iPad 帶來資料庫側欄、自適應專輯網格與常駐播放列。展開全螢幕播放器，讓封面與歌詞各得其所。",
+    "ipadBody": "資料庫側欄、自適應專輯網格與常駐播放列，讓 iPad 上的音樂收藏更好逛。展開全螢幕播放器，讓封面與歌詞各得其所。",
     "ipadHighlights": [
       "支援 iPadOS 17 與更新版本",
-      "1.7 TestFlight：資料庫側欄與自適應專輯網格",
+      "資料庫側欄與自適應專輯網格",
       "寬螢幕封面、歌詞與佇列版面"
     ],
     "ipadButton": "下載 iPad 版 ↗",
@@ -282,13 +282,13 @@
     ],
     "windowsButton": "下載 Windows 用戶端 ↗",
     "tvTitle": "讓自己的音樂，<br>填滿客廳。",
-    "tvBody": "Apple TV 客戶端已進入 TestFlight 內部測試。連接自己的音樂伺服器，以 Siri Remote 探索曲庫，在專為電視設計的播放器中享受音樂。",
+    "tvBody": "Apple TV 客戶端已於 App Store 上架。連接自己的音樂伺服器，以 Siri Remote 探索曲庫，在專為電視設計的播放器中享受音樂。",
     "tvHighlights": [
-      "支援 tvOS 17 與更新版本 · TestFlight 內部測試",
+      "支援 tvOS 17 與更新版本 · App Store",
       "支援 Synology、Plex、Jellyfin、Emby、WebDAV 與 SMB",
       "歌詞、收藏、歌單、佇列與睡眠定時"
     ],
-    "tvButton": "追蹤發布進度 ↗"
+    "tvButton": "在 App Store 下載 ↗"
   },
   "ja": {
     "navExperience": "音楽体験",
@@ -300,7 +300,7 @@
     "heroDescription": "集めた音楽。何度でも聴きたいアルバム。iPhone、iPad、Mac、Windows、Apple TV で、あなたの音楽に心地よい居場所を。",
     "iosDownload": "iPhone・iPad 版を入手 ↗",
     "macDiscover": "Mac 版 SynoMusic を見る ↗",
-    "heroNote": "1.6 からすべての機能が無料です。デスクトップ版はプレビュー公開中、iOS 更新版は TestFlight の内部テストで提供しています。",
+    "heroNote": "すべての機能は無料。開発への支援はいつでも任意です。",
     "stageCaption": "雑音を少し減らして、音楽をもう少し。",
     "stageFootnote": "自分の音楽を、心地よくつなぐ。",
     "sourcesLead": "大切なライブラリを、そのまま。",
@@ -339,7 +339,7 @@
     "q5": "サポートや開発への参加はどこからできますか？",
     "a5": "公開 GitHub リポジトリで問題を報告したり、ディスカッションに参加したりできます。",
     "closingTitle": "あなたの音楽に、<br>少しの余白を。",
-    "macDownload": "Mac プレビューを入手 ↗",
+    "macDownload": "Mac 版を入手 ↗",
     "footerLine": "自分だけの大切な音楽に、帰る場所を。",
     "privacy": "プライバシー",
     "terms": "利用規約",
@@ -363,10 +363,10 @@
     ],
     "iphoneButton": "App Store で入手 ↗",
     "ipadTitle": "アルバムに、<br>もっとゆったりした場所を。",
-    "ipadBody": "1.7のTestFlight版では、ライブラリのサイドバー、可変アルバムグリッド、常設の再生バーをiPadに追加。全画面プレーヤーはアートワークと歌詞を並べて表示します。",
+    "ipadBody": "ライブラリのサイドバー、可変アルバムグリッド、常設の再生バーで iPad の音楽を快適に。全画面プレーヤーはアートワークと歌詞を並べて表示します。",
     "ipadHighlights": [
       "iPadOS 17以降",
-      "1.7 TestFlight：サイドバーと可変アルバムグリッド",
+      "サイドバーと可変アルバムグリッド",
       "広い画面でアートワーク、歌詞、キューを表示"
     ],
     "ipadButton": "iPad 版を入手 ↗",
@@ -379,13 +379,13 @@
     ],
     "windowsButton": "Windows 版をダウンロード ↗",
     "tvTitle": "自分の音楽を、<br>リビングでも。",
-    "tvBody": "Apple TV版はTestFlight内部テスト中です。自分の音楽サーバーに接続し、Siri Remoteでライブラリを探して、大画面向けプレーヤーを楽しめます。",
+    "tvBody": "Apple TV 版を App Store で公開しました。自分の音楽サーバーに接続し、Siri Remote でライブラリを探して、大画面向けプレーヤーを楽しめます。",
     "tvHighlights": [
-      "tvOS 17以降 · TestFlight内部テスト",
+      "tvOS 17 以降 · App Store",
       "Synology、Plex、Jellyfin、Emby、WebDAV、SMB",
       "歌詞、お気に入り、プレイリスト、キュー、スリープタイマー"
     ],
-    "tvButton": "リリース情報を見る ↗"
+    "tvButton": "App Store で入手 ↗"
   },
   "ko": {
     "navExperience": "음악 경험",
@@ -397,7 +397,7 @@
     "heroDescription": "모아 온 음악과 다시 찾게 되는 앨범. iPhone, iPad, Mac, Windows, Apple TV에서 나의 음악이 머물 편안한 공간을 만나세요.",
     "iosDownload": "iPhone · iPad용 다운로드 ↗",
     "macDiscover": "Mac용 SynoMusic 만나보기 ↗",
-    "heroNote": "1.6부터 모든 기능이 무료입니다. 데스크톱 미리보기는 공개되었으며 iOS 업데이트는 TestFlight 내부 테스트 중입니다.",
+    "heroNote": "모든 기능은 무료입니다. 개발 후원은 언제나 선택 사항입니다.",
     "stageCaption": "방해는 조금 덜고, 음악은 조금 더.",
     "stageFootnote": "나만의 음악을, 자연스럽게 연결하세요.",
     "sourcesLead": "아끼는 음악 보관함을 그대로.",
@@ -436,7 +436,7 @@
     "q5": "도움을 받거나 개발에 참여하려면 어디로 가야 하나요?",
     "a5": "공개 GitHub 저장소에 문제를 제보하거나 토론에 참여해 주세요.",
     "closingTitle": "내 음악을 위한<br>공간을 만들어 보세요.",
-    "macDownload": "Mac 미리 보기 다운로드 ↗",
+    "macDownload": "Mac 버전 다운로드 ↗",
     "footerLine": "내가 아끼는 음악이 머무는 곳.",
     "privacy": "개인정보 처리방침",
     "terms": "이용약관",
@@ -460,10 +460,10 @@
     ],
     "iphoneButton": "App Store에서 다운로드 ↗",
     "ipadTitle": "좋아하는 앨범에<br>조금 더 넓은 공간을.",
-    "ipadBody": "1.7 TestFlight 버전은 iPad에 보관함 사이드바, 반응형 앨범 그리드와 상시 재생 바를 제공합니다. 전체 화면 플레이어에서 앨범 아트와 가사를 나란히 볼 수 있습니다.",
+    "ipadBody": "iPad에서 보관함 사이드바, 반응형 앨범 그리드와 상시 재생 바를 이용하세요. 전체 화면 플레이어에서 앨범 아트와 가사를 나란히 볼 수 있습니다.",
     "ipadHighlights": [
       "iPadOS 17 이상",
-      "1.7 TestFlight: 사이드바와 반응형 앨범 그리드",
+      "사이드바와 반응형 앨범 그리드",
       "넓은 화면에 앨범 아트, 가사 및 대기열 표시"
     ],
     "ipadButton": "iPad용 다운로드 ↗",
@@ -476,13 +476,13 @@
     ],
     "windowsButton": "Windows용 다운로드 ↗",
     "tvTitle": "거실에서도<br>나의 음악을.",
-    "tvBody": "Apple TV 앱은 TestFlight 내부 테스트 중입니다. 자신의 음악 서버에 연결하고 Siri Remote로 보관함을 둘러보며 큰 화면을 위해 설계한 플레이어를 즐기세요.",
+    "tvBody": "Apple TV 앱이 App Store에 출시되었습니다. 자신의 음악 서버에 연결하고 Siri Remote로 보관함을 둘러보며 큰 화면을 위해 설계한 플레이어를 즐기세요.",
     "tvHighlights": [
-      "tvOS 17 이상 · TestFlight 내부 테스트",
+      "tvOS 17 이상 · App Store",
       "Synology, Plex, Jellyfin, Emby, WebDAV, SMB",
       "가사, 즐겨찾기, 재생목록, 대기열, 취침 타이머"
     ],
-    "tvButton": "출시 소식 보기 ↗"
+    "tvButton": "App Store에서 다운로드 ↗"
   },
   "de": {
     "navExperience": "Musikerlebnis",
@@ -494,7 +494,7 @@
     "heroDescription": "Deine gesammelte Musik. Alben, zu denen du zurückkehrst. Ein schöner Ort zum Hören — auf iPhone, iPad, Mac, Windows und Apple TV.",
     "iosDownload": "Für iPhone & iPad laden ↗",
     "macDiscover": "SynoMusic für Mac entdecken ↗",
-    "heroNote": "Ab 1.6 sind alle Funktionen kostenlos. Desktop-Vorabversionen sind verfügbar; das iOS-Update wird intern über TestFlight getestet.",
+    "heroNote": "Alle Funktionen sind kostenlos. Unterstützung bleibt freiwillig.",
     "stageCaption": "Ein bisschen weniger Lärm. Ein bisschen mehr Musik.",
     "stageFootnote": "Deine eigene Musik. Schön verbunden.",
     "sourcesLead": "Bring deine liebste Mediathek mit.",
@@ -533,7 +533,7 @@
     "q5": "Wo bekomme ich Hilfe oder kann mitwirken?",
     "a5": "Melde ein Problem oder beteilige dich an den Diskussionen in unserem öffentlichen GitHub-Repository.",
     "closingTitle": "Mach Platz<br>für deine Musik.",
-    "macDownload": "Mac-Vorschau laden ↗",
+    "macDownload": "Für Mac laden ↗",
     "footerLine": "Ein Zuhause für die Musik, die dir gehört.",
     "privacy": "Datenschutz",
     "terms": "Nutzungsbedingungen",
@@ -557,10 +557,10 @@
     ],
     "iphoneButton": "Im App Store laden ↗",
     "ipadTitle": "Mehr Raum<br>für deine Alben.",
-    "ipadBody": "Die TestFlight-Version 1.7 bringt eine Seitenleiste, adaptive Albumraster und dauerhafte Wiedergabesteuerung aufs iPad. Der Vollbildplayer zeigt Cover und Liedtexte nebeneinander.",
+    "ipadBody": "Seitenleiste, adaptive Albumraster und dauerhafte Wiedergabesteuerung schaffen Platz für deine Sammlung auf dem iPad. Der Vollbildplayer zeigt Cover und Liedtexte nebeneinander.",
     "ipadHighlights": [
       "iPadOS 17 und neuer",
-      "1.7 TestFlight: Seitenleiste und adaptive Albumraster",
+      "Seitenleiste und adaptive Albumraster",
       "Großzügiger Player für Cover, Liedtexte und Warteschlange"
     ],
     "ipadButton": "Für iPad herunterladen ↗",
@@ -573,13 +573,13 @@
     ],
     "windowsButton": "Für Windows laden ↗",
     "tvTitle": "Deine Musik.<br>Auch im Wohnzimmer.",
-    "tvBody": "SynoMusic für Apple TV befindet sich im internen TestFlight-Test. Verbinde deinen Musikserver, navigiere mit Siri Remote und genieße einen Player für den großen Bildschirm.",
+    "tvBody": "SynoMusic für Apple TV ist im App Store verfügbar. Verbinde deinen Musikserver, navigiere mit Siri Remote und genieße einen Player für den großen Bildschirm.",
     "tvHighlights": [
-      "tvOS 17 und neuer · Interner TestFlight-Test",
+      "tvOS 17 und neuer · App Store",
       "Synology, Plex, Jellyfin, Emby, WebDAV und SMB",
       "Liedtexte, Favoriten, Playlists, Warteschlange und Einschlaftimer"
     ],
-    "tvButton": "Veröffentlichung verfolgen ↗"
+    "tvButton": "Im App Store laden ↗"
   },
   "fr": {
     "navExperience": "L’expérience",
@@ -591,7 +591,7 @@
     "heroDescription": "La musique que vous collectionnez. Les albums que vous retrouvez. Un bel endroit pour les écouter — sur iPhone, iPad, Mac, Windows et Apple TV.",
     "iosDownload": "Télécharger pour iPhone et iPad ↗",
     "macDiscover": "Découvrir SynoMusic pour Mac ↗",
-    "heroNote": "Toutes les fonctions sont gratuites dès la version 1.6. Les aperçus pour ordinateur sont disponibles ; la mise à jour iOS est en test interne sur TestFlight.",
+    "heroNote": "Toutes les fonctions sont gratuites. Soutenir le développement reste facultatif.",
     "stageCaption": "Un peu moins de bruit. Un peu plus de musique.",
     "stageFootnote": "Votre propre musique, tout simplement connectée.",
     "sourcesLead": "Retrouvez la bibliothèque que vous aimez.",
@@ -630,7 +630,7 @@
     "q5": "Où trouver de l’aide ou contribuer ?",
     "a5": "Signalez un problème ou participez aux discussions sur notre dépôt GitHub public.",
     "closingTitle": "Faites une place<br>à votre musique.",
-    "macDownload": "Télécharger l’aperçu Mac ↗",
+    "macDownload": "Télécharger pour Mac ↗",
     "footerLine": "Un chez-soi pour la musique qui vous appartient.",
     "privacy": "Confidentialité",
     "terms": "Conditions d’utilisation",
@@ -654,10 +654,10 @@
     ],
     "iphoneButton": "Télécharger sur l’App Store ↗",
     "ipadTitle": "Un peu plus d’espace<br>pour vos albums.",
-    "ipadBody": "La version 1.7 sur TestFlight apporte une barre latérale, une grille d’albums adaptative et des commandes permanentes à l’iPad. Le lecteur plein écran affiche la pochette et les paroles côte à côte.",
+    "ipadBody": "Une barre latérale, une grille d’albums adaptative et des commandes permanentes donnent de la place à votre collection sur iPad. Le lecteur plein écran affiche la pochette et les paroles côte à côte.",
     "ipadHighlights": [
       "iPadOS 17 et versions ultérieures",
-      "1.7 TestFlight : barre latérale et grille adaptative",
+      "Barre latérale et grille adaptative",
       "Un lecteur spacieux pour pochettes, paroles et file d’attente"
     ],
     "ipadButton": "Télécharger pour iPad ↗",
@@ -670,12 +670,12 @@
     ],
     "windowsButton": "Télécharger pour Windows ↗",
     "tvTitle": "Votre musique,<br>dans le salon.",
-    "tvBody": "SynoMusic pour Apple TV est en test interne sur TestFlight. Connectez votre serveur, explorez avec Siri Remote et profitez d’un lecteur conçu pour le grand écran.",
+    "tvBody": "SynoMusic pour Apple TV est disponible sur l’App Store. Connectez votre serveur, explorez avec Siri Remote et profitez d’un lecteur conçu pour le grand écran.",
     "tvHighlights": [
-      "tvOS 17 et versions ultérieures · Test interne TestFlight",
+      "tvOS 17 et versions ultérieures · App Store",
       "Synology, Plex, Jellyfin, Emby, WebDAV et SMB",
       "Paroles, favoris, playlists, file d’attente et minuterie"
     ],
-    "tvButton": "Suivre la sortie ↗"
+    "tvButton": "Télécharger sur l’App Store ↗"
   }
 }
